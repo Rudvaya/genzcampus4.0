@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% block title %}Manage Clubs & Events - GenZCampus{% endblock %}
+{% block page_title %}Manage Clubs & Events{% endblock %}
+
+{% block content %}
+<style>
+    .stat-card-modern {
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        background: var(--card-bg);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .stat-card-modern:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .club-card-modern {
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        background: var(--card-bg);
+        padding: 1.25rem;
+    }
+
+    .club-card-modern:hover {
+        border-color: var(--clr-primary-light);
+        box-shadow: var(--shadow-md);
+    }
+
+    .event-item-modern {
+        border-left: 4px solid var(--clr-primary);
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        padding: 1rem;
+        transition: all 0.2s;
+        border-top: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .event-item-modern:hover {
+        background: var(--card-bg);
+        box-shadow: var(--shadow-sm);
+        transform: translateX(4px);
+    }
+
+    @media (max-width: 767.98px) {
+        .stat-card-modern {
+            padding: 1rem !important;
+        }
+        .stat-card-modern h2 {
+            font-size: 1.25rem !important;
+        }
+        .club-card-modern, .event-item-modern {
+            padding: 1rem;
+        }
+        .club-actions {
+            margin-top: 1rem;
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
+</style>
+
+<!-- Statistics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card-modern shadow-sm h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase text-muted mb-1">Total Clubs</div>
+                    <h2 class="mb-0 fw-bold text-main" style="font-family: var(--font-code);">{{ stats.total_clubs }}</h2>
+                </div>
+                <div class="stat-icon bg-primary-soft p-2 rounded-3 text-primary">
+                    <i class="fas fa-university"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card-modern shadow-sm h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase text-muted mb-1">Portals</div>
+                    <h2 class="mb-0 fw-bold text-success" style="font-family: var(--font-code);">{{ stats.active_portals }}</h2>
+                </div>
+                <div class="stat-icon bg-success-soft p-2 rounded-3 text-success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card-modern shadow-sm h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase text-muted mb-1">Upcoming</div>
+                    <h2 class="mb-0 fw-bold text-info" style="font-family: var(--font-code);">{{ stats.upcoming_events }}</h2>
+                </div>
+                <div class="stat-icon bg-info-soft p-2 rounded-3 text-info">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card-modern shadow-sm h-100 p-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="text-xs font-weight-bold text-uppercase text-muted mb-1">Active</div>
+                    <h2 class="mb-0 fw-bold text-warning" style="font-family: var(--font-code);">{{ stats.active_events }}</h2>
+                </div>
+                <div class="stat-icon bg-warning-soft p-2 rounded-3 text-warning">
+                    <i class="fas fa-bolt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Clubs Section -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-4 border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-shield-alt me-2"></i>Club Administration
+                </h6>
+                <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal"
+                    data-bs-target="#addClubModal">
+                    <i class="fas fa-plus me-1"></i>Add
+                </button>
+            </div>
+            <div class="card-body p-3 p-md-4" style="max-height: 700px; overflow-y: auto;">
+                {% for club in clubs %}
+                <div class="club-card-modern shadow-sm">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-3">
+                        <div class="w-100">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h5 class="mb-0 font-weight-bold text-main">{{ club.name }}</h5>
+                                <div class="mobile-only">
+                                    <span class="badge {% if club.is_active %}bg-success-soft text-success{% else %}bg-danger-soft text-danger{% endif %} rounded-pill">
+                                        {{ 'Active' if club.is_active else 'Disabled' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge desktop-only {% if club.is_active %}bg-success-soft text-success{% else %}bg-danger-soft text-danger{% endif %} rounded-pill">
+                                    <i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i>
+                                    {{ 'Active Portal' if club.is_active else 'Disabled' }}
+                                </span>
+                                <small class="text-muted font-monospace opacity-75">ID: {{ club.club_login_id }}</small>
+                            </div>
+                        </div>
+                        <div class="club-actions d-flex gap-1 mt-3 mt-md-0">
+                            <a href="{{ url_for('toggle_club', club_id=club.id) }}"
+                                class="btn btn-sm btn-outline-warning rounded-pill px-2"
+                                title="{{ 'Disable' if club.is_active else 'Enable' }}">
+                                <i class="fas {% if club.is_active %}fa-pause{% else %}fa-play{% endif %}"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-2" data-bs-toggle="modal"
+                                data-bs-target="#editClubModal{{ club.id }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <a href="{{ url_for('delete_club', club_id=club.id) }}"
+                                class="btn btn-sm btn-outline-danger rounded-pill px-2"
+                                onclick="return confirm('Delete club and all its data?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-3">{{ club.description or 'No description provided.' }}</p>
+
+                    <div class="bg-main p-2 rounded-3 border-main border">
+                        <form method="POST" action="{{ url_for('reset_club_password', club_id=club.id) }}"
+                            class="d-flex gap-2">
+                            <input type="password" name="new_password"
+                                class="form-control form-control-sm border-0 bg-transparent text-main"
+                                placeholder="Reset portal password..." required minlength="4">
+                            <button type="submit" class="btn btn-sm btn-dark px-3 rounded-pill shadow-sm">Update</button>
+                        </form>
+                    </div>
+
+                    <!-- Edit Club Modal (Structure preserved) -->
+                    <div class="modal fade" id="editClubModal{{ club.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg">
+                                <div class="modal-header bg-primary text-white border-0">
+                                    <h5 class="modal-title font-weight-bold">Configure {{ club.name }}</h5>
+                                    <button type="button" class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="POST" action="{{ url_for('edit_club', club_id=club.id) }}">
+                                    <div class="modal-body p-4">
+                                        <div class="mb-3">
+                                            <label class="form-label font-weight-bold">Club Name</label>
+                                            <input type="text" class="form-control rounded-3" name="name"
+                                                value="{{ club.name }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label font-weight-bold">Description</label>
+                                            <textarea class="form-control rounded-3" name="description"
+                                                rows="3">{{ club.description }}</textarea>
+                                        </div>
+                                        <hr class="my-4">
+                                        <h6 class="text-primary font-weight-bold mb-3"><i
+                                                class="fas fa-key me-2"></i>Portal Credentials</h6>
+                                        <div class="row">
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label small text-muted">Login ID</label>
+                                                <input type="text" class="form-control bg-light" name="club_login_id"
+                                                    value="{{ club.club_login_id }}" required>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label small text-muted">New Password</label>
+                                                <input type="password" class="form-control bg-light" name="password"
+                                                    placeholder="••••••••">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer bg-light border-0">
+                                        <button type="button" class="btn btn-light px-4 rounded-pill"
+                                            data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary px-4 rounded-pill shadow-sm">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Section -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-4 border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-transparent py-3 border-bottom-0">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-calendar-check me-2"></i>Global Events Timeline
+                </h6>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <div class="mb-4">
+                    <div class="input-group rounded-pill overflow-hidden border border-main bg-main">
+                        <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="eventSearch" class="form-control border-0 bg-transparent text-main"
+                            placeholder="Search events...">
+                    </div>
+                </div>
+
+                <div id="eventsList" style="max-height: 600px; overflow-y: auto;">
+                    {% set has_events = false %}
+                    {% for club in clubs %}
+                    {% for event in club.events %}
+                    {% set has_events = true %}
+                    <div class="event-item-modern shadow-sm mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="font-weight-bold text-main mb-1">{{ event.name }}</h6>
+                                <div class="d-flex flex-wrap align-items-center gap-x-3 gap-y-1 mb-2">
+                                    <small class="text-primary fw-bold"><i class="fas fa-users me-1"></i>{{
+                                        event.club.name }}</small>
+                                    <small class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>{{ event.venue
+                                        or 'TBA' }}</small>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span
+                                        class="badge rounded-pill small px-2 py-1
+                                        {% if event.status == 'active' %}bg-success
+                                        {% elif event.status == 'expired' %}bg-secondary
+                                        {% else %}bg-primary{% endif %}">
+                                        {{ event.status|capitalize }}
+                                    </span>
+                                    <small class="text-muted small"><i class="far fa-calendar me-1"></i>{{
+                                        event.date.strftime('%b %d, %Y') if event.date else 'No Date' }}</small>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('delete_event', event_id=event.id) }}"
+                                class="btn btn-outline-danger btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                                style="width: 32px; height: 32px;"
+                                onclick="return confirm('Delete this event permanently?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endfor %}
+
+                    {% if not has_events %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times fa-4x text-muted opacity-25 mb-3"></i>
+                        <p class="text-muted small">No events organized yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Support Styles for Badges -->
+<style>
+    .bg-primary-soft { background-color: rgba(124, 58, 237, 0.1); }
+    .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-info-soft { background-color: rgba(13, 202, 240, 0.1); }
+    .bg-warning-soft { background-color: rgba(255, 193, 7, 0.1); }
+    .bg-danger-soft { background-color: rgba(220, 53, 69, 0.1); }
+</style>
+
+<!-- Add Club Modal (Structure preserved) -->
+<div class="modal fade" id="addClubModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-plus-circle me-2"></i>New Club Portal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_club') }}">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Club Name</label>
+                        <input type="text" class="form-control rounded-3" name="name"
+                            placeholder="e.g. Technical Research Club" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Description</label>
+                        <textarea class="form-control rounded-3" name="description" rows="2"
+                            placeholder="Tell us what this club is about..."></textarea>
+                    </div>
+                    <hr class="my-4">
+                    <h6 class="text-primary font-weight-bold mb-3"><i class="fas fa-user-lock me-2"></i>Access
+                        Configuration</h6>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted font-weight-bold">Login ID</label>
+                            <input type="text" class="form-control border-primary bg-light" name="club_login_id"
+                                placeholder="trc_admin" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted font-weight-bold">Password</label>
+                            <input type="password" class="form-control border-primary bg-light" name="password"
+                                required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-light px-4 rounded-pill"
+                        data-bs-dismiss="modal">Discard</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill shadow-sm">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $("#eventSearch").on("keyup", function () {
+            var value = $(this).val().toLowerCase();
+            $("#eventsList .event-item-modern").filter(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
+
+

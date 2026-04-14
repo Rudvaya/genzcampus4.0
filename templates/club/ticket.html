@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Ticket - {{ response.event.name }}{% endblock %}
+{% block page_title %}Event Ticket{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div id="printable-ticket" class="card border-0 shadow-lg overflow-hidden position-relative"
+                style="border-radius: 20px;">
+                <!-- Ticket Header -->
+                <div class="bg-primary p-4 text-white text-center">
+                    <h5 class="mb-0 text-uppercase fw-bold letter-spacing-1">Event Entry Ticket</h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="p-4 text-center border-bottom bg-light">
+                        <h3 class="fw-bold mb-1">{{ response.event.name }}</h3>
+                        <div class="text-primary fw-bold small text-uppercase">{{ response.event.club.name }}</div>
+                    </div>
+
+                    <div class="p-4">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-7">
+                                <div class="mb-4">
+                                    <div class="text-muted small text-uppercase">Participant</div>
+                                    <div class="fw-bold h5 mb-0">{{ response.student.get_full_name() }}</div>
+                                    <div class="small text-muted">{{ response.student.roll_no }}</div>
+                                </div>
+                                {% if team %}
+                                <div class="mb-4" style="background-color: var(--bs-primary-bg-subtle); padding: 12px; border-radius: 8px; border-left: 4px solid var(--bs-primary);">
+                                    <div class="text-primary small text-uppercase fw-bold mb-1"><i class="fas fa-users me-1"></i> Team Information</div>
+                                    <div class="fw-bold mb-1">{{ team.team_name }}</div>
+                                    <div class="small text-dark d-flex align-items-center">
+                                        Join Code: <span class="badge bg-primary text-white ms-2">{{ team.team_id_code }}</span>
+                                    </div>
+                                    <div class="mt-1" style="font-size: 0.75rem; color: #555;">
+                                        Share this code or your exact Team Name so others can join!
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="mb-4">
+                                    <div class="text-muted small text-uppercase">Date & Time</div>
+                                    {% if response.event.start_date %}
+                                    <div class="fw-bold">{{ response.event.start_date.strftime('%d %b, %Y') }}</div>
+                                    <div class="small">{{ response.event.start_date.strftime('%I:%M %p') }}</div>
+                                    {% else %}
+                                    <div class="fw-bold">Date TBD</div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="text-muted small text-uppercase">Venue</div>
+                                    <div class="fw-bold">{{ response.event.venue }}</div>
+                                </div>
+                            </div>
+                            <div class="col-5 text-center">
+                                <div class="bg-white p-2 rounded shadow-sm d-inline-block position-relative">
+                                    <img src="data:image/png;base64,{{ response.qr_code_data }}" class="img-fluid {% if ticket_status in ['PENDING', 'REJECTED', 'UNPAID'] %}qr-blurred{% endif %}"
+                                         style="width: 150px; height: 150px;">
+                                     {% if ticket_status in ['PENDING', 'REJECTED', 'UNPAID'] %}
+                                     <div class="position-absolute top-50 start-50 translate-middle w-100 px-1">
+                                         <span class="badge bg-danger rounded-pill px-2 py-1 shadow-sm border border-white" style="font-size:0.65rem;">
+                                             <i class="fas fa-lock me-1"></i>{{ ticket_status }}
+                                         </span>
+                                     </div>
+                                     {% endif %}
+                                </div>
+                                <div class="mt-2 fw-bold {% if ticket_status == 'REJECTED' %}text-danger text-decoration-line-through{% else %}text-primary{% endif %} small">{{ response.ticket_id }}</div>
+                            </div>
+                        </div>
+
+                        {% if ticket_status == 'PENDING' %}
+                        <div class="alert alert-warning py-2 px-3 small border-0 mb-0 text-start">
+                            <i class="fas fa-exclamation-triangle me-1"></i> <strong>Incomplete Team:</strong> {{ status_msg }}
+                        </div>
+                        {% elif ticket_status == 'REJECTED' %}
+                        <div class="alert alert-danger py-2 px-3 small border-0 mb-0 text-start">
+                            <i class="fas fa-ban me-1"></i> <strong>Registration Invalid:</strong> {{ status_msg }}
+                        </div>
+                        {% elif ticket_status == 'ACCEPTED_SOLO' %}
+                        <div class="alert alert-success py-2 px-3 small border-0 mb-0 text-start">
+                            <i class="fas fa-user-check me-1"></i> {{ status_msg }}
+                        </div>
+                        {% elif ticket_status == 'UNPAID' %}
+                        <div class="alert alert-danger py-2 px-3 small border-0 mb-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-credit-card me-1"></i> <strong>Payment Required:</strong> {{ status_msg }}
+                            </div>
+                            <button onclick="payNow(this, {{ response.id }})" class="btn btn-danger btn-sm rounded-pill px-3 ms-2 fw-bold" style="font-size: 0.7rem;">Pay Now</button>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info py-2 px-3 small border-0 mb-0 text-start">
+                            <i class="fas fa-info-circle me-1"></i> Please show this QR code at the event entrance for
+                            attendance marking.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Ticket Footer Decor -->
+                <div class="bg-dark p-2 text-center text-white-50 small">
+                    <i class="fas fa-shield-halved me-1"></i> Verified by GenZCampus Command Center
+                </div>
+            </div>
+
+            <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-center">
+                <button onclick="window.print()" class="btn btn-outline-primary px-4">
+                    <i class="fas fa-print me-2"></i> Print Ticket
+                </button>
+                <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary px-4">
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .letter-spacing-1 {
+        letter-spacing: 1px;
+    }
+
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #printable-ticket,
+        #printable-ticket * {
+            visibility: visible;
+        }
+
+        #printable-ticket {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            box-shadow: none !important;
+        }
+
+        .btn,
+        .sidebar,
+        .mt-4 {
+            display: none !important;
+        }
+    }
+    
+    .qr-blurred {
+        filter: blur(5px);
+        opacity: 0.6;
+        user-select: none;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    function payNow(btn, responseId) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>';
+        btn.disabled = true;
+
+        fetch(`/club/pay-existing/${responseId}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'pay') {
+                const options = {
+                    "key": data.key,
+                    "amount": data.amount,
+                    "currency": "INR",
+                    "name": "GenZCampus",
+                    "description": data.event_name,
+                    "order_id": data.order_id,
+                    "handler": function (response) {
+                        fetch("{{ url_for('club_portal.verify_payment') }}", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            body: JSON.stringify({
+                                response_id: data.response_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        })
+                        .then(r => r.json())
+                        .then(v => {
+                            if (v.success) window.location.href = v.redirect;
+                            else { alert(v.message); btn.innerHTML = originalText; btn.disabled = false; }
+                        });
+                    },
+                    "prefill": {
+                        "name": data.user_name,
+                        "email": data.user_email
+                    },
+                    "theme": { "color": "#0d6efd" },
+                    "modal": {
+                        "ondismiss": () => {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                        }
+                    }
+                };
+                new Razorpay(options).open();
+            } else {
+                alert(data.message || "Error starting payment");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Connection error");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+</script>
+{% endblock %}
+
+

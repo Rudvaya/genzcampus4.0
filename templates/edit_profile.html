@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile — GenZCampus{% endblock %}
+{% block page_title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+
+    <!-- Profile Header Card -->
+    <div class="card mb-4 animate-in" style="overflow:hidden;">
+      <div style="background:linear-gradient(135deg,var(--clr-primary),var(--clr-accent));padding:28px 28px 52px;position:relative;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:800;">
+            {{ current_user.first_name[0] }}{{ current_user.last_name[0] if current_user.last_name else '' }}
+          </div>
+          <div>
+            <h5 style="color:#fff;margin:0;font-weight:800;">{{ current_user.get_full_name() }}</h5>
+            <span style="font-family:var(--font-code);font-size:11px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">{{ current_user.role }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card-bg);border-radius:var(--r-xl) var(--r-xl) 0 0;margin-top:-28px;padding:28px 28px 0;position:relative;">
+
+        <form method="POST">
+
+          <!-- Personal Info -->
+          <div style="margin-bottom:28px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--clr-primary);font-family:var(--font-code);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+              Personal Info
+              <div style="flex:1;height:1px;background:var(--border);"></div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="first_name">First Name *</label>
+                <input type="text" class="form-control" id="first_name" name="first_name"
+                  value="{{ current_user.first_name }}" required>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="last_name">Last Name *</label>
+                <input type="text" class="form-control" id="last_name" name="last_name"
+                  value="{{ current_user.last_name }}" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="email">Email Address *</label>
+                <input type="email" class="form-control" id="email" name="email"
+                  value="{{ current_user.email }}" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Academic / Role Info -->
+          <div style="margin-bottom:28px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--clr-primary);font-family:var(--font-code);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+              Details
+              <div style="flex:1;height:1px;background:var(--border);"></div>
+            </div>
+            <div class="row g-3">
+              {% if current_user.role == 'student' %}
+              <div class="col-12 col-md-6">
+                <label class="form-label">Roll Number</label>
+                <input type="text" class="form-control" value="{{ current_user.roll_no }}" readonly
+                  style="font-family:var(--font-code);background:var(--bg-secondary);cursor:not-allowed;">
+                <div class="form-text">Cannot be changed</div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Section</label>
+                <input type="text" class="form-control" value="{{ current_user.section }}" readonly
+                  style="background:var(--bg-secondary);cursor:not-allowed;">
+              </div>
+              {% endif %}
+              <div class="col-12 col-md-6">
+                <label class="form-label">Department</label>
+                {% if current_user.role == 'admin' %}
+                <input type="text" class="form-control" name="department"
+                  value="{{ current_user.department or '' }}">
+                {% else %}
+                <input type="text" class="form-control" value="{{ current_user.department }}" readonly
+                  style="background:var(--bg-secondary);cursor:not-allowed;">
+                {% endif %}
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="phone">Phone Number</label>
+                <input type="text" class="form-control" id="phone" name="phone"
+                  value="{{ current_user.phone or '' }}" placeholder="Optional">
+              </div>
+            </div>
+          </div>
+
+          <!-- Change Password -->
+          <div style="margin-bottom:28px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--clr-primary);font-family:var(--font-code);margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+              Change Password
+              <div style="flex:1;height:1px;background:var(--border);"></div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="new_password">New Password</label>
+                <input type="password" class="form-control" id="new_password" name="new_password"
+                  placeholder="Leave blank to keep current">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="confirm_password">Confirm Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                  placeholder="Repeat new password">
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap pb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-light">
+              <i class="fas fa-times me-2"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fas fa-save me-2"></i>Save Changes
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+

@@ -1,0 +1,106 @@
+{% extends "club/layout.html" %}
+
+{% block title %}QR Attendance Scanner{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm border-0">
+            <h4 class="fw-bold mb-0 text-center text-primary"><i class="fas fa-qrcode me-2"></i> Attendance Scanner</h4>
+            <div class="text-center mb-4">
+                <span class="badge bg-light text-muted border px-3 py-2 rounded-pill">
+                    <i class="fas fa-calendar-alt me-1"></i> {{ event.name }}
+                </span>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-uppercase text-muted">Select Session</label>
+                <select id="session_type" class="form-select mb-3">
+                    <option value="Morning">Morning Session</option>
+                    <option value="Afternoon">Afternoon Session</option>
+                    <option value="Before Break">Before Break</option>
+                    <option value="After Break">After Break</option>
+                    <option value="Evening">Evening Session</option>
+                </select>
+            </div>
+
+            <div id="reader" style="width: 100%; border-radius: 12px; overflow: hidden;" class="mb-4"></div>
+
+            <div id="result-container" class="d-none">
+                <div id="status-alert" class="alert mb-3"></div>
+                <div id="student-info" class="p-3 bg-light rounded border d-none">
+                    <h6 class="fw-bold mb-1" id="res-name"></h6>
+                    <div class="small text-muted mb-0" id="res-roll"></div>
+                    <div class="small text-muted" id="res-dept"></div>
+                </div>
+                <button class="btn btn-primary w-100 mt-3" onclick="startScanner()">Scan Next Student</button>
+            </div>
+
+            <div class="text-center mt-3">
+                <p class="text-muted small"><i class="fas fa-info-circle me-1"></i> Scan the registration QR code for <strong>{{ event.name }}</strong> to mark attendance.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- html5-qrcode library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    const html5QrCode = new Html5Qrcode("reader");
+    const sessionSelect = document.getElementById('session_type');
+    const resultContainer = document.getElementById('result-container');
+    const statusAlert = document.getElementById('status-alert');
+    const studentInfo = document.getElementById('student-info');
+    const eventId = "{{ event.id }}";
+
+    function onScanSuccess(decodedText, decodedResult) {
+        html5QrCode.stop().then(() => {
+            markAttendance(decodedText);
+        });
+    }
+
+    function startScanner() {
+        resultContainer.classList.add('d-none');
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess
+        );
+    }
+
+    function markAttendance(ticketId) {
+        fetch("{{ url_for('club_portal.mark_attendance') }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                ticket_id: ticketId,
+                event_id: eventId,
+                session_type: sessionSelect.value
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                resultContainer.classList.remove('d-none');
+                if (data.success) {
+                    statusAlert.className = "alert alert-success";
+                    statusAlert.innerHTML = `<i class="fas fa-check-circle me-2"></i> ${data.message}`;
+                    studentInfo.classList.remove('d-none');
+                    document.getElementById('res-name').innerText = data.student_info.name;
+                    document.getElementById('res-roll').innerText = data.student_info.roll_no;
+                    document.getElementById('res-dept').innerText = data.student_info.dept;
+
+                    // Play success sound if possible
+                    new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => { });
+                } else {
+                    statusAlert.className = "alert alert-danger";
+                    statusAlert.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i> ${data.message}`;
+                    studentInfo.classList.add('d-none');
+                }
+            });
+    }
+
+    startScanner();
+</script>
+{% endblock %}
+
+

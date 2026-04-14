@@ -1,0 +1,15 @@
+# Development Gitignore - Including Credentials as requested
+__pycache__/
+*.py[cod]
+*$py.class
+.agents/
+.gemini/
+
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment/DB (Included for dev collaboration as requested)
+#!.env
+#!instance/

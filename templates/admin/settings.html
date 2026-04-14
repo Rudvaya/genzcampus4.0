@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}System Settings - Admin{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Branding Section -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100">
+            <div class="card-header bg-transparent py-3 border-bottom-0">
+                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-university me-2"></i>College Branding</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4 p-4 bg-light rounded-4 border border-dashed">
+                    <div class="mb-3">
+                        <label class="small text-muted d-block mb-3">Current College Logo</label>
+                        {% if college_logo %}
+                            <img src="{{ college_logo }}" alt="College Logo" class="img-fluid rounded shadow-sm" style="max-height: 120px;">
+                        {% else %}
+                            <div class="py-4 opacity-50">
+                                <i class="fas fa-image fa-4x text-muted mb-2"></i>
+                                <p class="small mb-0">No logo uploaded yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('admin_settings') }}" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted">Upload New Logo</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control rounded-start-pill border-main bg-main text-main" name="logo" accept="image/*" required>
+                            <button class="btn btn-primary px-4 rounded-end-pill shadow-sm" type="submit">
+                                <i class="fas fa-cloud-upload-alt me-1"></i> Upload
+                            </button>
+                        </div>
+                        <div class="form-text small mt-2">
+                            <i class="fas fa-info-circle me-1"></i> Recommended: PNG or SVG with transparent background (Max 5MB).
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMTP Configuration Section -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100">
+            <div class="card-header bg-transparent py-3 border-bottom-0">
+                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-envelope me-2"></i>SMTP Configuration</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_settings') }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Mail Server</label>
+                        <input type="text" class="form-control rounded-pill border-main bg-main text-main" name="mail_server" value="{{ smtp_configs|selectattr('key', 'equalto', 'MAIL_SERVER')|map(attribute='value')|first or '' }}" placeholder="smtp.gmail.com">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold text-muted">Username</label>
+                            <input type="text" class="form-control rounded-pill border-main bg-main text-main" name="mail_username" value="{{ smtp_configs|selectattr('key', 'equalto', 'MAIL_USERNAME')|map(attribute='value')|first or '' }}" placeholder="email@gmail.com">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Port</label>
+                            <input type="number" class="form-control rounded-pill border-main bg-main text-main" name="mail_port" value="{{ smtp_configs|selectattr('key', 'equalto', 'MAIL_PORT')|map(attribute='value')|first or '587' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Password / App Password</label>
+                        <input type="password" class="form-control rounded-pill border-main bg-main text-main" name="mail_password" placeholder="••••••••">
+                        <div class="form-text small mt-1">Leave blank to keep existing password.</div>
+                    </div>
+                    <div class="mb-4 d-flex align-items-center gap-2">
+                        <input type="checkbox" class="form-check-input" name="mail_use_tls" id="mail_use_tls" {% if smtp_configs|selectattr('key', 'equalto', 'MAIL_USE_TLS')|map(attribute='value')|first == 'True' %}checked{% endif %}>
+                        <label class="form-check-label small fw-bold text-muted" for="mail_use_tls">Enable TLS</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill shadow-sm py-2">
+                        <i class="fas fa-save me-1"></i> Save SMTP Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

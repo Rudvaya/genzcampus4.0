@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% block title %}Sign In — GenZCampus{% endblock %}
+
+{% block auth_content %}
+<style>
+  .auth-wrap {
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* Left panel — branding */
+  .auth-brand-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #7C3AED 0%, #6366F1 60%, #4F46E5 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+  }
+
+  .auth-brand-panel::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    left: -80px;
+    width: 300px;
+    height: 300px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+
+  .auth-brand-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    right: -60px;
+    width: 220px;
+    height: 220px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+
+  .brand-logo {
+    width: 72px;
+    height: 72px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 30px;
+    margin-bottom: 24px;
+    border: 2px solid rgba(255,255,255,0.2);
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+    font-family: var(--font-code);
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.72);
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-features {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .brand-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .brand-feature-item i {
+    width: 20px;
+    text-align: center;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .brand-feature-item span {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+  }
+
+  /* Right panel — form */
+  .auth-form-panel {
+    width: 480px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 48px;
+    min-height: 100vh;
+  }
+
+  .auth-form-inner {
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .auth-form-header {
+    margin-bottom: 32px;
+  }
+
+  .auth-form-header h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 4px;
+  }
+
+  .auth-form-header p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+
+  .auth-theme-toggle {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 28px;
+  }
+
+  .auth-input-group {
+    margin-bottom: 18px;
+  }
+
+  .auth-input-group label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-family: var(--font-code);
+  }
+
+  .auth-input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--text-main);
+    font-size: 14px;
+    font-family: var(--font-ui);
+    transition: all var(--t-base);
+  }
+
+  .auth-input-group input:focus {
+    outline: none;
+    border-color: var(--clr-primary);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  }
+
+  .auth-input-group input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .auth-submit-btn {
+    width: 100%;
+    padding: 13px 24px;
+    background: var(--clr-primary);
+    border: none;
+    border-radius: var(--r-md);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--t-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-family: var(--font-ui);
+  }
+
+  .auth-submit-btn:hover {
+    background: var(--clr-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+  }
+
+  .auth-links {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .auth-links a {
+    color: var(--clr-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity var(--t-fast);
+  }
+
+  .auth-links a:hover { opacity: 0.8; }
+
+  /* Divider */
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0;
+  }
+
+  .auth-divider::before,
+  .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .auth-divider span {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* Mobile — stack vertically */
+  @media (max-width: 768px) {
+    .auth-brand-panel { display: none; }
+    .auth-form-panel {
+      width: 100%;
+      padding: 40px 24px;
+    }
+  }
+</style>
+
+<div class="auth-wrap">
+  <!-- Left branding panel -->
+  <div class="auth-brand-panel d-none d-md-flex">
+    <div class="brand-logo" style="overflow: hidden; padding: 0;">
+      {% if college_logo %}
+        <img src="{{ college_logo }}" 
+             alt="Logo" 
+             style="width: 100%; height: 100%; object-fit: contain; padding: 10px;">
+      {% else %}
+        <i class="fas fa-shield-alt"></i>
+      {% endif %}
+    </div>
+    <h1 class="brand-title">{{ current_college.name if current_college else 'GenZCampus' }}</h1>
+    <p class="brand-subtitle">Modern academic management for {{ current_college.name if current_college else 'your institution' }}</p>
+
+    <div class="brand-features">
+      <div class="brand-feature-item">
+        <i class="fas fa-university"></i>
+        <span>Multi-role academic portal</span>
+      </div>
+      <div class="brand-feature-item">
+        <i class="fas fa-clipboard-check"></i>
+        <span>Streamlined OD approval flow</span>
+      </div>
+      <div class="brand-feature-item">
+        <i class="fas fa-chart-line"></i>
+        <span>Real-time attendance tracking</span>
+      </div>
+      <div class="brand-feature-item">
+        <i class="fas fa-layer-group"></i>
+        <span>Club & event management</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="auth-form-panel">
+    <div class="auth-form-inner">
+
+      <!-- Theme toggle -->
+      <div class="auth-theme-toggle">
+        <button class="theme-toggle-btn" id="authThemeToggle" title="Toggle theme">
+          <i class="fas fa-moon" id="authThemeIcon"></i>
+        </button>
+      </div>
+
+      <div class="auth-form-header animate-in">
+        <h2>Welcome back</h2>
+        <p>Sign in to your GenZCampus account to continue</p>
+      </div>
+
+      <form method="POST" class="animate-in" style="animation-delay:0.08s;">
+        <div class="auth-input-group">
+          <label for="email">Email / Login ID</label>
+          <input type="text" id="email" name="email" required
+            placeholder="e.g. yourname@student.edu">
+        </div>
+
+        <div class="auth-input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required
+            placeholder="Your password">
+        </div>
+
+        <button type="submit" class="auth-submit-btn">
+          <i class="fas fa-arrow-right-to-bracket"></i>
+          Sign In
+        </button>
+      </form>
+
+      <div class="auth-links animate-in" style="animation-delay:0.16s;">
+        <a href="{{ url_for('forgot_password') }}">Forgot password?</a>
+        <a href="{{ url_for('student_signup') }}">Create account →</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auth page theme toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    const icon = document.getElementById('authThemeIcon');
+    if (icon) icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+
+    document.getElementById('authThemeToggle').addEventListener('click', function() {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      const icon = document.getElementById('authThemeIcon');
+      if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    });
+  });
+</script>
+{% endblock %}
+
+

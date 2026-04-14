@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Create Account — GenZCampus{% endblock %}
+
+{% block auth_content %}
+<style>
+  .signup-wrap {
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 32px 16px;
+    padding-bottom: 60px;
+  }
+
+  .signup-card {
+    width: 100%;
+    max-width: 620px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-2xl);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  .signup-header {
+    background: linear-gradient(135deg, var(--clr-primary) 0%, var(--clr-accent) 100%);
+    padding: 28px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .signup-header-left h2 {
+    color: #fff;
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+
+  .signup-header-left p {
+    color: rgba(255,255,255,0.72);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .signup-header-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: var(--r-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .signup-body {
+    padding: 32px 36px;
+  }
+
+  .form-section-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--clr-primary);
+    font-family: var(--font-code);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .form-section { margin-bottom: 28px; }
+
+  @media (max-width: 576px) {
+    .signup-body   { padding: 24px 20px; }
+    .signup-header { padding: 22px 20px; }
+  }
+</style>
+
+<div class="signup-wrap">
+  <div class="signup-card animate-in">
+
+    <!-- Header -->
+    <div class="signup-header">
+      <div class="signup-header-left">
+        <h2>{{ current_college.name if current_college else 'Student Registration' }}</h2>
+        <p>Create your student account for {{ current_college.name if current_college else 'GenZCampus' }}</p>
+      </div>
+      <div class="signup-header-icon">
+        <i class="fas fa-user-graduate"></i>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="signup-body">
+      <form method="POST">
+
+        <!-- Account Info -->
+        <div class="form-section">
+          <div class="form-section-label">Account Info</div>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="roll_no">Roll Number *</label>
+              <input type="text" class="form-control" id="roll_no" name="roll_no"
+                pattern="(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{5,20}"
+                title="Alphanumeric, 5-20 characters"
+                style="text-transform: uppercase; font-family: var(--font-code);"
+                placeholder="e.g. CS22B001" required>
+              <div class="form-text" style="font-size:11px;">Alphanumeric, 5-20 chars</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="email">Email Address *</label>
+              <input type="email" class="form-control" id="email" name="email"
+                placeholder="yourname@student.edu" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal Info -->
+        <div class="form-section">
+          <div class="form-section-label">Personal Info</div>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="first_name">First Name *</label>
+              <input type="text" class="form-control" id="first_name" name="first_name"
+                placeholder="First name" required>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="last_name">Last Name *</label>
+              <input type="text" class="form-control" id="last_name" name="last_name"
+                placeholder="Last name" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Academic Info -->
+        <div class="form-section">
+          <div class="form-section-label">Academic Details</div>
+          <div class="row g-3">
+            <div class="col-12 col-md-4">
+              <label class="form-label" for="section">Section *</label>
+              <select class="form-select" id="section" name="section" required>
+                <option value="">Select</option>
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+                <option value="C">Section C</option>
+                <option value="D">Section D</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label" for="year">Year *</label>
+              <select class="form-select" id="year" name="year" required>
+                <option value="">Select</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label" for="department">Department *</label>
+              <select class="form-select" id="department" name="department" required>
+                <option value="">Select</option>
+                {% for dept in departments %}
+                <option value="{{ dept.name }}">{{ dept.name }}</option>
+                {% endfor %}
+                {% if not departments %}
+                <option value="CSE">CSE</option>
+                <option value="ECE">ECE</option>
+                <option value="EEE">EEE</option>
+                <option value="MECH">MECH</option>
+                <option value="CIVIL">CIVIL</option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-section">
+          <div class="form-section-label">Security</div>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="password">Password *</label>
+              <input type="password" class="form-control" id="password" name="password"
+                placeholder="Create a strong password" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+          <a href="{{ url_for('login') }}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Login
+          </a>
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-user-plus me-2"></i>Create Account
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var t = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+{% endblock %}
+
+

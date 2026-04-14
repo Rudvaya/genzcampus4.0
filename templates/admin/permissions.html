@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}All Permissions — GenZCampus{% endblock %}
+{% block page_title %}All Permissions{% endblock %}
+
+{% block content %}
+<style>
+  /* Mobile permission card */
+  .perm-card-mobile {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+  .perm-card-mobile .perm-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-main);
+  }
+  .perm-card-mobile .perm-roll {
+    font-family: var(--font-code);
+    font-size: 11.5px;
+    color: var(--clr-primary);
+    font-weight: 600;
+  }
+  .perm-card-mobile .perm-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .perm-chip {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    font-weight: 600;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .perm-card-mobile .perm-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Hide mobile cards on desktop, hide desktop table on mobile */
+  .perm-table-wrap { display: block; }
+  .perm-cards-mobile { display: none; }
+
+  @media (max-width: 767.98px) {
+    .perm-table-wrap { display: none; }
+    .perm-cards-mobile { display: block; }
+  }
+</style>
+
+<!-- Page header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div class="section-title">
+    <i class="fas fa-clipboard-check"></i>
+    Permission Requests
+  </div>
+  <span class="badge" style="background:var(--clr-primary-light);color:var(--clr-primary);font-family:var(--font-code);padding:6px 12px;border-radius:var(--r-pill);font-size:12px;">
+    {{ permissions|length }} total
+  </span>
+</div>
+
+<!-- ============================================================
+     DESKTOP: Full table
+     ============================================================ -->
+<div class="perm-table-wrap card">
+  <div class="table-responsive" style="border-radius:var(--r-lg);">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Roll No</th>
+          <th>Date</th>
+          <th>Club</th>
+          <th>Event</th>
+          <th>Status</th>
+          <th>Applied</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for permission in permissions %}
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:13.5px;">{{ permission.student.get_full_name() }}</div>
+          </td>
+          <td>
+            <span class="badge bg-main" style="font-family:var(--font-code);">{{ permission.student.roll_no }}</span>
+          </td>
+          <td style="font-size:13px;color:var(--text-muted);">{{ permission.date.strftime('%d %b %Y') if permission.date else 'N/A' }}</td>
+          <td style="font-size:13px;">{{ permission.club.name }}</td>
+          <td style="font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ permission.event.name if permission.event else permission.custom_event }}
+          </td>
+          <td>
+            <span class="badge rounded-pill
+              {% if permission.status == 'approved' %}bg-success
+              {% elif permission.status == 'rejected' %}bg-danger
+              {% else %}bg-warning{% endif %}"
+              style="font-family:var(--font-code);font-size:10.5px;padding:4px 10px;">
+              {{ permission.status|upper }}
+            </span>
+          </td>
+          <td style="font-size:12px;color:var(--text-muted);">{{ permission.applied_at.strftime('%d %b') if permission.applied_at else 'N/A' }}</td>
+          <td>
+            <div class="d-flex gap-2 justify-content-end">
+              {% if permission.status == 'pending' %}
+              <a href="{{ url_for('admin_update_permission', permission_id=permission.id, action='approve') }}"
+                 class="btn btn-success btn-sm rounded-pill" title="Approve" style="min-width:32px;">
+                <i class="fas fa-check"></i>
+              </a>
+              <a href="{{ url_for('admin_update_permission', permission_id=permission.id, action='reject') }}"
+                 class="btn btn-danger btn-sm rounded-pill" title="Reject" style="min-width:32px;">
+                <i class="fas fa-times"></i>
+              </a>
+              {% endif %}
+              <a href="{{ url_for('admin_view_permission', permission_id=permission.id) }}"
+                 class="btn btn-light btn-sm rounded-pill px-3" title="View Details">
+                <i class="fas fa-eye me-1"></i>View
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-5">
+            <i class="fas fa-inbox fa-3x mb-3" style="color:var(--border);display:block;"></i>
+            <div style="font-weight:600;color:var(--text-muted);">No permission requests found</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================
+     MOBILE: Card stack
+     ============================================================ -->
+<div class="perm-cards-mobile">
+  {% for permission in permissions %}
+  <div class="perm-card-mobile animate-in" style="animation-delay: {{ loop.index0 * 0.04 }}s;">
+    <div class="d-flex align-items-start justify-content-between">
+      <div style="flex:1;min-width:0;">
+        <div class="perm-name">{{ permission.student.get_full_name() }}</div>
+        <div class="perm-roll">{{ permission.student.roll_no }}</div>
+      </div>
+      <span class="badge rounded-pill ms-2 flex-shrink-0
+        {% if permission.status == 'approved' %}bg-success
+        {% elif permission.status == 'rejected' %}bg-danger
+        {% else %}bg-warning{% endif %}"
+        style="font-family:var(--font-code);font-size:10px;padding:4px 10px;">
+        {{ permission.status|upper }}
+      </span>
+    </div>
+
+    <div class="perm-meta">
+      <span class="perm-chip"><i class="fas fa-layer-group"></i>{{ permission.club.name }}</span>
+      <span class="perm-chip"><i class="fas fa-calendar"></i>{{ permission.date.strftime('%d %b %Y') if permission.date else 'N/A' }}</span>
+      <span class="perm-chip" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <i class="fas fa-star"></i>{{ permission.event.name if permission.event else permission.custom_event }}
+      </span>
+    </div>
+
+    <div class="perm-actions">
+      {% if permission.status == 'pending' %}
+      <a href="{{ url_for('admin_update_permission', permission_id=permission.id, action='approve') }}"
+         class="btn btn-success btn-sm rounded-pill px-3">
+        <i class="fas fa-check me-1"></i>Approve
+      </a>
+      <a href="{{ url_for('admin_update_permission', permission_id=permission.id, action='reject') }}"
+         class="btn btn-danger btn-sm rounded-pill px-3">
+        <i class="fas fa-times me-1"></i>Reject
+      </a>
+      {% endif %}
+      <a href="{{ url_for('admin_view_permission', permission_id=permission.id) }}"
+         class="btn btn-light btn-sm rounded-pill px-3">
+        <i class="fas fa-eye me-1"></i>Details
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="fas fa-inbox fa-3x mb-3" style="color:var(--border);display:block;"></i>
+    <div style="font-weight:600;color:var(--text-muted);">No permission requests found</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+

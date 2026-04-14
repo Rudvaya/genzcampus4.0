@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .date-header {
+        background: var(--bg-color);
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+    .history-table {
+        background: var(--card-bg);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        margin-bottom: 3rem;
+    }
+    .history-table th {
+        background: rgba(var(--text-main-rgb, 255, 255, 255), 0.03);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 1.5rem;
+    }
+    .history-table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+    .history-table tr:last-child td {
+        border-bottom: none;
+    }
+    .stat-badge {
+        background: var(--bg-color);
+        padding: 0.4rem 0.8rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .search-bar {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 50px;
+        padding: 0.6rem 1.5rem;
+        color: var(--text-main);
+    }
+    .search-bar:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+</style>
+
+<div class="container-fluid px-lg-5 py-4">
+    <div class="row align-items-center mb-5">
+        <div class="col-md-6">
+            <h2 class="fw-bold m-0"><i class="fas fa-history text-primary me-3"></i>Attendance History</h2>
+            <p class="text-muted mb-0">Browse and modify past class records</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <a href="{{ url_for('faculty_dashboard') }}" class="btn btn-light rounded-pill px-4 shadow-sm border border-main text-main fw-bold">
+                <i class="fas fa-arrow-left me-2"></i> BACK TO DASHBOARD
+            </a>
+        </div>
+    </div>
+
+    <!-- Grouped History -->
+    {% if grouped_sessions %}
+        {% for day in grouped_sessions %}
+        <div class="history-section" data-date="{{ day.date }}">
+            <div class="date-header shadow-sm">
+                <i class="fas fa-calendar-alt text-primary me-2"></i>
+                <span class="fw-bold text-main">{{ day.date.strftime('%A, %d %b %Y') }}</span>
+                <span class="ms-3 badge bg-primary bg-opacity-10 text-primary rounded-pill">
+                    {{ day.records|length }} Sessions
+                </span>
+            </div>
+
+            <div class="history-table shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Class Info</th>
+                                <th class="text-center">Present / Total</th>
+                                <th class="text-center">Percentage</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in day.records %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-main">{{ record.subject }}</div>
+                                </td>
+                                <td>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-graduation-cap me-1"></i> {{ record.department }} | Year {{ record.year }}{{ record.section }}
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="stat-badge">
+                                        <span class="text-success">{{ record.present }}</span> / {{ record.total }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% set pct = ((record.present / record.total) * 100)|round(1) %}
+                                    <div class="d-flex flex-column align-items-center">
+                                        <span class="fw-bold text-main">{{ pct }}%</span>
+                                        <div class="progress w-75 mt-1" style="height: 4px;">
+                                            <div class="progress-bar {% if pct < 75 %}bg-danger{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ pct }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('edit_attendance_view', date=day.date, dept=record.department, year=record.year, sec=record.section, sub=record.subject) }}" 
+                                       class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">
+                                        <i class="fas fa-edit me-1"></i> MODIFY
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card card-modern p-5 text-center shadow-sm border-0 border-main">
+            <div class="mb-4">
+                <i class="fas fa-history fa-4x text-muted opacity-25"></i>
+            </div>
+            <h4 class="text-muted">No attendance history found.</h4>
+            <p class="text-muted">Attendance records for your classes will appear here once marked.</p>
+            <a href="{{ url_for('faculty_dashboard') }}" class="btn btn-primary rounded-pill px-5 mt-3 shadow">
+                Mark Attendance Now
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+

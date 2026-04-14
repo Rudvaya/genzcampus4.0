@@ -1,0 +1,854 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard - GenZCampus{% endblock %}
+{% block page_title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
+        --glass-bg: rgba(255, 255, 255, 0.15);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --header-shadow: rgba(124, 58, 237, 0.3);
+    }
+
+    [data-theme="dark"] {
+        --glass-bg: rgba(0, 0, 0, 0.2);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --header-shadow: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Unified Premium Header */
+    .dashboard-header {
+        background: var(--primary-gradient);
+        border-radius: 30px;
+        padding: 3rem 2rem 5rem 2rem;
+        color: white;
+        margin-bottom: -3rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px var(--header-shadow);
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        padding: 1.5rem;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    .glass-card:hover { border-color: rgba(255,255,255,0.5); transform: translateY(-3px); }
+
+    /* Timeline Section */
+    .timeline-container {
+        overflow-x: auto;
+        display: flex;
+        gap: 15px;
+        padding: 10px 5px;
+        scrollbar-width: none;
+        align-items: stretch; /* Ensure all cards stretch to the tallest one */
+    }
+    .timeline-container::-webkit-scrollbar { display: none; }
+
+    .timeline-node {
+        min-width: 140px;
+        flex: 0 0 auto;
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .timeline-node.active {
+        border-color: var(--clr-primary);
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.15);
+        transform: scale(1.02);
+    }
+    .timeline-node.active::before {
+        content: 'LIVE';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #ef4444;
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 50px;
+        letter-spacing: 0.5px;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.6; }
+        100% { opacity: 1; }
+    }
+
+    .period-time { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: block; }
+    .period-subject { font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px; flex-grow: 1; }
+    .period-tag { font-size: 0.65rem; font-weight: 700; color: var(--clr-primary); opacity: 0.8; margin-top: auto; }
+
+    /* Modern Progress Node */
+    .day-progress-card {
+        background: var(--bg-color);
+        border-radius: 20px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+    .progress-info { flex-grow: 1; margin-right: 20px; }
+    .progress-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.75rem; font-weight: 700; color: var(--text-main); }
+
+    /* Timeline Live Animations */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.6; }
+        100% { opacity: 1; }
+    }
+
+    /* Attendance Breakdown Premium Grid */
+    .attendance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Mobile: 1-column grid, smaller cards */
+    @media (max-width: 767.98px) {
+        .attendance-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .subject-stat-card {
+            border-radius: 18px;
+            padding: 1rem 1.25rem;
+        }
+
+        .stat-circle {
+            width: 60px;
+            height: 60px;
+            flex-shrink: 0;
+        }
+
+        .stat-circle::after {
+            width: 50px;
+            height: 50px;
+        }
+
+        .dashboard-header {
+            padding: 1.25rem !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .dashboard-header h2 {
+            font-size: 1.4rem !important;
+        }
+
+        .dashboard-header .col-md-5 {
+            display: none;
+        }
+
+        .timeline-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+        }
+
+        .timeline-node {
+            min-width: 140px;
+            scroll-snap-align: start;
+        }
+    }
+    
+    .subject-stat-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 28px;
+        padding: 1.5rem;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: default;
+    }
+    .subject-stat-card:hover {
+        transform: translateY(-8px);
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+
+    .stat-circle {
+        width: 75px;
+        height: 75px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        background: conic-gradient(var(--p-color) calc(var(--p-val) * 1%), rgba(255,255,255,0.05) 0);
+        margin-left: 1rem;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+    .stat-circle::after {
+        content: "";
+        position: absolute;
+        width: 63px;
+        height: 63px;
+        background: var(--card-bg);
+        border-radius: 50%;
+        z-index: 1;
+    }
+
+    .stat-circle span {
+        position: relative;
+        z-index: 2;
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--text-main);
+    }
+
+    .sub-meta { flex: 1; min-width: 0; }
+    .sub-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sub-status-pill {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 10px;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: fadeInUp 0.5s ease backwards; }
+    /* Bottom Cards Modern List Item */
+    .list-item-modern {
+        background: var(--bg-color);
+        border-radius: 16px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+    .list-item-modern:hover {
+        background: var(--card-bg);
+        border-color: var(--border-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+</style>
+
+<div class="dashboard-header animate-in">
+    <div class="row align-items-center">
+        <div class="col-md-7 welcome-section">
+            <p class="mb-1 opacity-75 fw-bold text-uppercase small" style="letter-spacing: 1px;">Academy Command center</p>
+            <h2 class="fw-bold" style="font-size: clamp(1.3rem, 5vw, 2rem); margin-bottom: 0.5rem;">Hi, {{ current_user.first_name }}! 👋</h2>
+            <p class="mb-4 opacity-75" style="font-size: clamp(0.8rem, 3vw, 1rem);">Your academic performance is looking {% if overall_stats.percentage >= 75 %}excellent{% else %}steady{% endif %}! Overall Attendance: <strong>{{ overall_stats.percentage }}%</strong></p>
+            
+            <div class="mt-4">
+                <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                    <i class="fas fa-check-circle me-1"></i> UPDATED REAL-TIME
+                </span>
+            </div>
+        </div>
+        <div class="col-md-5 mt-4 mt-md-0 d-none d-md-block">
+            <div class="glass-card shadow-lg">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 fw-bold">Overall Attendance</h6>
+                        <small class="opacity-75">Status: {% if overall_stats.percentage >= 75 %}Safe{% else %}Critical{% endif %}</small>
+                    </div>
+                    <div class="overall-progress">
+                        {{ overall_stats.percentage }}%
+                    </div>
+                </div>
+                <div class="progress mt-3" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                    <div class="progress-bar bg-white" style="width: {{ overall_stats.percentage|default(0) }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-content">
+    <!-- Subject Attendance Breakdown -->
+    <div class="mb-5 animate-in" style="animation-delay: 0.1s;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold text-main m-0"><i class="fas fa-chart-pie text-primary me-2"></i> Attendance Analysis</h5>
+        </div>
+        
+        <div class="attendance-grid">
+            {% for subject, stats in subject_stats.items() %}
+            {% set s_color = '#10b981' if stats.percentage >= 75 else ('#f59e0b' if stats.percentage >= 65 else '#ef4444') %}
+            {% set s_status = 'Excellent' if stats.percentage >= 75 else ('Warning' if stats.percentage >= 65 else 'Critical') %}
+            <div class="subject-stat-card shadow-lg">
+                <div class="sub-meta">
+                    <div class="sub-title" title="{{ subject }}">{{ subject }}</div>
+                    <div class="sub-status-pill mt-2" style="background: {{ s_color }}20; color: {{ s_color }};">
+                        {{ s_status }}
+                    </div>
+                </div>
+                <div class="stat-circle" style="--p-color: {{ s_color }}; --p-val: {{ stats.percentage }};">
+                    <span>{{ stats.percentage }}%</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- Today's Timeline View -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <!-- Mobile Trigger: Replaces timeline on small screens -->
+            <div class="mobile-schedule-trigger" id="mobileScheduleBtn">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-uppercase fw-bold text-primary mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">Schedule</p>
+                        <h5 class="fw-extrabold mb-1 text-main">Today's Classes</h5>
+                        <p class="text-muted small mb-0">{{ ist_now.strftime('%A, %d %B') }}</p>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-calendar-alt fa-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 d-flex align-items-center">
+                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 me-2" style="font-size: 0.65rem;">
+                        <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i> LIVE
+                    </span>
+                    <span class="text-muted extra-small" style="font-size: 0.75rem;" id="mobileNextClass">Loading next class...</span>
+                </div>
+            </div>
+
+            <!-- Desktop View: Hidden on mobile via CSS -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden desktop-timeline-view">
+                <div class="card-header bg-transparent py-4 px-4 border-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="m-0 fw-bold text-main"><i class="fas fa-calendar-day me-2 text-indigo"></i> <span id="timelineTitle">Today's Timeline</span></h5>
+                        <p class="text-muted small mb-0" id="timelineDateText">{{ ist_now.strftime('%A, %d %B %Y') }}</p>
+                    </div>
+                    <div class="position-relative">
+                        <button class="btn btn-light rounded-circle shadow-sm" style="width: 40px; height: 40px; border: 1px solid var(--border-color);" id="timelineDatePickerBtn">
+                            <i class="fas fa-calendar-alt text-indigo"></i>
+                        </button>
+                        <input type="text" id="timelineDateInput" style="position: absolute; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0; border: none; padding: 0;">
+                    </div>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div id="timelinePlaceholder" class="text-center py-5 bg-surface-secondary rounded-4 {% if today_timetable %}d-none{% endif %}">
+                        {% if ist_now.strftime('%A') == 'Sunday' %}
+                            <i class="fas fa-couch fa-2x text-primary mb-3"></i>
+                            <h5 class="fw-bold">Relax, it's Sunday!</h5>
+                            <p class="text-muted small mb-0">No classes are scheduled for today. Enjoy your break!</p>
+                        {% else %}
+                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                            <p class="text-muted small mb-0" id="placeholderText">No classes scheduled for today.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="timeline-container {% if not today_timetable %}d-none{% endif %}" id="todayTimeline">
+                        {% if today_timetable %}
+                        {% set periods = [
+                            {'time': today_timetable.period_1_time | format_time_range if today_timetable and today_timetable.period_1_time else '09:30 AM - 10:20 AM', 'start': today_timetable.period_1_time.split(' - ')[0] if today_timetable and today_timetable.period_1_time else '09:30', 'end': today_timetable.period_1_time.split(' - ')[1] if today_timetable and today_timetable.period_1_time else '10:20', 'sub': today_timetable.period_1 if today_timetable else None, 'num': 'P1'},
+                            {'time': today_timetable.period_2_time | format_time_range if today_timetable and today_timetable.period_2_time else '10:20 AM - 11:10 AM', 'start': today_timetable.period_2_time.split(' - ')[0] if today_timetable and today_timetable.period_2_time else '10:20', 'end': today_timetable.period_2_time.split(' - ')[1] if today_timetable and today_timetable.period_2_time else '11:10', 'sub': today_timetable.period_2 if today_timetable else None, 'num': 'P2'},
+                            {'time': today_timetable.period_3_time | format_time_range if today_timetable and today_timetable.period_3_time else '11:10 AM - 12:00 PM', 'start': today_timetable.period_3_time.split(' - ')[0] if today_timetable and today_timetable.period_3_time else '11:10', 'end': today_timetable.period_3_time.split(' - ')[1] if today_timetable and today_timetable.period_3_time else '12:00', 'sub': today_timetable.period_3 if today_timetable else None, 'num': 'P3'},
+                            {'time': '12:00 PM - 01:00 PM', 'start': '12:00', 'end': '13:00', 'sub': 'BREAK', 'num': '--'},
+                            {'time': today_timetable.period_4_time | format_time_range if today_timetable and today_timetable.period_4_time else '01:00 PM - 01:50 PM', 'start': today_timetable.period_4_time.split(' - ')[0] if today_timetable and today_timetable.period_4_time else '13:00', 'end': today_timetable.period_4_time.split(' - ')[1] if today_timetable and today_timetable.period_4_time else '13:50', 'sub': today_timetable.period_4 if today_timetable else None, 'num': 'P4'},
+                            {'time': today_timetable.period_5_time | format_time_range if today_timetable and today_timetable.period_5_time else '01:50 PM - 02:40 PM', 'start': today_timetable.period_5_time.split(' - ')[0] if today_timetable and today_timetable.period_5_time else '13:50', 'end': today_timetable.period_5_time.split(' - ')[1] if today_timetable and today_timetable.period_5_time else '14:40', 'sub': today_timetable.period_5 if today_timetable else None, 'num': 'P5'},
+                            {'time': today_timetable.period_6_time | format_time_range if today_timetable and today_timetable.period_6_time else '02:40 PM - 03:30 PM', 'start': today_timetable.period_6_time.split(' - ')[0] if today_timetable and today_timetable.period_6_time else '14:40', 'end': today_timetable.period_6_time.split(' - ')[1] if today_timetable and today_timetable.period_6_time else '15:30', 'sub': today_timetable.period_6 if today_timetable else None, 'num': 'P6'},
+                            {'time': today_timetable.period_7_time | format_time_range if today_timetable and today_timetable.period_7_time else '03:30 PM - 04:20 PM', 'start': today_timetable.period_7_time.split(' - ')[0] if today_timetable and today_timetable.period_7_time else '15:30', 'end': today_timetable.period_7_time.split(' - ')[1] if today_timetable and today_timetable.period_7_time else '16:20', 'sub': today_timetable.period_7 if today_timetable else None, 'num': 'P7'}
+                        ] %}
+                        {% for p in periods %}
+                            {% set ns = namespace(status_class='', status_icon='') %}
+                            {% if today_attendance and p.sub %}
+                                {% for att in today_attendance %}
+                                    {% if att.subject|lower|trim == p.sub|lower|trim %}
+                                        {% if att.status == 'present' %}
+                                            {% set ns.status_class = 'bg-success-subtle border-success' %}
+                                            {% set ns.status_icon = '<i class="fas fa-check-circle text-success ms-2"></i>' %}
+                                        {% elif att.status == 'absent' %}
+                                            {% set ns.status_class = 'bg-danger-subtle border-danger' %}
+                                            {% set ns.status_icon = '<i class="fas fa-times-circle text-danger ms-2"></i>' %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <div class="timeline-node {{ ns.status_class }}" data-start="{{ p.start }}" data-end="{{ p.end }}">
+                                <span class="period-time">{{ p.time }}</span>
+                                <h6 class="period-subject text-truncate">{{ p.sub or 'Free Study' }}{{ ns.status_icon|safe }}</h6>
+                                <span class="period-tag">{{ p.num }} • {% if p.sub == 'BREAK' %}Relax{% elif 'LAB' in (p.sub|upper if p.sub else '') %}Practical{% else %}Theory{% endif %}</span>
+                            </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Schedule Overlay -->
+    <div class="schedule-overlay" id="scheduleOverlay">
+        <div class="overlay-header">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-main p-0 me-3" id="closeOverlayBtn">
+                    <i class="fas fa-arrow-left fa-lg"></i>
+                </button>
+                <h5 class="fw-bold mb-0">Class Schedule</h5>
+            </div>
+            <span class="text-muted extra-small fw-bold" id="overlayDateLabel">TODAY</span>
+        </div>
+        
+        <div class="day-strip" id="overlayDayStrip">
+            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+            <div class="day-pill {% if day == ist_now.strftime('%A') %}active{% endif %}" data-day="{{ day }}">
+                {{ day[:3] }}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="overlay-body" id="overlayScheduleBody">
+            <!-- Dynamically loaded via JS -->
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                <p class="mt-2 text-muted small">Syncing schedule...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Section replaces weekly schedule top space -->
+    <div class="row">
+        <!-- Events Component -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 animate-in" style="animation-delay: 0.1s;">
+                <div class="card-header bg-transparent py-4 border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-primary"><i class="fas fa-bullhorn me-2"></i> Events</h6>
+                    <a href="{{ url_for('club_portal.student_events') }}" class="btn btn-light btn-sm rounded-pill px-3 shadow-sm text-primary fw-bold" style="font-size: 0.75rem;">View All</a>
+                </div>
+                <div class="card-body px-4 pt-0 pb-4">
+                    {% if events %}
+                        {% for event in events[:3] %}
+                        <a href="{{ url_for('club_portal.apply_event', event_id=event.id) }}" class="text-decoration-none">
+                            <div class="list-item-modern d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold text-main text-truncate" style="max-width: 200px; font-size: 0.85rem;">{{ event.name }}</h6>
+                                    <div class="d-flex align-items-center text-muted opacity-75" style="font-size: 0.7rem;">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        <span>{{ event.start_date.strftime('%B %d') if event.start_date else 'TBD' }}</span>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted opacity-50 small"></i>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="d-flex flex-column justify-content-center align-items-center h-100 py-4 opacity-50">
+                            <i class="fas fa-ghost fa-2x mb-2"></i>
+                            <span style="font-size: 0.8rem;">No upcoming events</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Permissions Component -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 animate-in" style="animation-delay: 0.2s;">
+                <div class="card-header bg-transparent py-4 border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-info"><i class="fas fa-stamp me-2"></i> Permissions</h6>
+                    <a href="{{ url_for('apply_permission') }}" class="btn btn-light btn-sm text-info rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="fas fa-plus"></i></a>
+                </div>
+                <div class="card-body px-4 pt-0 pb-4">
+                    {% if permissions %}
+                        {% for perm in permissions[:3] %}
+                        <a href="{{ url_for('student_permissions') }}" class="text-decoration-none">
+                            <div class="list-item-modern d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 fw-bold text-main text-truncate" style="max-width: 160px; font-size: 0.85rem;">{{ perm.club.name if perm.club else 'Academic OD' }}</h6>
+                                    <div class="d-flex align-items-center text-muted opacity-75" style="font-size: 0.7rem;">
+                                        <i class="far fa-clock me-1"></i>
+                                        <span>{{ perm.date.strftime('%d %b') }}</span>
+                                    </div>
+                                </div>
+                                {% if perm.status == 'approved' %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1" style="font-size: 0.65rem;"><i class="fas fa-check me-1"></i>Approved</span>
+                                {% elif perm.status == 'pending' %}
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1" style="font-size: 0.65rem;"><i class="fas fa-clock me-1"></i>Pending</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1" style="font-size: 0.65rem;"><i class="fas fa-times me-1"></i>Rejected</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="d-flex flex-column justify-content-center align-items-center h-100 py-4 opacity-50">
+                            <i class="fas fa-folder-open fa-2x mb-2"></i>
+                            <span style="font-size: 0.8rem;">No active permissions</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tickets Component -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 animate-in" style="animation-delay: 0.3s;">
+                <div class="card-header bg-transparent py-4 border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-success"><i class="fas fa-ticket-alt me-2"></i> My Tickets</h6>
+                </div>
+                <div class="card-body px-4 pt-0 pb-4">
+                    {% if registrations %}
+                        {% for reg in registrations[:3] %}
+                        <div class="list-item-modern d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 fw-bold text-main text-truncate" style="max-width: 160px; font-size: 0.85rem;">{{ reg.event.name }}</h6>
+                                <div class="d-flex align-items-center text-muted opacity-75" style="font-size: 0.7rem;">
+                                    <i class="fas fa-hashtag me-1"></i>
+                                    <span>{{ reg.ticket_id }}</span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                {% if reg.event.is_paid and reg.payment_status in ['pending', 'on-hold'] %}
+                                    <button onclick="payNow(this, {{ reg.id }})" class="btn btn-primary btn-sm rounded-pill px-3 shadow-none fw-bold" style="font-size: 0.7rem;">Pay Now</button>
+                                {% endif %}
+                                <a href="{{ url_for('club_portal.registration_ticket', response_id=reg.id) }}" class="btn btn-light btn-sm rounded-pill px-3 shadow-none text-success fw-bold" style="font-size: 0.7rem; background-color: rgba(25, 135, 84, 0.1);">View</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="d-flex flex-column justify-content-center align-items-center h-100 py-4 opacity-50">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <span style="font-size: 0.8rem;">No tickets found</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    function payNow(btn, responseId) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.disabled = true;
+
+        fetch(`/club/pay-existing/${responseId}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'pay') {
+                const options = {
+                    "key": data.key,
+                    "amount": data.amount,
+                    "currency": "INR",
+                    "name": "GenZCampus",
+                    "description": data.event_name,
+                    "order_id": data.order_id,
+                    "handler": function (response) {
+                        fetch("{{ url_for('club_portal.verify_payment') }}", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            body: JSON.stringify({
+                                response_id: data.response_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        })
+                        .then(r => r.json())
+                        .then(v => {
+                            if (v.success) window.location.href = v.redirect;
+                            else alert(v.message);
+                        });
+                    },
+                    "prefill": {
+                        "name": data.user_name,
+                        "email": data.user_email
+                    },
+                    "theme": { "color": "#7C3AED" },
+                    "modal": {
+                        "ondismiss": () => {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                        }
+                    }
+                };
+                new Razorpay(options).open();
+            } else {
+                alert(data.message || "Error starting payment");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Connection error");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    $(document).ready(function() {
+        const overlay = $('#scheduleOverlay');
+        const overlayBody = $('#overlayScheduleBody');
+        const dayPills = $('.day-pill');
+        
+        // 1. Live Timeline Tracking (Desktop)
+        function updateLiveTimeline(isHistorical = false) {
+            const nowTime = new Date();
+            const currentTimeStr = nowTime.getHours().toString().padStart(2, '0') + ':' + nowTime.getMinutes().toString().padStart(2, '0');
+            
+            let nextClass = "No more classes today";
+            
+            $('.timeline-node').each(function() {
+                const start = $(this).data('start');
+                const end = $(this).data('end');
+                const sub = $(this).find('.period-subject').text().trim();
+                
+                // Only show LIVE badge if it's the current real-time and it's TODAY's view
+                if (!isHistorical && currentTimeStr >= start && currentTimeStr < end) {
+                    $(this).addClass('active');
+                    const container = $('#todayTimeline');
+                    if (container.length) {
+                        const scrollLeft = $(this).position().left - container.width()/2 + $(this).width()/2 + container.scrollLeft();
+                        container.animate({ scrollLeft: scrollLeft }, 1000);
+                    }
+                    nextClass = "Ongoing: " + sub;
+                } else {
+                    $(this).removeClass('active');
+                    if (!isHistorical && start > currentTimeStr && nextClass === "No more classes today") {
+                        nextClass = "Next: " + sub;
+                    }
+                }
+            });
+            
+            if (!isHistorical) {
+                $('#mobileNextClass').text(nextClass);
+            }
+        }
+        
+        updateLiveTimeline();
+        setInterval(() => updateLiveTimeline($('#timelineTitle').text().includes('Historical')), 60000);
+
+        // 2. Mobile Overlay Logic
+        $('#mobileScheduleBtn').click(function() {
+            overlay.addClass('show');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+            loadScheduleForDay($('.day-pill.active').data('day'));
+        });
+
+        $('#closeOverlayBtn').click(function() {
+            overlay.removeClass('show');
+            document.body.style.overflow = '';
+        });
+
+        dayPills.click(function() {
+            dayPills.removeClass('active');
+            $(this).addClass('active');
+            loadScheduleForDay($(this).data('day'));
+        });
+
+        async function loadScheduleForDay(dayName) {
+            overlayBody.html('<div class="text-center py-5"><div class="spinner-border text-primary spinner-border-sm" role="status"></div><p class="mt-2 text-muted small">Loading...</p></div>');
+            
+            // Get date for the selected day of current week
+            const today = new Date();
+            const todayDayIdx = today.getDay(); // 0-Sun, 1-Mon
+            const targetDayIdx = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(dayName);
+            
+            const diff = targetDayIdx - todayDayIdx;
+            const targetDate = new Date(today);
+            targetDate.setDate(today.getDate() + diff);
+            const dateStr = targetDate.toISOString().split('T')[0];
+            
+            $('#overlayDateLabel').text(targetDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
+
+            try {
+                const resp = await $.ajax({
+                    url: '/api/student/timeline/history',
+                    data: { date: dateStr },
+                    dataType: 'json'
+                });
+
+                if (resp.is_holiday) {
+                    overlayBody.html(`
+                        <div class="holiday-banner animate-in">
+                            <i class="fas fa-calendar-check"></i>
+                            <h4>Holiday Declared</h4>
+                            <p class="mb-0">${resp.holiday_reason || 'Enjoy your day off!'}</p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                if (!resp.has_classes || resp.is_sunday) {
+                    overlayBody.html(`
+                        <div class="text-center py-5 opacity-75">
+                            <i class="fas fa-couch fa-2x text-muted mb-3"></i>
+                            <h6 class="fw-bold">No Classes</h6>
+                            <p class="small text-muted">Nothing scheduled for ${dayName}.</p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                let html = '<div class="accordion animate-in" id="periodAccordion">';
+                resp.timeline.forEach((p, idx) => {
+                    const isBreak = p.subject === 'BREAK';
+                    const statusIcon = p.status === 'present' ? '<i class="fas fa-check-circle text-success ms-2"></i>' : 
+                                     (p.status === 'absent' ? '<i class="fas fa-times-circle text-danger ms-2"></i>' : '');
+                    
+                    html += `
+                        <div class="period-accordion-item">
+                            <div class="period-header" data-bs-toggle="collapse" data-bs-target="#collapse${idx}">
+                                <div class="period-info">
+                                    <div class="period-num-circle">${p.num}</div>
+                                    <div class="period-details">
+                                        <span class="period-time-small">${p.timeDisplay}</span>
+                                        <div class="period-subject-bold">${p.subject || 'Free Study'}${statusIcon}</div>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-down text-muted small"></i>
+                            </div>
+                            <div id="collapse${idx}" class="accordion-collapse collapse" data-bs-parent="#periodAccordion">
+                                <div class="px-4 pb-4 pt-1">
+                                    <hr class="mt-0 mb-3 opacity-5">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="bg-surface-secondary rounded p-2 me-3"><i class="fas fa-info-circle text-primary"></i></div>
+                                        <div>
+                                            <div class="small fw-bold">Period Type</div>
+                                            <div class="extra-small text-muted">${isBreak ? 'Lunch/Break' : (p.subject && p.subject.toUpperCase().includes('LAB') ? 'Laboratory/Practical' : 'Lecture/Theory')}</div>
+                                        </div>
+                                    </div>
+                                    ${p.status ? `
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-surface-secondary rounded p-2 me-3"><i class="fas fa-fingerprint text-info"></i></div>
+                                        <div>
+                                            <div class="small fw-bold">Attendance Status</div>
+                                            <div class="extra-small text-muted text-capitalize">${p.status}</div>
+                                        </div>
+                                    </div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                overlayBody.html(html);
+
+            } catch(e) {
+                console.error("Schedule Load Error:", e);
+                overlayBody.html('<div class="text-center py-5 text-danger"><i class="fas fa-exclamation-triangle mb-2"></i> Error loading schedule</div>');
+            }
+        }
+
+        // 3. Desktop Flatpickr logic (Keep for desktop view)
+        const fp = flatpickr("#timelineDateInput", {
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                if(selectedDates.length > 0) {
+                    const timelineTitle = $('#timelineTitle');
+                    const dateText = $('#timelineDateText');
+                    const placeholder = $('#timelinePlaceholder');
+                    const container = $('#todayTimeline');
+
+                    timelineTitle.text("Historical Timeline");
+                    dateText.text("Loading...");
+                    placeholder.addClass('d-none');
+                    container.empty().removeClass('d-none').html('<div class="col-12 text-center py-5"><div class="spinner-border text-primary spinner-border-sm"></div></div>');
+
+                    $.ajax({
+                        url: '/api/student/timeline/history',
+                        data: { date: dateStr },
+                        dataType: 'json',
+                        success: function(resp) {
+                            dateText.text(resp.date);
+                            container.empty();
+                            
+                            if (resp.is_holiday) {
+                                container.addClass('d-none');
+                                placeholder.removeClass('d-none').html(`<div class="text-center py-4 w-100">
+                                    <i class="fas fa-calendar-check fa-2x text-danger mb-3"></i>
+                                    <h5 class="fw-bold">Holiday: ${resp.holiday_reason}</h5>
+                                </div>`);
+                            } else if (resp.has_classes) {
+                                container.removeClass('d-none');
+                                resp.timeline.forEach(function(p) {
+                                    let statusClass = p.status === 'present' ? 'bg-success-subtle border-success' : (p.status === 'absent' ? 'bg-danger-subtle border-danger' : '');
+                                    let statusIcon = p.status === 'present' ? '<i class="fas fa-check-circle text-success ms-2"></i>' : (p.status === 'absent' ? '<i class="fas fa-times-circle text-danger ms-2"></i>' : '');
+                                    container.append(`
+                                        <div class="timeline-node ${statusClass}" data-start="${p.start}" data-end="${p.end}">
+                                            <span class="period-time">${p.timeDisplay}</span>
+                                            <h6 class="period-subject text-truncate">${p.subject || 'Free Study'} ${statusIcon}</h6>
+                                            <span class="period-tag">${p.num} • ${p.subject === 'BREAK' ? 'Relax' : (p.subject && p.subject.toUpperCase().includes('LAB') ? 'Practical' : 'Theory')}</span>
+                                        </div>
+                                    `);
+                                });
+                                
+                                // Check if the selected date is today to decide whether to show LIVE indicators
+                                const selectedDate = new Date(dateStr).setHours(0,0,0,0);
+                                const todayDate = new Date().setHours(0,0,0,0);
+                                updateLiveTimeline(selectedDate !== todayDate);
+                            } else {
+                                container.addClass('d-none');
+                                placeholder.removeClass('d-none').html('<div class="py-5 w-100"><p class="text-muted mb-0">No classes scheduled.</p></div>');
+                            }
+                        },
+                        error: function() {
+                            dateText.text("Error loading");
+                            container.html('<div class="col-12 text-center py-5 text-danger"><i class="fas fa-exclamation-triangle mb-2"></i> Failed to load schedule</div>');
+                        }
+                    });
+                }
+            }
+        });
+        
+        $('#timelineDatePickerBtn').click(() => fp.open());
+    });
+</script>
+{% endblock %}
+
+
+

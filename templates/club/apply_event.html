@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Register for {{ event.name }}{% endblock %}
+{% block page_title %}Event Registration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-0">Event Registration</h3>
+                <p class="text-primary fw-bold mb-0">{{ event.name }}</p>
+                <hr class="w-25 mx-auto">
+            </div>
+
+            <form method="POST">
+                <!-- Auto-filled Section -->
+                <div class="bg-light p-3 rounded mb-4">
+                    <h6 class="fw-bold mb-3 small text-uppercase text-muted"><i class="fas fa-user-circle me-1"></i>
+                        Profile Details (Auto-filled)</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="small text-muted mb-1">Full Name</label>
+                            <div class="fw-bold">{{ current_user.get_full_name() }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted mb-1">Roll Number</label>
+                            <div class="fw-bold text-uppercase">{{ current_user.roll_no }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted mb-1">Email</label>
+                            <div class="small fw-bold">{{ current_user.email }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted mb-1">Department & Section</label>
+                            <div class="fw-bold">{{ current_user.department }} - {{ current_user.section }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if event.participation_type != 'solo' %}
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Participation Selection</label>
+                    <div class="row g-3">
+                        {% if event.participation_type in ['solo', 'both'] %}
+                        <div class="col-md-6">
+                            <div class="form-check card p-3 border h-100 cursor-pointer hover-bg-light"
+                                onclick="toggleTeamFields(false)">
+                                <input class="form-check-input" type="radio" name="participation_choice" value="solo"
+                                    id="solo" checked>
+                                <label class="form-check-label w-100" for="solo">
+                                    <div class="fw-bold">Individual (Solo)</div>
+                                    <small class="text-muted">Register as a single participant</small>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if event.participation_type in ['team', 'both'] %}
+                        <div class="col-md-6">
+                            <div class="form-check card p-3 border h-100 cursor-pointer hover-bg-light"
+                                onclick="toggleTeamFields(true)">
+                                <input class="form-check-input" type="radio" name="participation_choice" value="team"
+                                    id="team" {% if event.participation_type=='team' %}checked{% endif %}>
+                                <label class="form-check-label w-100" for="team">
+                                    <div class="fw-bold">Team Entry</div>
+                                    <small class="text-muted">Register with a group</small>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Team Specific Fields -->
+                <div id="team_fields" class="mb-4 p-3 border rounded bg-light"
+                    style="display: {{ 'block' if event.participation_type == 'team' else 'none' }};">
+                    <h6 class="fw-bold mb-3 small text-uppercase text-muted"><i class="fas fa-users me-1"></i> Team Configuration</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Action</label>
+                        <select class="form-select" name="team_action" id="team_action" onchange="toggleTeamAction()">
+                            <option value="create">Create New Team</option>
+                            <option value="join">Join Existing Team</option>
+                        </select>
+                    </div>
+
+                    <div id="create_team_group">
+                        <div class="mb-3">
+                            <label class="form-label">Team Name <span class="text-danger">*</span></label>
+                            <input type="text" name="team_name" class="form-control" placeholder="Enter team name">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Total Team Size</label>
+                            <input type="number" name="declared_size" class="form-control" 
+                                min="{{ event.team_size_min }}" max="{{ event.team_size_max }}" 
+                                value="{{ event.team_size_min }}">
+                            <small class="text-muted">Min: {{ event.team_size_min }}, Max: {{ event.team_size_max }}</small>
+                        </div>
+                    </div>
+
+                    <div id="join_team_group" style="display: none;">
+                        <label class="form-label">Team Code or Exact Team Name <span class="text-danger">*</span></label>
+                        <input type="text" name="team_code" class="form-control" placeholder="e.g. ABC123">
+                    </div>
+
+                    <div class="alert alert-info py-2 small mt-2">
+                        <i class="fas fa-info-circle me-1"></i> Every member must register individually using the Team Code.
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Dynamic Custom Form Fields (Always visible) -->
+                {% if schema %}
+                <div class="mb-4" id="event_custom_form">
+                    <h6 class="fw-bold mb-3 small text-uppercase text-muted"><i class="fas fa-list-ul me-1"></i> Event Specific Info</h6>
+                    {% for field in schema %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }} {% if field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                        {% if field.type == 'text' %}
+                        <input type="text" name="field_{{ field.label }}" class="form-control" {% if field.required %}required{% endif %}>
+                        {% elif field.type == 'number' %}
+                        <input type="number" name="field_{{ field.label }}" class="form-control" {% if field.required %}required{% endif %}>
+                        {% elif field.type == 'textarea' %}
+                        <textarea name="field_{{ field.label }}" class="form-control" rows="3" {% if field.required %}required{% endif %}></textarea>
+                        {% elif field.type == 'dropdown' %}
+                        <select name="field_{{ field.label }}" class="form-select" {% if field.required %}required{% endif %}>
+                            <option value="">Select Options</option>
+                            {% for opt in field.options %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+                        </select>
+                        {% elif field.type == 'checkbox' %}
+                        <div class="form-check mt-1">
+                            <input class="form-check-input" type="checkbox" name="field_{{ field.label }}" value="Yes" id="f_{{ loop.index }}">
+                            <label class="form-check-label" for="f_{{ loop.index }}">Confirm</label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <input type="hidden" name="payment_mode" id="payment_mode" value="pay">
+
+                <div class="d-grid gap-2 mt-4">
+                    {% if event.is_paid %}
+                    <button type="submit" onclick="document.getElementById('payment_mode').value='pay'" class="btn btn-primary btn-lg rounded-pill" id="submitBtn">
+                        <i class="fas fa-credit-card me-2"></i> Register & Pay Now
+                    </button>
+                    <button type="submit" onclick="document.getElementById('payment_mode').value='hold'" class="btn btn-outline-secondary rounded-pill">
+                        <i class="fas fa-clock me-2"></i> Register & Pay on Spot
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary btn-lg rounded-pill" id="submitBtn">
+                        <i class="fas fa-ticket-alt me-2"></i> Complete Registration
+                    </button>
+                    {% endif %}
+                    <p class="text-center text-muted small mt-2">By clicking, you agree to follow guidelines.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    function toggleTeamFields(show) {
+        const teamFields = document.getElementById('team_fields');
+        if (teamFields) {
+            teamFields.style.display = show ? 'block' : 'none';
+        }
+        const teamAction = document.getElementById('team_action');
+        if (teamAction) {
+            if (show) teamAction.setAttribute('required', 'required');
+            else teamAction.removeAttribute('required');
+        }
+    }
+
+    function toggleTeamAction() {
+        const actionSelect = document.getElementById('team_action');
+        if (!actionSelect) return;
+        const action = actionSelect.value;
+        const createGroup = document.getElementById('create_team_group');
+        const joinGroup = document.getElementById('join_team_group');
+        
+        if (createGroup) createGroup.style.display = action === 'create' ? 'block' : 'none';
+        if (joinGroup) joinGroup.style.display = action === 'join' ? 'block' : 'none';
+        
+        if (createGroup) createGroup.querySelectorAll('input, select').forEach(el => el.disabled = (action !== 'create'));
+        if (joinGroup) joinGroup.querySelectorAll('input, select').forEach(el => el.disabled = (action !== 'join'));
+    }
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+        btn.disabled = true;
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'pay') {
+                const options = {
+                    "key": data.key, "amount": data.amount, "currency": "INR",
+                    "name": "GenZCampus", "description": data.event_name,
+                    "order_id": data.order_id,
+                    "handler": function (response) {
+                        fetch("{{ url_for('club_portal.verify_payment') }}", {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                            body: JSON.stringify({
+                                response_id: data.response_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        })
+                        .then(r => r.json())
+                        .then(v => { if (v.success) window.location.href = v.redirect; else alert(v.message); });
+                    },
+                    "prefill": {"name": data.user_name, "email": data.user_email},
+                    "theme": {"color": "#0d6efd"},
+                    "modal": {"ondismiss": () => { btn.innerHTML = originalText; btn.disabled = false; }}
+                };
+                new Razorpay(options).open();
+            } else if (data.status === 'success') {
+                window.location.href = data.redirect;
+            } else {
+                alert(data.message || "Error");
+                btn.innerHTML = originalText; btn.disabled = false;
+            }
+        })
+        .catch(err => { alert("Error occurred"); btn.innerHTML = originalText; btn.disabled = false; });
+    });
+
+    window.onload = () => {
+        const teamRadio = document.getElementById('team');
+        if (teamRadio && teamRadio.checked) toggleTeamFields(true);
+        toggleTeamAction();
+    };
+</script>
+
+<style>
+    .cursor-pointer { cursor: pointer; }
+    .hover-bg-light:hover { background-color: #f8f9fa; }
+    .form-check-input:checked+.form-check-label .card { border-color: var(--bs-primary) !important; background-color: #f0f7ff; }
+</style>
+{% endblock %}

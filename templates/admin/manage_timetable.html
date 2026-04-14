@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% block title %}Manage Timetable - GenZCampus{% endblock %}
+{% block page_title %}Manage Timetable{% endblock %}
+
+{% block content %}
+<style>
+    .timetable-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border: none;
+        overflow: hidden;
+    }
+    .period-input {
+        border-radius: 8px;
+        font-size: 0.85rem;
+        padding: 8px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+    }
+    .period-input:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        outline: none;
+    }
+    .day-header {
+        background: #f8fafc;
+        font-weight: 700;
+        color: #475569;
+        text-align: center;
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+    .period-header {
+        background: #4e73df;
+        color: white;
+        font-weight: 700;
+        text-align: center;
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+    .timetable-grid-wrapper {
+        overflow-x: auto;
+    }
+    .timetable-grid {
+        display: grid;
+        grid-template-columns: 120px repeat(7, minmax(110px, 1fr));
+        gap: 1px;
+        background: #e2e8f0;
+        border: 1px solid #e2e8f0;
+        min-width: 900px;
+    }
+    .grid-cell {
+        background: white;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-save {
+        padding: 10px 30px;
+        font-weight: 700;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    .upload-area {
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px dashed #e2e8f0;
+    }
+    .upload-area:hover, .upload-area.dragover {
+        border-color: #4e73df;
+        background: #f8fafc !important;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Filter Section -->
+    <div class="card timetable-card mb-4 shadow-sm">
+        <div class="card-body p-4">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">DEPARTMENT</label>
+                    <select name="department" class="form-select border-0 bg-light rounded-pill px-3" required>
+                        <option value="" disabled selected>Select Dept...</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.name }}" {% if selected_dept == dept.name %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">YEAR</label>
+                    <select name="year" class="form-select border-0 bg-light rounded-pill px-3" required>
+                        <option value="" disabled selected>Select Year...</option>
+                        {% for y in [1,2,3,4] %}
+                        <option value="{{ y }}" {% if selected_year|int == y %}selected{% endif %}>{{ y }} Year</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">SECTION</label>
+                    <select name="section" class="form-select border-0 bg-light rounded-pill px-3" required>
+                        <option value="" disabled selected>Select Section...</option>
+                        {% for s in ['A','B','C','D'] %}
+                        <option value="{{ s }}" {% if selected_section == s %}selected{% endif %}>Section {{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm">
+                        <i class="fas fa-search me-2"></i> LOAD
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-primary w-100 rounded-pill fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#aiUploadModal">
+                        <i class="fas fa-robot me-2"></i> AI UPLOAD
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Upload Modal -->
+    <div class="modal fade" id="aiUploadModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-robot text-primary me-2"></i> Smart Timetable Analysis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-4">Upload a photo or PDF of the physical timetable. Our AI will analyze the grid and predict the subjects for each period.</p>
+                    
+                    <div class="upload-area border-2 border-dashed rounded-4 p-5 text-center bg-light" id="dropZone">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary opacity-25 mb-3"></i>
+                        <h6 class="fw-bold mb-1">Click or Drag File Here</h6>
+                        <p class="x-small text-muted">Supports JPG, PNG, PDF (Max 10MB)</p>
+                    </div>
+                    <input type="file" id="aiFile" class="d-none" accept=".jpg,.jpeg,.png,.pdf">
+                    
+                    <div id="analyzeProgress" class="d-none mt-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold text-primary">AI is analyzing schedule...</span>
+                            <span class="small fw-bold text-primary" id="progressPercent">45%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" style="width: 45%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" id="startAnalyzeBtn">
+                        START ANALYSIS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if selected_dept and selected_year and selected_section %}
+    <div class="card timetable-card shadow-sm mb-5">
+        <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center border-0 px-4">
+            <h5 class="m-0 fw-bold text-dark">
+                <i class="fas fa-calendar-alt text-primary me-2"></i> 
+                {{ selected_dept }} - {{ selected_year }} Year (Section {{ selected_section }}) Schedule
+            </h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-save shadow" id="saveBtn">
+                    <i class="fas fa-save me-2"></i> SAVE TIMETABLE
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="timetable-grid-wrapper">
+                <div class="timetable-grid" id="timetableGrid">
+                    <!-- Header Row -->
+                    <div class="day-header" style="background:#4e73df; color:white;">DAY / PERIOD</div>
+                {% for i in range(1, 8) %}
+                <div class="period-header">P{{ i }}</div>
+                {% endfor %}
+
+                <!-- Timings Row -->
+                <div class="day-header" style="background:#f1f5f9;">TIMINGS</div>
+                {% for i in range(1, 8) %}
+                <div class="grid-cell" style="background:#f1f5f9;">
+                    {% set timing_val = getattr(timetable_data.get('Monday'), 'period_' ~ i ~ '_time') if timetable_data else '' %}
+                    <input type="text" class="period-timing-input w-100 border-0 bg-transparent text-center fw-bold small" 
+                           data-period="{{ i }}" 
+                           placeholder="00:00 - 00:00"
+                           value="{{ timing_val if timing_val else (['09:30 - 10:20', '10:20 - 11:10', '11:10 - 12:00', '13:00 - 13:50', '13:50 - 14:40', '14:40 - 15:30', '15:30 - 16:20'][i-1]) }}">
+                </div>
+                {% endfor %}
+
+                <!-- Daily Rows -->
+                {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+                <div class="day-header">{{ day }}</div>
+                {% set row_data = timetable_data.get(day) %}
+                {% for i in range(1, 8) %}
+                <div class="grid-cell">
+                    {% set period_val = getattr(row_data, 'period_' ~ i) if row_data else '' %}
+                    <input type="text" class="period-input w-100" 
+                           data-day="{{ day }}" 
+                           data-period="{{ i }}" 
+                           placeholder="Subject..."
+                           value="{{ period_val if period_val else '' }}">
+                </div>
+                {% endfor %}
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // AI Analysis Logic
+    const dropZone = $('#dropZone');
+    const fileInput = $('#aiFile');
+
+    dropZone.on('click', function(e) {
+        e.preventDefault();
+        fileInput.trigger('click');
+    });
+
+    dropZone.on('dragover', (e) => {
+        e.preventDefault();
+        dropZone.addClass('dragover');
+    });
+
+    dropZone.on('dragleave', () => dropZone.removeClass('dragover'));
+
+    dropZone.on('drop', (e) => {
+        e.preventDefault();
+        dropZone.removeClass('dragover');
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length) fileInput[0].files = files;
+    });
+
+    fileInput.on('change', function() {
+        if (this.files.length) {
+            const fileName = this.files[0].name;
+            dropZone.find('h6').text(fileName);
+            dropZone.find('i').removeClass('fa-cloud-upload-alt').addClass('fa-file-alt text-success');
+        }
+    });
+
+    $('#startAnalyzeBtn').on('click', function() {
+        const file = fileInput[0].files[0];
+        if (!file) {
+            alert('Please select a file first.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('department', $('select[name="department"]').val());
+        formData.append('year', $('select[name="year"]').val());
+        formData.append('section', $('select[name="section"]').val());
+
+        const btn = $(this);
+        const progress = $('#analyzeProgress');
+        const progressBar = $('#progressBar');
+        const progressPercent = $('#progressPercent');
+
+        btn.prop('disabled', true);
+        progress.removeClass('d-none');
+        
+        let p = 0;
+        const interval = setInterval(() => {
+            if (p < 90) {
+                p += Math.random() * 15;
+                if (p > 90) p = 90;
+                progressBar.css('width', p + '%');
+                progressPercent.text(Math.round(p) + '%');
+            }
+        }, 500);
+
+        $.ajax({
+            url: '/admin/timetable/analyze',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(resp) {
+                clearInterval(interval);
+                progressBar.css('width', '100%');
+                progressPercent.text('100%');
+                
+                if (resp.success) {
+                    const data = resp.parsed_data;
+                    const timings = resp.timings;
+                    
+                    // If grid is already loaded on page, fill it
+                    if ($('.period-input').length > 0) {
+                        Object.keys(data).forEach(day => {
+                            const periods = data[day];
+                            periods.forEach((subject, index) => {
+                                const periodNum = index + 1;
+                                $(`.period-input[data-day="${day}"][data-period="${periodNum}"]`).val(subject);
+                            });
+                        });
+
+                        // Populate Timings
+                        if (timings && timings.length > 0) {
+                            timings.forEach((t, index) => {
+                                $(`.period-timing-input[data-period="${index + 1}"]`).val(t);
+                            });
+                        }
+
+                        setTimeout(() => {
+                            bootstrap.Modal.getInstance($('#aiUploadModal')[0]).hide();
+                            alert('Smart Analysis Success! Predicted schedule and timings have been loaded into the grid. Please review and SAVE.');
+                        }, 800);
+                    } else {
+                        // ... existing fallback ...
+                        setTimeout(() => {
+                            bootstrap.Modal.getInstance($('#aiUploadModal')[0]).hide();
+                            alert('AI Analysis Success! Data extracted for ' + resp.detected_format + '. Please LOAD the correct section to view and save the schedule.');
+                        }, 800);
+                    }
+                } else {
+                    alert('AI Error: ' + resp.error);
+                    btn.prop('disabled', false);
+                    progress.addClass('d-none');
+                }
+            },
+            error: function() {
+                clearInterval(interval);
+                alert('Connection error during AI analysis.');
+                btn.prop('disabled', false);
+                progress.addClass('d-none');
+            }
+        });
+    });
+
+    // Save Logic
+    $('#saveBtn').on('click', function() {
+        const btn = $(this);
+        const schedule = {};
+        const timings = [];
+        
+        $('.period-input').each(function() {
+            const day = $(this).data('day');
+            const val = $(this).val().trim();
+            if (!schedule[day]) schedule[day] = [];
+            schedule[day].push(val);
+        });
+
+        $('.period-timing-input').each(function() {
+            timings.push($(this).val().trim());
+        });
+
+        const data = {
+            department: '{{ selected_dept }}',
+            year: '{{ selected_year }}',
+            section: '{{ selected_section }}',
+            schedule: schedule,
+            timings: timings
+        };
+
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> SAVING...');
+
+        $.ajax({
+            url: '/admin/timetable/save',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(resp) {
+                if (resp.success) {
+                    btn.html('<i class="fas fa-check me-2"></i> SAVED').removeClass('btn-success').addClass('btn-primary');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert('Error: ' + resp.error);
+                    btn.prop('disabled', false).html('<i class="fas fa-save me-2"></i> SAVE TIMETABLE');
+                }
+            },
+            error: function(err) {
+                alert('Connection error. Please try again.');
+                btn.prop('disabled', false).html('<i class="fas fa-save me-2"></i> SAVE TIMETABLE');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+

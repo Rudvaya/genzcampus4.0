@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}My Permissions - GenZCampus{% endblock %}
+{% block page_title %}My Permission History{% endblock %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
+        <h6 class="m-0 font-weight-bold text-primary">My Permission Requests</h6>
+        <a href="{{ url_for('apply_permission') }}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+            <i class="fas fa-plus me-1"></i>New Permission
+        </a>
+    </div>
+    <div class="card-body">
+        {% if permissions %}
+        
+        <!-- Desktop View (Table) -->
+        <div class="table-responsive desktop-only">
+            <table class="table table-hover align-middle" width="100%" cellspacing="0">
+                <thead class="text-muted small text-uppercase">
+                    <tr>
+                        <th>Date</th>
+                        <th>Club</th>
+                        <th>Event</th>
+                        <th>Status</th>
+                        <th>Applied</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for permission in permissions %}
+                    <tr>
+                        <td class="fw-bold">{{ permission.date.strftime('%Y-%m-%d') if permission.date else 'N/A' }}</td>
+                        <td>{{ permission.club.name }}</td>
+                        <td>{{ permission.event.name if permission.event else permission.custom_event }}</td>
+                        <td>
+                            <span class="badge rounded-pill 
+                                {% if permission.status == 'approved' %}bg-success
+                                {% elif permission.status == 'rejected' %}bg-danger
+                                {% else %}bg-warning{% endif %}">
+                                {{ permission.status|upper }}
+                            </span>
+                        </td>
+                        <td class="text-muted small">{{ permission.applied_at.strftime('%Y-%m-%d') if permission.applied_at else 'N/A' }}</td>
+                        <td class="text-end">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{{ url_for('student_view_permission', permission_id=permission.id) }}"
+                                    class="btn btn-light btn-sm rounded-pill px-3 border shadow-sm">
+                                    <i class="fas fa-eye me-1"></i> Details
+                                </a>
+                                {% if permission.status == 'pending' %}
+                                <a href="{{ url_for('withdraw_permission', permission_id=permission.id) }}"
+                                    class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm"
+                                    onclick="return confirm('Are you sure you want to withdraw this permission request?')">
+                                    <i class="fas fa-trash me-1"></i> Withdraw
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile View (Card Stack) -->
+        <div class="card-stack mobile-only">
+            {% for permission in permissions %}
+            <div class="card-stack-item shadow-sm">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="card-stack-label">Permission Date</div>
+                        <div class="card-stack-value fs-5">{{ permission.date.strftime('%d %b %Y') if permission.date else 'N/A' }}</div>
+                    </div>
+                    <span class="badge rounded-pill 
+                        {% if permission.status == 'approved' %}bg-success
+                        {% elif permission.status == 'rejected' %}bg-danger
+                        {% else %}bg-warning{% endif %}" style="font-size: 0.7rem; padding: 0.4rem 0.8rem;">
+                        {{ permission.status|upper }}
+                    </span>
+                </div>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="card-stack-label">Club</div>
+                        <div class="card-stack-value small">{{ permission.club.name }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card-stack-label">Applied On</div>
+                        <div class="card-stack-value small">{{ permission.applied_at.strftime('%d %b') if permission.applied_at else 'N/A' }}</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="card-stack-label">Event</div>
+                    <div class="card-stack-value small">{{ permission.event.name if permission.event else permission.custom_event }}</div>
+                </div>
+
+                <div class="d-flex gap-2 mt-2 pt-2 border-top">
+                    <a href="{{ url_for('student_view_permission', permission_id=permission.id) }}"
+                        class="btn btn-light btn-sm flex-grow-1 rounded-pill border shadow-sm">
+                        <i class="fas fa-eye me-1"></i> Details
+                    </a>
+                    {% if permission.status == 'pending' %}
+                    <a href="{{ url_for('withdraw_permission', permission_id=permission.id) }}"
+                        class="btn btn-outline-danger btn-sm flex-grow-1 rounded-pill shadow-sm"
+                        onclick="return confirm('Are you sure you want to withdraw this permission request?')">
+                        <i class="fas fa-trash me-1"></i> Withdraw
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-clipboard-list fa-4x text-muted opacity-25"></i>
+            </div>
+            <h5 class="text-muted">No permission requests yet</h5>
+            <p class="text-muted small">Apply for a permission to see your history here.</p>
+            <a href="{{ url_for('apply_permission') }}" class="btn btn-primary rounded-pill px-4 shadow-sm mt-2">
+                <i class="fas fa-plus me-1"></i>Apply for Permission
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+

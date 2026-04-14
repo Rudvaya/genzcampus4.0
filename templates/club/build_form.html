@@ -1,0 +1,159 @@
+{% extends "club/layout.html" %}
+
+{% block title %}Build Application Form - {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold mb-0"><i class="fas fa-tasks text-primary me-2"></i> Custom Form Builder</h4>
+                <div class="text-end">
+                    <span class="badge bg-light text-dark border">{{ event.name }}</span>
+                </div>
+            </div>
+
+            <p class="text-muted small">Add custom fields students need to fill during registration. Profile details
+                (Name, Roll No, Email, Phone) are automatically collected.</p>
+
+            <div id="form-fields" class="mb-4">
+                <!-- Fields will be added here -->
+            </div>
+
+            <div class="bg-light p-3 rounded mb-4">
+                <h6 class="fw-bold mb-3 small text-uppercase">Add New Field</h6>
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input type="text" id="new-label" class="form-control"
+                            placeholder="Field Label (e.g. Why do you want to join?)">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="new-type" class="form-select">
+                            <option value="text">Text Input</option>
+                            <option value="textarea">Long Text</option>
+                            <option value="number">Number</option>
+                            <option value="dropdown">Dropdown Selection</option>
+                            <option value="checkbox">Checkbox (Yes/No)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="new-required">
+                            <label class="form-check-label small" for="new-required">Required</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-1" onclick="addField()">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
+                <div id="options-container" class="mt-2 d-none">
+                    <input type="text" id="new-options" class="form-control form-control-sm"
+                        placeholder="Comma separated options (e.g. Red, Blue, Green)">
+                </div>
+            </div>
+
+            <form method="POST" id="main-form">
+                <input type="hidden" name="schema_json" id="schema_json">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('club_portal.dashboard') }}" class="btn btn-light border px-4">Skip / Later</a>
+                    <button type="submit" class="btn btn-primary px-5" onclick="saveSchema()">
+                        <i class="fas fa-cloud-upload-alt me-2"></i> Save & Publish Form
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let fields = {{ (form_obj.schema_json | safe) if form_obj.schema_json else '[]' }};
+
+    document.getElementById('new-type').addEventListener('change', function () {
+        const container = document.getElementById('options-container');
+        if (this.value === 'dropdown') {
+            container.classList.remove('d-none');
+        } else {
+            container.classList.add('d-none');
+        }
+    });
+
+    function renderFields() {
+        const container = document.getElementById('form-fields');
+        container.innerHTML = '';
+
+        if (fields.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 bg-light rounded border-dashed"><p class="text-muted mb-0">No custom fields added yet.</p></div>';
+            return;
+        }
+
+        fields.forEach((f, index) => {
+            const div = document.createElement('div');
+            div.className = 'card mb-2 p-3 bg-white border';
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-primary me-2">${f.type.toUpperCase()}</span>
+                        <span class="fw-bold">${f.label}</span>
+                        ${f.required ? '<span class="text-danger">*</span>' : ''}
+                        ${f.options ? `<div class="small text-muted mt-1">Options: ${f.options.join(', ')}</div>` : ''}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeField(${index})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function addField() {
+        const label = document.getElementById('new-label').value;
+        const type = document.getElementById('new-type').value;
+        const required = document.getElementById('new-required').checked;
+        const optionsStr = document.getElementById('new-options').value;
+
+        if (!label) return;
+
+        const field = {
+            label: label,
+            type: type,
+            required: required
+        };
+
+        if (type === 'dropdown' && optionsStr) {
+            field.options = optionsStr.split(',').map(s => s.trim());
+        }
+
+        fields.push(field);
+        document.getElementById('new-label').value = '';
+        document.getElementById('new-required').checked = false;
+        document.getElementById('new-options').value = '';
+        renderFields();
+    }
+
+    function removeField(index) {
+        fields.splice(index, 1);
+        renderFields();
+    }
+
+    function saveSchema() {
+        document.getElementById('schema_json').value = JSON.stringify(fields);
+    }
+
+    renderFields();
+</script>
+<style>
+    .border-dashed {
+        border-style: dashed !important;
+        border-width: 2px !important;
+    }
+
+    .fw-600 {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+

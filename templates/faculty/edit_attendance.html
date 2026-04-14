@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .attendance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 15px;
+        padding: 20px;
+    }
+    .student-node {
+        aspect-ratio: 1;
+        background: var(--bg-color);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .student-node.present {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+    }
+    .student-node.absent {
+        border-color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+    }
+    .student-node .roll-num {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-main);
+    }
+    .student-node .status-icon {
+        font-size: 0.75rem;
+        margin-top: 5px;
+    }
+    .student-node.present .status-icon { color: #10b981; }
+    .student-node.absent .status-icon { color: #ef4444; }
+
+    .edit-header {
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+</style>
+
+<div class="edit-header shadow-sm">
+    <div class="container-fluid px-lg-5">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="fw-bold m-0"><i class="fas fa-edit text-primary me-2"></i>Edit Attendance</h3>
+                <p class="text-muted mb-0">Modifying record for <strong>{{ sub }}</strong> on {{ date }}</p>
+            </div>
+            <a href="{{ url_for('faculty_attendance_history') }}" class="btn btn-light rounded-pill px-4 shadow-sm border border-main text-main fw-bold">
+                <i class="fas fa-times me-2"></i> CANCEL
+            </a>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-auto">
+                <div class="bg-light px-3 py-2 rounded-pill small fw-bold text-main border border-main">
+                    <i class="fas fa-layer-group me-2 text-primary"></i>{{ dept }}
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="bg-light px-3 py-2 rounded-pill small fw-bold text-main border border-main">
+                    <i class="fas fa-graduation-cap me-2 text-primary"></i>Year {{ year }} - {{ sec }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-lg-5 pb-5">
+    <div class="card card-modern shadow-sm border-0">
+        <div class="card-header bg-transparent py-4 px-4 border-0 d-flex justify-content-between align-items-center">
+            <h5 class="m-0 fw-bold text-main"><i class="fas fa-users me-2 text-primary"></i>Student Roster</h5>
+            <div id="selectionSummary" class="small text-muted">
+                <span id="selectedCount" class="fw-bold text-primary">0</span> students present
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="attendanceLoading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-3 text-muted">Loading attendance data...</p>
+            </div>
+            
+            <div id="attendanceArea" class="d-none">
+                <div class="attendance-grid" id="attendanceGrid"></div>
+                
+                <div class="p-4 border-top border-main d-flex justify-content-end">
+                    <button id="saveAttendanceBtn" class="btn btn-primary rounded-pill px-5 shadow-sm fw-bold">
+                        <i class="fas fa-cloud-upload-alt me-2"></i> UPDATE ATTENDANCE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        let attendanceStore = {};
+        const grid = $('#attendanceGrid');
+        const area = $('#attendanceArea');
+        const loader = $('#attendanceLoading');
+
+        // 1. Fetch Students
+        $.ajax({
+            url: '/api/faculty/students',
+            data: { department: '{{ dept }}', section: '{{ sec }}', year: '{{ year }}' },
+            success: function(students) {
+                // 2. Fetch existing attendance
+                $.ajax({
+                    url: '/api/faculty/attendance/load',
+                    data: { date: '{{ date }}', dept: '{{ dept }}', year: '{{ year }}', sec: '{{ sec }}', sub: '{{ sub }}' },
+                    success: function(resp) {
+                        loader.addClass('d-none');
+                        
+                        let nodesHtml = '';
+                        students.forEach(s => {
+                            const status = resp.attendance[s.id] || 'present';
+                            attendanceStore[s.id] = status;
+                            
+                            const statusClass = status === 'present' ? 'present' : 'absent';
+                            const iconClass = status === 'present' ? 'fa-check' : 'fa-times';
+                            
+                            nodesHtml += `
+                                <div class="student-node ${statusClass}" data-id="${s.id}">
+                                    <span class="roll-num">${s.roll_no.slice(-3)}</span>
+                                    <i class="fas ${iconClass} status-icon"></i>
+                                </div>
+                            `;
+                        });
+                        grid.html(nodesHtml);
+                        updateSummary();
+                        area.removeClass('d-none');
+                    }
+                });
+            }
+        });
+
+        // Toggle Logic
+        $(document).on('click', '.student-node', function() {
+            const id = $(this).data('id');
+            const icon = $(this).find('.status-icon');
+
+            if($(this).hasClass('present')) {
+                $(this).removeClass('present').addClass('absent');
+                attendanceStore[id] = 'absent';
+                icon.removeClass('fa-check').addClass('fa-times');
+            } else {
+                $(this).removeClass('absent').addClass('present');
+                attendanceStore[id] = 'present';
+                icon.removeClass('fa-times').addClass('fa-check');
+            }
+            updateSummary();
+        });
+
+        function updateSummary() {
+            const present = Object.values(attendanceStore).filter(v => v === 'present').length;
+            $('#selectedCount').text(present);
+        }
+
+        // Save Logic
+        $('#saveAttendanceBtn').on('click', function() {
+            const btn = $(this);
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> UPDATING...');
+
+            $.ajax({
+                url: '/faculty/attendance/save',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    department: '{{ dept }}',
+                    year: '{{ year }}',
+                    section: '{{ sec }}',
+                    subject: '{{ sub }}',
+                    date: '{{ date }}', // Need to update route to handle date
+                    attendance: attendanceStore
+                }),
+                success: function() {
+                    btn.html('<i class="fas fa-check me-2"></i> UPDATED SUCCESSFULLY');
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('faculty_attendance_history') }}";
+                    }, 1000);
+                },
+                error: function(err) {
+                    alert(err.responseJSON?.error || "Failed to update.");
+                    btn.prop('disabled', false).html('<i class="fas fa-cloud-upload-alt me-2"></i> UPDATE ATTENDANCE');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+

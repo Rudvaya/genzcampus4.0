@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Change Email — GenZCampus{% endblock %}
+
+{% block auth_content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px 16px;">
+  <div class="animate-in" style="width:100%;max-width:400px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--r-2xl);box-shadow:var(--shadow-lg);overflow:hidden;">
+    <div style="padding:32px 32px 24px;text-align:center;border-bottom:1px solid var(--border);">
+      <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--clr-primary),var(--clr-accent));display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:24px;margin-bottom:16px;box-shadow:0 6px 20px rgba(124,58,237,0.3);">
+        <i class="fas fa-envelope-open-text"></i>
+      </div>
+      <h3 style="font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:8px;">Update Email Address</h3>
+      <p style="font-size:13.5px;color:var(--text-muted);">
+        Update your email and we'll send a new OTP.
+      </p>
+    </div>
+    <div style="padding:28px 32px;">
+      <form method="POST">
+        <div class="mb-4">
+          <label class="form-label">New Email Address</label>
+          <input type="email" class="form-control" name="email" value="{{ user.email }}" required
+            placeholder="yourname@student.edu">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-sync-alt me-2"></i>Update & Send OTP
+        </button>
+      </form>
+    </div>
+    <div style="padding:16px 32px;border-top:1px solid var(--border);text-align:center;">
+      <a href="{{ url_for('verify_otp', user_id=user.id) }}" style="font-size:13px;color:var(--text-muted);text-decoration:none;">
+        <i class="fas fa-arrow-left me-1"></i>Back to Verification
+      </a>
+    </div>
+  </div>
+</div>
+<script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+{% endblock %}

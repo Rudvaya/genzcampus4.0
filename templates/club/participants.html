@@ -1,0 +1,140 @@
+{% extends "club/layout.html" %}
+
+{% block title %}Participants - {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="fas fa-users text-primary me-2"></i> Event Participants</h4>
+        <small class="text-muted">{{ event.name }}</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('club_portal.scanner', event_id=event.id) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-qrcode me-1"></i> Scan Attendance
+        </a>
+        <a href="{{ url_for('club_portal.export_participants', event_id=event.id) }}" class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-1"></i> Export to Excel
+        </a>
+        <a href="{{ url_for('club_portal.dashboard') }}" class="btn btn-light btn-sm border">
+            <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-surface-secondary text-muted small text-uppercase fw-bold">
+                    <tr>
+                        <th class="px-4 py-3">Student Details</th>
+                        <th class="py-3">Ticket ID</th>
+                        <th class="py-3">Registration Date</th>
+                        <th class="py-3">Custom Fields</th>
+                        <th class="px-4 py-3 text-end">Attendance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% macro render_row(r) %}
+                    <tr>
+                        <td class="px-4 border-end-0">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="fw-bold me-2">{{ r.student.get_full_name() }}</span>
+                                {% if r.is_leader %}
+                                <span class="badge bg-warning text-dark small py-1 px-2 border-0">
+                                    <i class="fas fa-crown me-1 small"></i> Leader
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="small text-muted">{{ r.student.roll_no }} | {{ r.student.department }}</div>
+                        </td>
+                        <td class="border-end-0">
+                            <code class="text-primary fw-bold small">{{ r.ticket_id }}</code>
+                        </td>
+                        <td class="small border-end-0">
+                            {{ r.submitted_at.strftime('%d %b, %Y') if r.submitted_at else 'N/A' }}<br>
+                            <span class="text-muted">{{ r.submitted_at.strftime('%H:%M') if r.submitted_at else '' }}</span>
+                        </td>
+                        <td class="border-end-0">
+                            <div style="max-width: 250px;">
+                                {% for key, value in r.custom_data.items() %}
+                                <div class="small mb-1">
+                                    <span class="text-muted">{{ key }}:</span> {{ value }}
+                                </div>
+                                {% else %}
+                                <span class="text-muted small italic">No additional info</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="px-4 text-end border-start-0">
+                            {% if r.attendance_records %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                                <i class="fas fa-check-circle me-1"></i> Present
+                            </span>
+                            {% else %}
+                            <span class="badge bg-surface-secondary text-muted border px-3 py-2 rounded-pill">
+                                <i class="fas fa-clock me-1"></i> Not Scanned
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endmacro %}
+                    
+                    {% if grouped_teams or solo_responses %}
+                        {% for team_name, members in grouped_teams.items() %}
+                            <tr>
+                                <td colspan="5" class="p-0 border-0">
+                                    <div class="bg-surface-secondary px-4 py-2 border-start border-primary border-4 shadow-sm mt-3 mb-1">
+                                        <h6 class="fw-bold mb-0 text-primary">
+                                            <i class="fas fa-users me-2"></i> Team: {{ team_name }} 
+                                            <span class="badge bg-primary rounded-pill ms-2">{{ members|length }} Members</span>
+                                        </h6>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% for r in members %}
+                                {{ render_row(r) }}
+                            {% endfor %}
+                        {% endfor %}
+                        
+                        {% if solo_responses %}
+                            {% if grouped_teams %}
+                            <tr>
+                                <td colspan="5" class="p-0 border-0">
+                                    <div class="bg-surface-secondary px-4 py-2 border-start border-secondary border-4 shadow-sm mt-4 mb-1">
+                                        <h6 class="fw-bold mb-0 text-secondary">
+                                            <i class="fas fa-user mb-0 me-2"></i> Individual Participants 
+                                            <span class="badge bg-secondary rounded-pill ms-2">{{ solo_responses|length }} Members</span>
+                                        </h6>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% for r in solo_responses %}
+                                {{ render_row(r) }}
+                            {% endfor %}
+                        {% endif %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-user-slash d-block mb-2 fs-2 opacity-25"></i>
+                                No students have registered for this event yet.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-subtle {
+        background-color: rgba(16, 185, 129, 0.1) !important;
+    }
+
+    .border-success-subtle {
+        border-color: rgba(16, 185, 129, 0.2) !important;
+    }
+</style>
+{% endblock %}

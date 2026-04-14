@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Class Incharge Console - {{ dept }} {{ year }}-{{ sec }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-0">Class Incharge Console</h2>
+            <p class="text-muted small mb-0">{{ dept }} Section {{ sec }} ({{ year }} Year)</p>
+        </div>
+        <button class="btn btn-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#holidayModal">
+            <i class="fas fa-calendar-plus me-1"></i> Declare Holiday
+        </button>
+    </div>
+
+    <!-- Day Navigation Pills -->
+    <div class="nav-pills-wrapper mb-4 overflow-auto pb-2">
+        <ul class="nav nav-pills flex-nowrap" id="dayPills" role="tablist">
+            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if loop.first %}active{% endif %} px-4 rounded-pill me-2" 
+                        data-bs-toggle="pill" data-bs-target="#tab-{{ day }}" type="button">
+                    {{ day }}
+                </button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="tab-content" id="dayPillsContent">
+        {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="tab-{{ day }}" role="tabpanel">
+            <div class="row g-3">
+                {% set tt = timetable_data.get(day) %}
+                {% if tt %}
+                    {% for i in range(1, 8) %}
+                    {% set sub = getattr(tt, 'period_' ~ i) %}
+                    {% set time = getattr(tt, 'period_' ~ i ~ '_time') %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm h-100 period-card" data-period="{{ i }}" data-day="{{ day }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-light text-primary border rounded-pill px-3">Period {{ i }}</span>
+                                    <button class="btn btn-link btn-sm text-muted p-0 swap-btn" title="Swap Period">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </div>
+                                <h5 class="card-title mb-1">{% if sub %}{{ sub }}{% else %}<span class="text-muted italic">No Class</span>{% endif %}</h5>
+                                <div class="d-flex align-items-center text-muted small">
+                                    <i class="far fa-clock me-2"></i>
+                                    <span>{{ time }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info border-0 shadow-sm">
+                            No timetable data synced for {{ day }}. Please contact admin to upload.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Holiday List Section -->
+    <div class="mt-5">
+        <h3 class="h5 mb-3">Declared Holidays</h3>
+        <div id="holidayList" class="row g-3">
+            <!-- Loaded via JS -->
+            <div class="col-12 text-center py-4 text-muted">
+                <i class="fas fa-spinner fa-spin me-2"></i> Loading holidays...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Swap Modal -->
+<div class="modal fade" id="swapModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Swap Periods</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Swap <strong id="swapFromLabel">Period X</strong> with another period on <span id="swapDayLabel">Day</span>.</p>
+                <div class="list-group" id="swapOptions">
+                    <!-- Loaded via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Holiday Modal -->
+<div class="modal fade" id="holidayModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="holidayForm">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Declare Holiday</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Date</label>
+                        <input type="date" class="form-control rounded-pill" name="date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Reason</label>
+                        <textarea class="form-control rounded-3" name="reason" rows="3" placeholder="e.g., Festival, Technical Maintenance..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Declare</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-pills-wrapper::-webkit-scrollbar { display: none; }
+    .period-card { transition: transform 0.2s; }
+    .period-card:hover { transform: translateY(-3px); }
+    .swap-btn:hover { color: var(--bs-primary) !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentSwapData = { day: null, period: null };
+    const swapModal = new bootstrap.Modal(document.getElementById('swapModal'));
+
+    // 1. Swap Logic
+    document.querySelectorAll('.swap-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const card = this.closest('.period-card');
+            currentSwapData.day = card.dataset.day;
+            currentSwapData.period = parseInt(card.dataset.period);
+            
+            document.getElementById('swapFromLabel').textContent = `Period ${currentSwapData.period}`;
+            document.getElementById('swapDayLabel').textContent = currentSwapData.day;
+            
+            // Build options
+            const optionsContainer = document.getElementById('swapOptions');
+            optionsContainer.innerHTML = '';
+            
+            for(let i=1; i<=7; i++) {
+                if(i === currentSwapData.period) continue;
+                
+                // Find subject for label
+                const targetCard = document.querySelector(`.period-card[data-day="${currentSwapData.day}"][data-period="${i}"]`);
+                const sub = targetCard ? targetCard.querySelector('.card-title').textContent.trim() : 'No Class';
+                
+                const a = document.createElement('a');
+                a.className = 'list-group-item list-group-item-action border-0 mb-1 rounded-3';
+                a.href = '#';
+                a.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">Period ${i}</div>
+                            <div class="text-muted small">${sub}</div>
+                        </div>
+                        <i class="fas fa-chevron-right text-muted small"></i>
+                    </div>
+                `;
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    performSwap(i);
+                };
+                optionsContainer.appendChild(a);
+            }
+            swapModal.show();
+        });
+    });
+
+    async function performSwap(targetIdx) {
+        if(!confirm(`Confirm swapping Period ${currentSwapData.period} with Period ${targetIdx}?`)) return;
+        
+        try {
+            const resp = await fetch('/api/incharge/timetable/swap', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    day: currentSwapData.day,
+                    p1: currentSwapData.period,
+                    p2: targetIdx
+                })
+            });
+            const data = await resp.json();
+            if(data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Swap failed');
+            }
+        } catch(e) {
+            alert('Error connecting to server');
+        }
+    }
+
+    // 2. Holiday Logic
+    const holidayForm = document.getElementById('holidayForm');
+    holidayForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(holidayForm);
+        const payload = {
+            date: formData.get('date'),
+            reason: formData.get('reason')
+        };
+        
+        try {
+            const resp = await fetch('/api/incharge/holiday/declare', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if(data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('holidayModal')).hide();
+                loadHolidays();
+                holidayForm.reset();
+            } else {
+                alert(data.error);
+            }
+        } catch(e) { alert('Error declaring holiday'); }
+    };
+
+    async function loadHolidays() {
+        const container = document.getElementById('holidayList');
+        try {
+            const resp = await fetch('/api/incharge/holidays');
+            const holidays = await resp.json();
+            
+            if(holidays.length === 0) {
+                container.innerHTML = '<div class="col-12"><div class="text-center p-4 text-muted border rounded-3 bg-light">No holidays declared yet.</div></div>';
+                return;
+            }
+            
+            container.innerHTML = holidays.map(h => `
+                <div class="col-12 col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">${new Date(h.date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'})}</div>
+                                <div class="text-muted small">${h.reason}</div>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="deleteHoliday(${h.id})">
+                                <i class="fas fa-trash-alt me-1"></i> Undo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch(e) { container.innerHTML = 'Error loading holidays'; }
+    }
+
+    window.deleteHoliday = async (id) => {
+        if(!confirm('Remove this holiday declaration?')) return;
+        try {
+            await fetch(`/api/incharge/holiday/${id}`, { method: 'DELETE' });
+            loadHolidays();
+        } catch(e) { alert('Error deleting holiday'); }
+    };
+
+    loadHolidays();
+});
+</script>
+{% endblock %}

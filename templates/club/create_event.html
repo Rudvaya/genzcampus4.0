@@ -1,0 +1,174 @@
+{% extends "club/layout.html" %}
+
+{% block title %}Create Event - {{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card p-4">
+            <h4 class="fw-bold mb-4"><i class="fas fa-calendar-plus text-primary me-2"></i> Create New Event</h4>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label fw-600">Event Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Annual Tech Symposium"
+                        required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3"
+                        placeholder="Tell students about the event..."></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Start Date & Time</label>
+                        <input type="datetime-local" name="start_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">End Date & Time</label>
+                        <input type="datetime-local" name="end_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label text-danger fw-bold">Registration Deadline</label>
+                        <input type="datetime-local" name="registration_deadline" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Venue</label>
+                        <input type="text" name="venue" class="form-control" placeholder="e.g. Auditorium" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Max Registrations</label>
+                        <input type="number" name="max_registrations" class="form-control" value="0" min="0">
+                        <small class="text-muted">(0 for unlimited)</small>
+                    </div>
+                </div>
+
+                <div class="row" id="team_size_config" style="display: none;">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Min Team Size</label>
+                        <input type="number" name="team_size_min" class="form-control" value="1" min="1">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Max Team Size</label>
+                        <input type="number" name="team_size_max" class="form-control" value="4" min="1">
+                    </div>
+                </div>
+
+                <div class="row">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Participation Type</label>
+                        <select name="participation_type" id="participation_type" class="form-select" onchange="toggleTeamSizeConfig()">
+                            <option value="solo">Solo Only</option>
+                            <option value="team">Team Only</option>
+                            <option value="both" selected>Solo & Team</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Allowed Departments (Multi-select)</label>
+                        <div class="border rounded p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
+                            {% for dept in departments %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="departments"
+                                    value="{{ dept.name }}" id="dept_{{ dept.id }}" checked>
+                                <label class="form-check-label small" for="dept_{{ dept.id }}">
+                                    {{ dept.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-light border-0 mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_paid" id="is_paid" onchange="togglePriceConfig()">
+                                    <label class="form-check-label fw-bold" for="is_paid">
+                                        <i class="fas fa-hand-holding-usd text-success me-2"></i> Paid Event
+                                    </label>
+                                </div>
+                            </div>
+                        <div class="row g-3" id="price_config" style="display: none;">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Amount per person (₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Payment Model</label>
+                                <select name="payment_model" class="form-select">
+                                    <option value="individual">Individual Pay (Split)</option>
+                                    <option value="leader">Leader Pays for Team (Full)</option>
+                                </select>
+                                <small class="text-muted" style="font-size: 11px;">"Leader Pays" only applies to Team participation.</small>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Create Event & Build Form
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function toggleTeamSizeConfig() {
+        const ptype = document.getElementById('participation_type').value;
+        const config = document.getElementById('team_size_config');
+        if (ptype === 'team' || ptype === 'both') {
+            config.style.display = 'flex';
+        } else {
+            config.style.display = 'none';
+        }
+    }
+    
+    function togglePriceConfig() {
+        const isPaid = document.getElementById('is_paid').checked;
+        const config = document.getElementById('price_config');
+        config.style.display = isPaid ? 'flex' : 'none';
+        
+        const amountInput = document.querySelector('input[name="amount"]');
+        if (isPaid) {
+            amountInput.setAttribute('required', 'required');
+        } else {
+            amountInput.removeAttribute('required');
+        }
+    }
+    
+    window.addEventListener('load', function() {
+        toggleTeamSizeConfig();
+        togglePriceConfig();
+        
+        // Set default times (09:00 start, 16:00 end)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        const startInput = document.querySelector('input[name="start_date"]');
+        const endInput = document.querySelector('input[name="end_date"]');
+        const deadlineInput = document.querySelector('input[name="registration_deadline"]');
+        
+        if (!startInput.value) startInput.value = `${todayStr}T09:00`;
+        if (!endInput.value) endInput.value = `${todayStr}T16:00`;
+        if (!deadlineInput.value) deadlineInput.value = `${todayStr}T08:30`;
+    });
+</script>
+{% endblock %}
+
+
