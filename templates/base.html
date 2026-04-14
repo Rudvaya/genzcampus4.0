@@ -22,6 +22,10 @@
     (function () {
       var t = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
+      
+      // Load and apply persistent sidebar width immediately to prevent layout shift
+      var w = localStorage.getItem('pms_sidebar_width') || '240px';
+      document.documentElement.style.setProperty('--sidebar-w', w);
     })();
   </script>
 </head>
@@ -220,6 +224,9 @@
         </a>
       </div>
     </aside>
+
+    <!-- Sidebar Resizer Splitter -->
+    <div class="sidebar-resizer" id="sidebarResizer"></div>
 
     <!-- ---- Main Content ---- -->
     <div class="pms-main">
@@ -499,6 +506,42 @@
         setTimeout(() => window.scrollTo(0, 0), 50);
       }
     }
+  });
+
+  /* ============================================================
+     SIDEBAR RESIZER SYSTEM
+     ============================================================ */
+  document.addEventListener('DOMContentLoaded', function () {
+    const resizer = document.getElementById('sidebarResizer');
+    if (!resizer) return;
+
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', function (e) {
+      isResizing = true;
+      document.body.classList.add('is-resizing');
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (!isResizing) return;
+      
+      let newWidth = e.clientX;
+      
+      // Constraints
+      if (newWidth < 180) newWidth = 180;
+      if (newWidth > 450) newWidth = 450;
+      
+      const widthStr = newWidth + 'px';
+      document.documentElement.style.setProperty('--sidebar-w', widthStr);
+      localStorage.setItem('pms_sidebar_width', widthStr);
+    });
+
+    document.addEventListener('mouseup', function () {
+      if (isResizing) {
+        isResizing = false;
+        document.body.classList.remove('is-resizing');
+      }
+    });
   });
 </script>
 

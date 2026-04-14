@@ -144,7 +144,7 @@ with app.app_context():
 @app.before_request
 def resolve_tenant_isolation():
     # Public routes that don't need tenant context
-    if request.endpoint in ['static', 'super_admin_dashboard', 'login_global']:
+    if request.endpoint in ['static', 'super_admin_dashboard', 'login_global', 'super_admin_login']:
         return
 
     college = getattr(g, 'current_college', None)
@@ -170,7 +170,7 @@ def login_global():
 
 @app.route('/cc/dashboard')
 @login_required
-def command_center_dashboard():
+def super_admin_dashboard():
     if not current_user.is_superadmin:
         flash('Access denied.', 'danger')
         return redirect(url_for('login_global'))
@@ -192,9 +192,12 @@ def create_college():
         name = request.form.get('name')
         slug = request.form.get('slug').lower()
         
-        if College.query.filter_by(slug=slug).first():
-            flash('Slug already exists.', 'danger')
-            return redirect(url_for('command_center_dashboard'))
+        admin_email = request.form.get('admin_email')
+        admin_password = request.form.get('admin_password')
+
+        if User.query.filter_by(email=admin_email).first():
+            flash('Admin email already exists.', 'danger')
+            return redirect(url_for('super_admin_dashboard'))
             
         college = College(
             name=name,
@@ -207,9 +210,21 @@ def create_college():
             })
         )
         db.session.add(college)
+        db.session.flush() # Get ID before commit
+
+        # Create the college admin
+        admin_user = User(
+            email=admin_email,
+            role='admin',
+            college_id=college.id,
+            is_verified=True
+        )
+        admin_user.set_password(admin_password)
+        db.session.add(admin_user)
+        
         db.session.commit()
-        flash(f'College {name} created successfully!', 'success')
-        return redirect(url_for('command_center_dashboard'))
+        flash(f'College {name} and admin account created successfully!', 'success')
+        return redirect(url_for('super_admin_dashboard'))
     
     return render_template('super_admin/create_college.html')
 
@@ -221,7 +236,7 @@ def toggle_college_status(college_id):
     college = College.query.get_or_404(college_id)
     college.is_active = not college.is_active
     db.session.commit()
-    return redirect(url_for('command_center_dashboard'))
+    return redirect(url_for('super_admin_dashboard'))
 
 @app.route('/cc/college/<int:college_id>/toggle-feature/<feature>')
 @login_required
@@ -233,14 +248,58 @@ def toggle_college_feature(college_id, feature):
     features[feature] = not features.get(feature, False)
     college.features = json.dumps(features)
     db.session.commit()
-    return redirect(url_for('command_center_dashboard'))
+    return redirect(url_for('super_admin_dashboard'))
+
+@app.route('/cc/college/<int:college_id>/update-admin', methods=['POST'])
+@login_required
+def update_college_admin(college_id):
+    if not current_user.is_superadmin:
+        return jsonify({'success': False}), 403
+    
+    college = College.query.get_or_404(college_id)
+    new_email = request.form.get('admin_email')
+    new_password = request.form.get('admin_password')
+    
+    admin = college.admin
+    
+    # 1. Validate email uniqueness if changing email
+    if new_email:
+        existing = User.query.filter_by(email=new_email).first()
+        # If email exists and either we have no admin yet OR it belongs to a different user
+        if existing and (not admin or existing.id != admin.id):
+            flash('Email already taken by another user.', 'danger')
+            return redirect(url_for('super_admin_dashboard'))
+
+    # 2. Update or Create Admin
+    if not admin:
+        if not new_email:
+            flash('Admin email is required.', 'danger')
+            return redirect(url_for('super_admin_dashboard'))
+        # Create with the required email
+        admin = User(
+            email=new_email,
+            role='admin',
+            college_id=college.id,
+            is_verified=True
+        )
+        db.session.add(admin)
+    else:
+        if new_email:
+            admin.email = new_email
+        
+    if new_password:
+        admin.set_password(new_password)
+        
+    db.session.commit()
+    flash(f'Admin credentials for {college.name} updated successfully.', 'success')
+    return redirect(url_for('super_admin_dashboard'))
 
 # Tenant Specific Routes
 @app.route('/<college_slug>/')
 def index():
     if current_user.is_authenticated:
         if current_user.is_superadmin:
-            return redirect(url_for('command_center_dashboard'))
+            return redirect(url_for('super_admin_dashboard'))
         if current_user.is_admin():
             return redirect(url_for('admin_dashboard'))
         elif current_user.is_student():
@@ -248,6 +307,24 @@ def index():
         else:
             return redirect(url_for('faculty_dashboard'))
     return redirect(url_for('login'))
+
+@app.route('/cc/login', methods=['GET', 'POST'])
+def super_admin_login():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        
+        user = User.query.filter_by(email=email, is_superadmin=True).first()
+        if user and user.check_password(password):
+            if user.is_blocked:
+                flash('Your account has been blocked.', 'danger')
+                return redirect(url_for('login_global'))
+            login_user(user)
+            return redirect(url_for('super_admin_dashboard'))
+        
+        flash('Invalid super-admin credentials', 'danger')
+    
+    return render_template('super_admin/login.html')
 
 @app.route('/<college_slug>/login', methods=['GET', 'POST'])
 def login():
@@ -260,9 +337,13 @@ def login():
             f.write(f"\n--- {datetime.now()} ---\n")
             f.write(f"Attempt: [{email}]\n")
             
-            # 1. Check Super Admin (Global Search)
+            # 1. Check if this is a superadmin attempting to log in here
             user = User.query.filter_by(email=email, is_superadmin=True).first()
-            if not user and g.current_college:
+            if user:
+                flash('Super-admins must log in through the Command Center.', 'warning')
+                return redirect(url_for('super_admin_login'))
+            
+            if g.current_college:
                 # 2. Check User Table for college users
                 user = User.query.filter_by(email=email, college_id=g.current_college.id).first()
             

@@ -3,166 +3,505 @@
 {% block title %}Institution Registration — GenZCampus Command Center{% endblock %}
 
 {% block content %}
-<div class="pms-page-header">
-    <div class="header-content">
-        <h1><i class="fas fa-plus-circle me-3"></i>Register New Institution</h1>
-        <p>Onboard a new college to the GenZCampus orchestration platform.</p>
-    </div>
-</div>
-
-<div class="row justify-content-center">
-    <div class="col-xl-8 col-lg-10">
-        <div class="pms-card glass-card fade-in">
-            <form method="POST" class="pms-form">
-                <div class="card-section">
-                    <h3 class="section-title"><i class="fas fa-university me-2"></i>Institutional Details</h3>
-                    
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="form-group mb-4">
-                                <label for="name" class="pms-label">College Name</label>
-                                <div class="pms-input-wrapper">
-                                    <i class="fas fa-school input-icon"></i>
-                                    <input type="text" class="pms-control" id="name" name="name" 
-                                           placeholder="e.g. Sphoorthy Engineering College" required>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="form-group mb-4">
-                                <label for="slug" class="pms-label">URL Slug</label>
-                                <div class="pms-input-wrapper">
-                                    <i class="fas fa-link input-icon"></i>
-                                    <input type="text" class="pms-control" id="slug" name="slug" 
-                                           placeholder="e.g. sphn" required>
-                                </div>
-                                <small class="text-muted mt-2 d-block">This will be used in the URL: genzcampus.com/<b>slug</b>/</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-section mt-4">
-                    <h3 class="section-title"><i class="fas fa-microchip me-2"></i>Module Permissions</h3>
-                    <p class="section-desc mb-4">Select the features to enable for this institution initially. These can be toggled later from the dashboard.</p>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6 col-lg-3">
-                            <div class="feature-checkbox">
-                                <input type="checkbox" id="attendance" name="attendance" checked>
-                                <label for="attendance">
-                                    <i class="fas fa-clipboard-user feature-icon mb-2"></i>
-                                    <span>Attendance</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 col-lg-3">
-                            <div class="feature-checkbox">
-                                <input type="checkbox" id="clubs" name="clubs" checked>
-                                <label for="clubs">
-                                    <i class="fas fa-users-viewfinder feature-icon mb-2"></i>
-                                    <span>Clubs & Events</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 col-lg-3">
-                            <div class="feature-checkbox">
-                                <input type="checkbox" id="permissions" name="permissions" checked>
-                                <label for="permissions">
-                                    <i class="fas fa-file-signature feature-icon mb-2"></i>
-                                    <span>Permissions</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 col-lg-3">
-                            <div class="feature-checkbox">
-                                <input type="checkbox" id="exams" name="exams" checked>
-                                <label for="exams">
-                                    <i class="fas fa-graduation-cap feature-icon mb-2"></i>
-                                    <span>Exam Branch</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-end gap-3 mt-5">
-                    <a href="{{ url_for('command_center_dashboard') }}" class="btn btn-secondary px-4">
-                        Cancel
-                    </a>
-                    <button type="submit" class="btn btn-primary px-5">
-                        <i class="fas fa-check-circle me-2"></i>Complete Registration
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <style>
-.feature-checkbox {
-    position: relative;
-    height: 100%;
-}
+    /* PRO MAX REFINEMENTS */
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --accent-glow: rgba(124, 58, 237, 0.3);
+    }
 
-.feature-checkbox input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
+    [data-theme="light"] {
+        --glass-bg: rgba(255, 255, 255, 0.8);
+        --glass-border: rgba(0, 0, 0, 0.05);
+        --accent-glow: rgba(124, 58, 237, 0.1);
+    }
 
-.feature-checkbox label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    text-align: center;
-    width: 100%;
-}
+    .pms-page-header {
+        margin-bottom: 2rem;
+        padding: 1rem 0;
+    }
 
-.feature-checkbox input:checked + label {
-    background: rgba(124, 58, 237, 0.1);
-    border-color: #7C3AED;
-    box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
-}
+    .pms-page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        background: linear-gradient(135deg, var(--text-main) 30%, var(--clr-primary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
 
-.feature-checkbox input:checked + label .feature-icon {
-    color: #7C3AED;
-}
+    .pms-page-header p {
+        font-size: 1.1rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
 
-.feature-icon {
-    font-size: 1.5rem;
-    color: rgba(255, 255, 255, 0.4);
-    transition: all 0.3s ease;
-}
+    .registration-container {
+        max-width: 100%;
+        margin: 0;
+    }
 
-.feature-checkbox label span {
-    font-weight: 500;
-    font-size: 0.9rem;
-    color: var(--pms-text-primary);
-}
+    .pro-vault {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--r-2xl);
+        overflow: hidden;
+        box-shadow: var(--shadow-xl);
+        position: relative;
+    }
 
-.section-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
+    .pro-vault::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, var(--clr-primary), var(--clr-accent));
+    }
 
-.section-desc {
-    color: var(--pms-text-secondary);
-    font-size: 0.95rem;
-}
+    .vault-section {
+        padding: 2rem 3rem;
+        position: relative;
+    }
+
+    .vault-header {
+        background: var(--bg-secondary);
+        padding: 2rem 3rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .header-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--clr-primary);
+        color: #fff;
+        border-radius: var(--r-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 20px var(--accent-glow);
+    }
+
+    .header-text h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .header-text p {
+        margin: 0.25rem 0 0;
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .vault-section:not(:last-of-type) {
+        border-bottom: 1px solid var(--border);
+    }
+
+    .vault-section-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--clr-primary-light);
+        color: var(--clr-primary);
+        border-radius: var(--r-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    .vault-section-title div h3 {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 800;
+    }
+
+    .vault-section-title div p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--text-muted);
+    }
+
+    /* INPUT STYLING */
+    .pro-input-group {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .pro-label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+        padding-left: 4px;
+    }
+
+    .pro-input-wrapper {
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .pro-input-wrapper i {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        pointer-events: none;
+    }
+
+    .pro-control {
+        width: 100%;
+        padding: 12px 16px 12px 48px;
+        background: var(--bg-secondary);
+        border: 2px solid transparent;
+        border-radius: var(--r-md);
+        color: var(--text-main);
+        font-size: 0.95rem;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .pro-control:focus {
+        outline: none;
+        background: var(--card-bg);
+        border-color: var(--clr-primary);
+        box-shadow: 0 8px 24px var(--accent-glow);
+        transform: translateY(-2px);
+    }
+
+    .pro-control:focus + i {
+        color: var(--clr-primary);
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    /* FEATURE PICKER */
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .feature-card {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .feature-card input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .feature-card-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 2.5rem 1.5rem;
+        background: var(--bg-secondary);
+        border: 2px solid transparent;
+        border-radius: var(--r-xl);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .feature-card-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 1.25rem;
+        background: var(--card-bg);
+        color: var(--text-muted);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        transition: all 0.4s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .feature-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-top: 0.5rem;
+    }
+
+    .feature-card input:checked + .feature-card-content {
+        background: var(--card-bg);
+        border-color: var(--clr-primary);
+        box-shadow: 0 12px 30px var(--accent-glow);
+        transform: translateY(-8px);
+    }
+
+    .feature-card input:checked + .feature-card-content .feature-card-icon {
+        background: var(--clr-primary);
+        color: #fff;
+        transform: scale(1.1) rotate(5deg);
+        box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+    }
+
+    .feature-card:hover .feature-card-content {
+        background: var(--card-bg);
+        border-color: var(--glass-border);
+        transform: translateY(-4px);
+    }
+
+    .select-check {
+        position: absolute;
+        top: 1rem;
+        right: 1.25rem;
+        width: 24px;
+        height: 24px;
+        background: var(--clr-primary);
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .feature-card input:checked + .feature-card-content .select-check {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-section {
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+
+    /* BUTTONS */
+    .pro-btn-group {
+        padding: 2rem 3rem;
+        background: var(--bg-secondary);
+        display: flex;
+        justify-content: flex-end;
+        gap: 1.25rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-pro {
+        padding: 1rem 2.5rem;
+        border-radius: var(--r-lg);
+        font-size: 1rem;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        border: none;
+    }
+
+    .btn-pro-primary {
+        background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent));
+        color: #fff;
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-pro-primary:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 12px 35px rgba(124, 58, 237, 0.4);
+    }
+
+    .btn-pro-ghost {
+        background: transparent;
+        color: var(--text-muted);
+        border: 2px solid var(--border);
+    }
+
+    .btn-pro-ghost:hover {
+        background: rgba(0,0,0,0.03);
+        border-color: var(--text-muted);
+        color: var(--text-main);
+    }
+
+    [data-theme="dark"] .btn-pro-ghost:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    @media (max-width: 768px) {
+        .vault-section { padding: 2rem 1.5rem; }
+        .feature-grid { grid-template-columns: 1fr 1fr; }
+        .pms-page-header h1 { font-size: 1.8rem; }
+    }
 </style>
+
+<div class="registration-container mt-4 animate-section">
+    <form method="POST" class="pro-vault shadow-lg">
+        <!-- Card Header -->
+        <div class="vault-header">
+            <div class="header-icon"><i class="fas fa-plus"></i></div>
+            <div class="header-text">
+                <h1>Register Institution</h1>
+                <p>Architect a new campus environment on the GenZCampus platform.</p>
+            </div>
+        </div>
+
+        <!-- Section 1: Identity -->
+        <div class="vault-section">
+            <div class="vault-section-title">
+                <div class="section-icon"><i class="fas fa-university"></i></div>
+                <div>
+                    <h3>Institutional Identity</h3>
+                    <p>Core name and navigation endpoint.</p>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-7">
+                    <div class="pro-input-group">
+                        <label class="pro-label">College Display Name</label>
+                        <div class="pro-input-wrapper">
+                            <input type="text" name="name" class="pro-control" placeholder="e.g. Sphoorthy Engineering College" required>
+                            <i class="fas fa-signature"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="pro-input-group">
+                        <label class="pro-label">URL Slug</label>
+                        <div class="pro-input-wrapper">
+                            <input type="text" name="slug" class="pro-control" placeholder="e.g. sphn" required>
+                            <i class="fas fa-link"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Command Access -->
+        <div class="vault-section">
+            <div class="vault-section-title">
+                <div class="section-icon" style="background: rgba(16, 185, 129, 0.1); color: #10B981;"><i class="fas fa-shield-halved"></i></div>
+                <div>
+                    <h3>Administrative Access</h3>
+                    <p>Secured credentials for the primary college administrator.</p>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="pro-input-group">
+                        <label class="pro-label">Admin Email Identifier</label>
+                        <div class="pro-input-wrapper">
+                            <input type="email" name="admin_email" class="pro-control" placeholder="admin@institute.edu" required>
+                            <i class="fas fa-envelope-open-text"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="pro-input-group">
+                        <label class="pro-label">Security Key (Password)</label>
+                        <div class="pro-input-wrapper">
+                            <input type="password" name="admin_password" class="pro-control" placeholder="••••••••" required>
+                            <i class="fas fa-fingerprint"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Ecosystem Modules -->
+        <div class="vault-section">
+            <div class="vault-section-title">
+                <div class="section-icon" style="background: rgba(245, 158, 11, 0.1); color: #F59E0B;"><i class="fas fa-cubes-stacked"></i></div>
+                <div>
+                    <h3>Ecosystem Modules</h3>
+                    <p>Orchestrate active features for this institution.</p>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <label class="feature-card">
+                    <input type="checkbox" name="attendance" checked>
+                    <div class="feature-card-content">
+                        <div class="select-check"><i class="fas fa-check"></i></div>
+                        <div class="feature-card-icon"><i class="fas fa-clipboard-user"></i></div>
+                        <div class="feature-card-title">Attendance</div>
+                    </div>
+                </label>
+
+                <label class="feature-card">
+                    <input type="checkbox" name="clubs" checked>
+                    <div class="feature-card-content">
+                        <div class="select-check"><i class="fas fa-check"></i></div>
+                        <div class="feature-card-icon"><i class="fas fa-users-viewfinder"></i></div>
+                        <div class="feature-card-title">Clubs & Events</div>
+                    </div>
+                </label>
+
+                <label class="feature-card">
+                    <input type="checkbox" name="permissions" checked>
+                    <div class="feature-card-content">
+                        <div class="select-check"><i class="fas fa-check"></i></div>
+                        <div class="feature-card-icon"><i class="fas fa-file-signature"></i></div>
+                        <div class="feature-card-title">Permissions</div>
+                    </div>
+                </label>
+
+                <label class="feature-card">
+                    <input type="checkbox" name="exams" checked>
+                    <div class="feature-card-content">
+                        <div class="select-check"><i class="fas fa-check"></i></div>
+                        <div class="feature-card-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="feature-card-title">Exam Branch</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pro-btn-group">
+            <a href="{{ url_for('super_admin_dashboard') }}" class="btn-pro btn-pro-ghost">
+                Cancel
+            </a>
+            <button type="submit" class="btn-pro btn-pro-primary">
+                Provision Institution <i class="fas fa-rocket"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Smooth check sound or vibration could go here if in a native wrapper
+    // For web, focus tracking is enough.
+</script>
 {% endblock %}

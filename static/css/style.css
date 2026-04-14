@@ -225,6 +225,41 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-sm);
 }
 
+/* Sidebar Resizer (Horizontal Splitter) */
+.sidebar-resizer {
+  position: fixed;
+  left: calc(var(--sidebar-w) - 2px);
+  top: 0;
+  width: 4px;
+  height: 100vh;
+  cursor: col-resize;
+  z-index: 210;
+  transition: background var(--t-fast);
+}
+
+.sidebar-resizer:hover,
+.is-resizing .sidebar-resizer {
+  background: var(--clr-primary);
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.4);
+}
+
+/* Resizing state — disable smoothness for immediate feedback */
+body.is-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.is-resizing .pms-sidebar,
+body.is-resizing .pms-main,
+body.is-resizing .pms-topbar,
+body.is-resizing .sidebar-resizer {
+  transition: none !important;
+}
+
+@media (max-width: 767.98px) {
+  .sidebar-resizer { display: none; }
+}
+
 /* Sidebar brand */
 .sidebar-brand {
   display: flex;

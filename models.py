@@ -21,6 +21,11 @@ class College(db.Model):
     clubs = db.relationship('Club', backref='college', lazy=True)
     exams = db.relationship('Exam', backref='college', lazy=True)
 
+    @property
+    def admin(self):
+        from models import User
+        return User.query.filter_by(college_id=self.id, role='admin').first()
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     roll_no = db.Column(db.String(20), unique=True, nullable=True)

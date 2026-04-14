@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Command Center Sign In — GenZCampus{% endblock %}
+
+{% block auth_content %}
+<style>
+  .auth-wrap {
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* Left panel — branding */
+  .auth-brand-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #111827 0%, #1e293b 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+  }
+
+  .auth-brand-panel::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    left: -80px;
+    width: 300px;
+    height: 300px;
+    background: rgba(124, 58, 237, 0.05);
+    border-radius: 50%;
+  }
+
+  .brand-logo {
+    width: 80px;
+    height: 80px;
+    background: rgba(124, 58, 237, 0.1);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7C3AED;
+    font-size: 36px;
+    margin-bottom: 24px;
+    border: 2px solid rgba(124, 58, 237, 0.2);
+    position: z-index: 1;
+  }
+
+  .brand-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-subtitle {
+    font-size: 15px;
+    color: #94a3b8;
+    text-align: center;
+    max-width: 320px;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-badge {
+    margin-top: 16px;
+    background: rgba(124, 58, 237, 0.1);
+    color: #c084fc;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    z-index: 1;
+  }
+
+  /* Right panel — form */
+  .auth-form-panel {
+    width: 480px;
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 48px;
+    min-height: 100vh;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .auth-form-inner {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .auth-form-header {
+    margin-bottom: 40px;
+  }
+
+  .auth-form-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .auth-form-header p {
+    font-size: 14px;
+    color: #64748b;
+  }
+
+  .auth-input-group {
+    margin-bottom: 24px;
+  }
+
+  .auth-input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .auth-input-group input {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+    transition: all 0.2s;
+  }
+
+  .auth-input-group input:focus {
+    outline: none;
+    border-color: #7C3AED;
+    background: rgba(30, 41, 59, 0.8);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+  }
+
+  .auth-submit-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: #7C3AED;
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .auth-submit-btn:hover {
+    background: #6D28D9;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.5);
+  }
+
+  .back-to-site {
+    margin-top: 32px;
+    text-align: center;
+  }
+
+  .back-to-site a {
+    color: #64748b;
+    text-decoration: none;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s;
+  }
+
+  .back-to-site a:hover {
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .auth-brand-panel { display: none; }
+    .auth-form-panel { width: 100%; }
+  }
+</style>
+
+<div class="auth-wrap">
+  <div class="auth-brand-panel d-none d-md-flex">
+    <div class="brand-logo">
+      <i class="fas fa-microchip"></i>
+    </div>
+    <h1 class="brand-title">Command Center</h1>
+    <p class="brand-subtitle">Centralized orchestration & governance for GenZCampus institution networks.</p>
+    <div class="brand-badge">Administrative Hub</div>
+  </div>
+
+  <div class="auth-form-panel">
+    <div class="auth-form-inner">
+      <div class="auth-form-header animate-in">
+        <h2>Secure Authentication</h2>
+        <p>Enter your super-administrative credentials</p>
+      </div>
+
+      <form method="POST" class="animate-in" style="animation-delay:0.1s;">
+        <div class="auth-input-group">
+          <label for="email">Admin Email</label>
+          <input type="email" id="email" name="email" required placeholder="admin@genzcampus.com">
+        </div>
+
+        <div class="auth-input-group">
+          <label for="password">Security Key</label>
+          <input type="password" id="password" name="password" required placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="auth-submit-btn">
+          <i class="fas fa-shield-check"></i>
+          Verify & Access
+        </button>
+      </form>
+
+      <div class="back-to-site animate-in" style="animation-delay:0.2s;">
+        <a href="{{ url_for('login_global') }}">
+          <i class="fas fa-arrow-left"></i>
+          Return to Hub
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

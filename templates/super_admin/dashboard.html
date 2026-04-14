@@ -119,11 +119,49 @@
                             </div>
                         </td>
                         <td class="align-middle">
-                            <a href="{{ url_for('index', college_slug=college.slug) }}" class="btn btn-link text-secondary font-weight-bold text-xs" target="_blank">
-                                <i class="fas fa-external-link-alt me-1"></i>Visit
-                            </a>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="{{ url_for('index', college_slug=college.slug) }}" class="btn btn-link text-secondary font-weight-bold text-xs p-0" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i> Visit
+                                </a>
+                                <button type="button" class="btn btn-link text-primary font-weight-bold text-xs p-0" 
+                                        data-bs-toggle="modal" data-bs-target="#adminModal{{ college.id }}">
+                                    <i class="fas fa-user-shield"></i> Admin
+                                </button>
+                            </div>
                         </td>
                     </tr>
+
+                    <!-- Admin Management Modal -->
+                    <div class="modal fade" id="adminModal{{ college.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow">
+                                <form action="{{ url_for('update_college_admin', college_id=college.id) }}" method="POST">
+                                    <div class="modal-header bg-light border-0">
+                                        <h5 class="modal-title fw-bold">Manage Admin: {{ college.name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        <div class="mb-3">
+                                            <label class="form-label text-xs fw-bold text-uppercase">Current Admin Email</label>
+                                            <input type="email" name="admin_email" class="form-control" 
+                                                   value="{{ college.admin.email if college.admin else '' }}" required>
+                                            <small class="text-muted">This email is used to log in to the {{ college.slug }} portal.</small>
+                                        </div>
+                                        <div class="mb-0">
+                                            <label class="form-label text-xs fw-bold text-uppercase">New Password</label>
+                                            <input type="password" name="admin_password" class="form-control" 
+                                                   placeholder="Leave blank to keep current">
+                                            <small class="text-muted">Reset the password for this administrator.</small>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0">
+                                        <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Update Credentials</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
                 </tbody>
             </table>
