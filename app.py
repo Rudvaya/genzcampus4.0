@@ -199,9 +199,24 @@ def create_college():
             flash('Admin email already exists.', 'danger')
             return redirect(url_for('super_admin_dashboard'))
             
+        # Handle Logo Upload
+        branding_logo = None
+        logo_file = request.files.get('logo')
+        if logo_file and logo_file.filename != '' and allowed_file(logo_file.filename):
+            ext = logo_file.filename.rsplit('.', 1)[1].lower()
+            logo_filename = secure_filename(f"{slug}_logo.{ext}")
+            upload_path = os.path.join(app.static_folder, 'uploads', 'logos')
+            
+            # Ensure directory exists
+            os.makedirs(upload_path, exist_ok=True)
+            
+            logo_file.save(os.path.join(upload_path, logo_filename))
+            branding_logo = f"uploads/logos/{logo_filename}"
+            
         college = College(
             name=name,
             slug=slug,
+            branding_logo=branding_logo,
             features=json.dumps({
                 'attendance': 'attendance' in request.form,
                 'clubs': 'clubs' in request.form,

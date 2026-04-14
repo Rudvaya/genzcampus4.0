@@ -1663,3 +1663,109 @@ Found User. Role: super_admin. Password Match: True
 --- 2026-04-14 13:29:11.450441 ---
 Attempt: [admin@pms.com]
 Found User. Role: admin. Password Match: True
+
+--- 2026-04-14 19:35:04.510238 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 19:35:41.174342 ---
+Attempt: [mandotisaikiran@gmail.com]
+No college context; skipping club search.
+Result: FAILED
+
+--- 2026-04-14 19:36:27.273415 ---
+Attempt: [superadmin@pms.com]
+Found User. Role: super_admin. Password Match: True
+
+--- 2026-04-14 19:50:51.849769 ---
+Attempt: [mandotisaikiran@gmail.com]
+No college context; skipping club search.
+Result: FAILED
+
+--- 2026-04-14 19:51:47.262929 ---
+Attempt: [superadmin@pms.com]
+Found User. Role: super_admin. Password Match: True
+
+--- 2026-04-14 19:56:33.519484 ---
+Attempt: [superadmin@pms.com]
+Found User. Role: super_admin. Password Match: True
+
+--- 2026-04-14 19:58:08.957061 ---
+Attempt: [superadmin@pms.com]
+Found User. Role: super_admin. Password Match: True
+
+--- 2026-04-14 19:58:45.546191 ---
+Attempt: [mandotisaikiran@gmail.com]
+No college context; skipping club search.
+Result: FAILED
+
+--- 2026-04-14 20:00:08.558631 ---
+Attempt: [superadmin@pms.com]
+Found User. Role: super_admin. Password Match: True
+
+--- 2026-04-14 20:00:57.722966 ---
+Attempt: [superadmin@pms.com]
+Found User. Role: super_admin. Password Match: True
+
+--- 2026-04-14 20:01:15.330250 ---
+Attempt: [superadmin@pms.com]
+Found User. Role: super_admin. Password Match: True
+
+--- 2026-04-14 20:04:24.475488 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 20:07:55.221258 ---
+Attempt: [superadmin@pms.com]
+
+--- 2026-04-14 20:08:52.091345 ---
+Attempt: [superadmin@pms.com]
+
+--- 2026-04-14 20:12:12.630011 ---
+Attempt: [mandotisaikiran@gmail.com]
+Result: FAILED
+
+--- 2026-04-14 20:12:41.666585 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 20:12:46.122220 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 20:12:51.749306 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 20:12:52.061690 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 20:21:14.545722 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-14 20:27:16.220796 ---
+Attempt: [superadmin@pms.com]
+
+--- 2026-04-14 20:29:48.488038 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-14 20:50:44.031007 ---
+Attempt: [superadmin@pms.com]
+
+--- 2026-04-14 20:53:55.194235 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-14 20:59:48.975116 ---
+Attempt: [superadmin@pms.com]
+
+--- 2026-04-14 21:30:59.490950 ---
+Attempt: [adminmvsr@pms.com]
+No college context; skipping club search.
+Result: FAILED
+
+--- 2026-04-14 21:31:25.746537 ---
+Attempt: [superadmin@pms.com]

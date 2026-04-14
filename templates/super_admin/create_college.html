@@ -365,7 +365,7 @@
 </style>
 
 <div class="registration-container mt-4 animate-section">
-    <form method="POST" class="pro-vault shadow-lg">
+    <form method="POST" class="pro-vault shadow-lg" enctype="multipart/form-data">
         <!-- Card Header -->
         <div class="vault-header">
             <div class="header-icon"><i class="fas fa-plus"></i></div>
@@ -375,13 +375,13 @@
             </div>
         </div>
 
-        <!-- Section 1: Identity -->
+        <!-- Section 1: Identity & Branding -->
         <div class="vault-section">
             <div class="vault-section-title">
                 <div class="section-icon"><i class="fas fa-university"></i></div>
                 <div>
                     <h3>Institutional Identity</h3>
-                    <p>Core name and navigation endpoint.</p>
+                    <p>Core name, navigation endpoint, and brand logo.</p>
                 </div>
             </div>
 
@@ -402,6 +402,16 @@
                             <input type="text" name="slug" class="pro-control" placeholder="e.g. sphn" required>
                             <i class="fas fa-link"></i>
                         </div>
+                    </div>
+                </div>
+                <div class="col-12 mt-3">
+                    <div class="pro-input-group">
+                        <label class="pro-label">Brand Logo (Optional)</label>
+                        <div class="pro-input-wrapper">
+                            <input type="file" name="logo" id="collegeLogo" class="pro-control" accept="image/*" style="padding: 10px 16px 10px 48px;">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <small class="text-muted mt-1 d-block" style="font-size: 11px;">Recommended: Square transparency PNG (512x512)</small>
                     </div>
                 </div>
             </div>
