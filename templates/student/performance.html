@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}My Performance & Portfolio - GenZCampus{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #F8F9FE;
+        padding-bottom: 80px;
+    }
+    @media (min-width: 768px) {
+        .bottom-nav { display: none !important; }
+        body { padding-bottom: 0 !important; }
+    }
+    @media (max-width: 767px) {
+        .sidebar, .topbar { display: none !important; }
+        #page-content-wrapper { width: 100%; padding: 0 !important; }
+    }
+    .dashboard-header {
+        background: linear-gradient(135deg, #021B79 0%, #0575E6 100%);
+        border-radius: 0 0 30px 30px;
+        padding: 3rem 1.5rem 2rem 1.5rem;
+        color: white;
+        margin-top: -1.5rem;
+    }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1A1A24;
+    }
+    .content-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        margin-bottom: 20px;
+    }
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        box-shadow: 0 -2px 15px rgba(0,0,0,0.05);
+        border-radius: 20px 20px 0 0;
+        z-index: 1000;
+    }
+    .nav-item {
+        text-align: center;
+        text-decoration: none;
+        color: #888;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    .nav-item.active {
+        color: #0d6efd;
+    }
+    .nav-icon {
+        font-size: 1.3rem;
+        margin-bottom: 3px;
+        display: block;
+    }
+    .perf-item {
+        border-left: 3px solid #0d6efd;
+        padding-left: 15px;
+        margin-bottom: 15px;
+    }
+</style>
+
+<div class="dashboard-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1 fw-bold">My Portfolio & Performance</h5>
+            <div style="font-size: 0.85rem; opacity: 0.9;">Manage your skills, certificates, and internships</div>
+        </div>
+        <button class="btn btn-light btn-sm rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+            <i class="fas fa-plus me-1"></i> Add New
+        </button>
+    </div>
+</div>
+
+<div class="container px-3 pb-4 mt-4">
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show rounded-pill" style="font-size:0.85rem;" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.8rem;"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="content-card">
+        <h6 class="section-title mb-3"><i class="fas fa-laptop-code text-primary me-2"></i> Skills</h6>
+        {% if skills %}
+            {% for s in skills %}
+            <div class="perf-item border-primary">
+                <div class="fw-bold">{{ s.title }}</div>
+                <div class="text-muted small">{{ s.description }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted small">No skills added yet.</div>
+        {% endif %}
+    </div>
+
+    <div class="content-card">
+        <h6 class="section-title mb-3"><i class="fas fa-certificate text-warning me-2"></i> Certifications</h6>
+        {% if certificates %}
+            {% for c in certificates %}
+            <div class="perf-item border-warning">
+                <div class="fw-bold">{{ c.title }}</div>
+                <div class="text-muted small">ID: {{ c.certificate_id or 'N/A' }}</div>
+                {% if c.proof_filename %}
+                <a href="{{ url_for('static', filename='uploads/performance/' + c.proof_filename) }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1"><i class="fas fa-external-link-alt me-1"></i> View Certificate</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted small">No certifications added yet.</div>
+        {% endif %}
+    </div>
+
+    <div class="content-card">
+        <h6 class="section-title mb-3"><i class="fas fa-briefcase text-success me-2"></i> Internships</h6>
+        {% if internships %}
+            {% for i in internships %}
+            <div class="perf-item border-success">
+                <div class="fw-bold">{{ i.title }}</div>
+                <div class="text-muted small">{{ i.description }}</div>
+                {% if i.proof_filename %}
+                <a href="{{ url_for('static', filename='uploads/performance/' + i.proof_filename) }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1"><i class="fas fa-external-link-alt me-1"></i> View Proof</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted small">No internships added yet.</div>
+        {% endif %}
+    </div>
+    
+    <div class="content-card">
+        <h6 class="section-title mb-3"><i class="fas fa-trophy text-purple me-2" style="color: #8b5cf6;"></i> Achievements</h6>
+        {% if achievements %}
+            {% for a in achievements %}
+            <div class="perf-item border-purple" style="border-left-color: #8b5cf6;">
+                <div class="fw-bold">{{ a.title }}</div>
+                <div class="text-muted small">{{ a.description }}</div>
+                {% if a.proof_filename %}
+                <a href="{{ url_for('static', filename='uploads/performance/' + a.proof_filename) }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1"><i class="fas fa-external-link-alt me-1"></i> View Proof</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted small">No achievements added yet.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Record Modal -->
+<div class="modal fade" id="addRecordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Add Performance Record</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('student_performance', college_slug=current_college.slug) }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Category</label>
+                        <select name="type" class="form-select form-select-sm border-0 bg-light" required>
+                            <option value="skill">Skill</option>
+                            <option value="certificate">Certification</option>
+                            <option value="internship">Internship</option>
+                            <option value="achievement">Achievement</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Title / Name</label>
+                        <input type="text" name="title" class="form-control form-control-sm border-0 bg-light" required placeholder="e.g. Python Programming, AWS Certified...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Description (Optional)</label>
+                        <textarea name="description" class="form-control form-control-sm border-0 bg-light" rows="2" placeholder="Brief details about this record..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Certificate/Credential ID (Optional)</label>
+                        <input type="text" name="certificate_id" class="form-control form-control-sm border-0 bg-light" placeholder="Only for certifications">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Proof File (PDF/JPG)</label>
+                        <input type="file" name="proof" class="form-control form-control-sm border-0 bg-light" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary rounded-pill fw-bold">Save Record</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+    <a href="{{ url_for('student_dashboard', college_slug=current_college.slug) }}" class="nav-item">
+        <i class="fas fa-home nav-icon"></i>
+        Home
+    </a>
+    <a href="{{ url_for('student_performance', college_slug=current_college.slug) }}" class="nav-item active">
+        <i class="fas fa-laptop-code nav-icon"></i>
+        Performance
+    </a>
+    <a href="{{ url_for('club_portal.student_events', college_slug=current_college.slug) }}" class="nav-item">
+        <i class="fas fa-bullhorn nav-icon"></i>
+        Events
+    </a>
+    <a href="#" class="nav-item">
+        <i class="far fa-user nav-icon"></i>
+        Profile
+    </a>
+</div>
+{% endblock %}

@@ -38,6 +38,7 @@
                     <li><h6 class="dropdown-header">Management</h6></li>
                     <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#exportModal"><i class="fas fa-file-excel text-success me-2"></i> Export Excel</a></li>
                     <li><a class="dropdown-item py-2" href="{{ url_for('download_template') }}"><i class="fas fa-download text-warning me-2"></i> Template</a></li>
+                    <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#promoteModal"><i class="fas fa-level-up-alt text-primary me-2"></i> Promote Students</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#bulkUploadModal"><i class="fas fa-cloud-upload-alt text-info me-2"></i> Bulk Upload</a></li>
                 </ul>
@@ -283,6 +284,50 @@
                     <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success rounded-pill px-4">
                         <i class="fas fa-file-download me-1"></i>Download
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Promote Students Modal -->
+<div class="modal fade" id="promoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Promote Students by One Year</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('promote_students') }}">
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action will increment the year of the selected students by 1 (up to 4).
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select Department</label>
+                        <select class="form-select rounded-3" name="department">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.name }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select Current Year</label>
+                        <select class="form-select rounded-3" name="year">
+                            <option value="">All Years</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="fas fa-level-up-alt me-1"></i>Promote
                     </button>
                 </div>
             </form>

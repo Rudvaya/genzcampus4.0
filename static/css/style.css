@@ -163,7 +163,6 @@ body {
   transition: background-color var(--t-slow), color var(--t-slow);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 /* ============================================================
@@ -216,25 +215,28 @@ h1, h2, h3, h4, h5, h6 {
   border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   z-index: 200;
-  transition: width var(--t-slow), transform var(--t-slow);
+  flex-shrink: 0;
+  transition: width var(--t-slow);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
 }
 
 /* Sidebar Resizer (Horizontal Splitter) */
 .sidebar-resizer {
-  position: fixed;
-  left: calc(var(--sidebar-w) - 2px);
-  top: 0;
   width: 4px;
   height: 100vh;
+  background: transparent;
   cursor: col-resize;
   z-index: 210;
+  flex-shrink: 0;
+  position: relative;
   transition: background var(--t-fast);
+  margin-left: -2px;
+  margin-right: -2px;
 }
 
 .sidebar-resizer:hover,
@@ -429,12 +431,11 @@ body.is-resizing .sidebar-resizer {
 
 /* Main content area */
 .pms-main {
-  margin-left: var(--sidebar-w);
   flex: 1;
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: margin-left var(--t-slow);
 }
 
 /* Top bar (desktop) */
@@ -481,9 +482,12 @@ body.is-resizing .sidebar-resizer {
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1030;
   box-shadow: var(--shadow-xs);
 }
 
@@ -1224,6 +1228,7 @@ body.is-resizing .sidebar-resizer {
   /* Content padding for bottom nav — comfortable mobile spacing */
   .pms-content {
     padding: 14px 14px;
+    padding-top: calc(var(--topbar-h) + 14px);
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 12px) + 20px);
     width: 100%;
     overflow-x: hidden;
@@ -1268,7 +1273,7 @@ body.is-resizing .sidebar-resizer {
    ============================================================ */
 @media (min-width: 768px) and (max-width: 1023.98px) {
   .pms-sidebar { width: var(--sidebar-collapsed); }
-  .pms-main    { margin-left: var(--sidebar-collapsed); }
+
 
   .sidebar-brand-text,
   .sidebar-user-info,
@@ -1288,7 +1293,6 @@ body.is-resizing .sidebar-resizer {
    ============================================================ */
 @media (min-width: 1024px) {
   .pms-sidebar { width: var(--sidebar-w); }
-  .pms-main    { margin-left: var(--sidebar-w); }
 }
 
 /* ============================================================

@@ -253,6 +253,46 @@
         background-color: var(--bg-color);
         border-radius: 10px;
     }
+
+    /* PA Badge Styles (Permission Approved) */
+    .pa-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #9333ea;
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 50px;
+        box-shadow: 0 2px 5px rgba(147, 51, 234, 0.4);
+        z-index: 2;
+        border: 2px solid var(--card-bg);
+    }
+    .student-node.has-pa {
+        border-color: #9333ea !important;
+    }
+
+    /* Mobile Roster View */
+    .roster-list-mobile {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .roster-item-mobile {
+        padding: 1rem;
+        border-radius: 15px;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s;
+        display: block;
+        text-decoration: none;
+        color: inherit;
+    }
+    .roster-item-mobile:active {
+        transform: scale(0.98);
+        background: var(--border-color);
+    }
 </style>
 
 <div class="faculty-header shadow">
@@ -570,10 +610,11 @@
                 <div class="card-header bg-transparent py-4 px-4 border-0 d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold text-main"><i class="fas fa-check-double me-2 text-success"></i> Approved Student Roster</h5>
                     <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-bold shadow-none">{{ approved_list|length if approved_list else 0 }} Students</span>
-                </div>
-                <div class="card-body p-4 pt-0">
+                </div>                <div class="card-body p-4 pt-0">
                     {% if approved_list and approved_list|length > 0 %}
-                    <div class="table-responsive">
+                    
+                    <!-- Desktop View (Table) -->
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-borderless roster-table mb-0 align-middle">
                             <thead>
                                 <tr>
@@ -602,7 +643,6 @@
                                     </td>
                                     <td>
                                         <div class="small fw-bold text-main text-truncate" style="max-width: 200px;" title="{{ perm.event.title if perm.event else 'General' }}">
-
                                             {{ perm.event.title if perm.event else 'General' }}
                                         </div>
                                         <div class="text-muted small" style="font-size: 0.7rem;">{{ perm.club.name }}</div>
@@ -617,7 +657,33 @@
                             </tbody>
                         </table>
                     </div>
-                    {% else %}
+
+                    <!-- Mobile View (Unified List) -->
+                    <div class="roster-list-mobile d-block d-md-none">
+                        {% for perm in approved_list|sort(attribute='date', reverse=True) %}
+                        <a href="{{ url_for('view_permission', permission_id=perm.id) }}" class="roster-item-mobile shadow-sm">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-10 rounded-circle text-success d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                        <i class="fas fa-user-check small"></i>
+                                    </div>
+                                    <div class="fw-bold text-main" style="font-size: 0.9rem;">{{ perm.student.get_full_name() }}</div>
+                                </div>
+                                <span class="badge bg-light text-muted border px-2 py-1 rounded-pill extra-small" style="font-family: monospace; font-size: 0.7rem;">{{ perm.student.roll_no }}</span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="text-muted small">
+                                    <i class="far fa-calendar-alt me-1 text-primary"></i>{{ perm.date.strftime('%b %d, %Y') }}
+                                </div>
+                                <div class="text-muted small text-truncate" style="max-width: 180px;">
+                                    <i class="fas fa-trophy me-1 text-warning"></i>{{ perm.event.title if perm.event else 'General' }}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    
+                    {% else %}%}
                     <div class="text-center py-5">
                         <i class="fas fa-folder-open fa-3x text-muted bg-light p-4 rounded-circle mb-3"></i>
                         <h6 class="text-muted">No Approved Permissions</h6>
@@ -667,7 +733,7 @@
 
             timetableHint.text("Fetching schedule...");
             $.ajax({
-                url: '/api/timetable/today',
+                url: "{{ url_for('get_today_timetable', college_slug=current_college.slug) }}",
                 data: { department: dept, year: year, section: sec },
                 success: function(resp) {
                     subSelect.empty();
@@ -711,7 +777,7 @@
             attendanceStore = {};
 
             $.ajax({
-                url: '/api/faculty/students',
+                url: "{{ url_for('get_faculty_students', college_slug=current_college.slug) }}",
                 data: { department: dept, section: sec, year: year },
                 success: function(students) {
                     loadingDiv.addClass('d-none');
@@ -723,11 +789,15 @@
 
                     let nodesHtml = '';
                     students.forEach(s => {
-                        // Default to present in the grid visually, but toggle-able
-                        attendanceStore[s.id] = 'present'; // Mark all 'present' by default like the previous UI did
+                        // Default to present
+                        attendanceStore[s.id] = 'present';
+                        
+                        const paIndicator = s.has_pa ? `<span class="pa-badge" title="${s.pa_reason}">PA</span>` : '';
+                        const paClass = s.has_pa ? 'has-pa' : '';
                         
                         nodesHtml += `
-                            <div class="student-node present" data-id="${s.id}">
+                            <div class="student-node present ${paClass} shadow-sm" data-id="${s.id}" title="${s.has_pa ? 'Permission Approved: ' + s.pa_reason : ''}">
+                                ${paIndicator}
                                 <span class="roll-num">${s.roll_no.slice(-3)}</span>
                                 <i class="fas fa-check status-icon"></i>
                             </div>
@@ -771,7 +841,7 @@
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> SAVING...');
 
             $.ajax({
-                url: '/faculty/attendance/save',
+                url: "{{ url_for('save_class_attendance', college_slug=current_college.slug) }}",
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({

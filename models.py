@@ -11,7 +11,7 @@ class College(db.Model):
     name = db.Column(db.String(150), nullable=False)
     slug = db.Column(db.String(50), unique=True, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
-    features = db.Column(db.Text, default='{"attendance": true, "clubs": true, "permissions": true, "exams": true}') # JSON string
+    features = db.Column(db.Text, default='{"attendance": true, "timetable": true, "clubs": true, "permissions": true, "exams": true}') # JSON string
     branding_logo = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -25,10 +25,20 @@ class College(db.Model):
     def admin(self):
         from models import User
         return User.query.filter_by(college_id=self.id, role='admin').first()
+        
+    @property
+    def get_features(self):
+        import json
+        if self.features:
+            try:
+                return json.loads(self.features)
+            except:
+                pass
+        return {}
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    roll_no = db.Column(db.String(20), unique=True, nullable=True)
+    roll_no = db.Column(db.String(20), nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
     first_name = db.Column(db.String(50))
@@ -51,6 +61,10 @@ class User(UserMixin, db.Model):
     incharge_department = db.Column(db.String(50)) # e.g., 'CSE'
     incharge_section = db.Column(db.String(10))    # e.g., 'A'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('roll_no', 'college_id', name='uq_roll_no_college_id'),
+    )
     
     # Relationships - specify foreign keys explicitly
     permissions = db.relationship('Permission', backref='student_ref', lazy=True, foreign_keys='Permission.student_id', cascade='all, delete-orphan')
@@ -241,6 +255,19 @@ class TeamMember(db.Model):
     
     user = db.relationship('User', backref=db.backref('team_memberships', overlaps="user_rel,team_memberships_rel"), overlaps="team_memberships_rel,user_rel")
 
+class StudentPerformance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    type = db.Column(db.String(50), nullable=False) # 'skill', 'certificate', 'internship', 'achievement'
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    certificate_id = db.Column(db.String(100))
+    proof_filename = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    student = db.relationship('User', backref=db.backref('performances', lazy='dynamic', cascade='all, delete-orphan'))
+
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     response_id = db.Column(db.Integer, db.ForeignKey('event_response.id'), nullable=False)
@@ -319,6 +346,12 @@ class TimeTable(db.Model):
     period_6_time = db.Column(db.String(50), server_default='02:40 - 03:30')
     period_7 = db.Column(db.String(150))
     period_7_time = db.Column(db.String(50), server_default='03:30 - 04:20')
+    period_8 = db.Column(db.String(150))
+    period_8_time = db.Column(db.String(50), server_default='04:20 - 05:10')
+    period_9 = db.Column(db.String(150))
+    period_9_time = db.Column(db.String(50), server_default='05:10 - 06:00')
+    period_10 = db.Column(db.String(150))
+    period_10_time = db.Column(db.String(50), server_default='06:00 - 06:50')
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -327,7 +360,7 @@ class TimeTable(db.Model):
         return f'<TimeTable {self.day} - {self.department} {self.year}-{self.section}>'
 
     def get_periods(self):
-        return [self.period_1, self.period_2, self.period_3, self.period_4, self.period_5, self.period_6, self.period_7]
+        return [self.period_1, self.period_2, self.period_3, self.period_4, self.period_5, self.period_6, self.period_7, self.period_8, self.period_9, self.period_10]
 
 class ClassHoliday(db.Model):
     id          = db.Column(db.Integer, primary_key=True)

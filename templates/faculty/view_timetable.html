@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}View Timetable - GenZCampus{% endblock %}
+{% block page_title %}View Timetable{% endblock %}
+
+{% block content %}
+<style>
+    .timetable-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        border: none;
+        overflow: hidden;
+    }
+    .period-input {
+        border-radius: 8px;
+        font-size: 0.85rem;
+        padding: 8px;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+        color: #1e293b;
+        background: transparent;
+    }
+    .day-header {
+        background: #f8fafc;
+        font-weight: 700;
+        color: #475569;
+        text-align: center;
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+    .period-header {
+        background: #4e73df;
+        color: white;
+        font-weight: 700;
+        text-align: center;
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+    .timetable-grid-wrapper {
+        overflow-x: auto;
+    }
+    .timetable-grid {
+        display: grid;
+        grid-template-columns: 120px repeat(var(--cols, 7), minmax(110px, 1fr));
+        gap: 1px;
+        background: #e2e8f0;
+        border: 1px solid #e2e8f0;
+        min-width: 900px;
+    }
+    .grid-cell {
+        background: white;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Filter Section -->
+    <div class="card timetable-card mb-4 shadow-sm">
+        <div class="card-body p-4">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-muted">DEPARTMENT</label>
+                    <select name="department" class="form-select border-0 bg-light rounded-pill px-3" required>
+                        <option value="" disabled selected>Select Dept...</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.name }}" {% if selected_dept == dept.name %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">YEAR</label>
+                    <select name="year" class="form-select border-0 bg-light rounded-pill px-3" required>
+                        <option value="" disabled selected>Select Year...</option>
+                        {% for y in [1,2,3,4] %}
+                        <option value="{{ y }}" {% if selected_year|int == y %}selected{% endif %}>{{ y }} Year</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">SECTION</label>
+                    <select name="section" class="form-select border-0 bg-light rounded-pill px-3" required>
+                        <option value="" disabled selected>Select Section...</option>
+                        {% for s in ['A','B','C','D'] %}
+                        <option value="{{ s }}" {% if selected_section == s %}selected{% endif %}>Section {{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm">
+                        <i class="fas fa-search me-2"></i> VIEW
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if selected_dept and selected_year and selected_section %}
+    <div class="card timetable-card shadow-sm mb-5">
+        <div class="card-header bg-white py-4 border-0 px-4">
+            <h5 class="m-0 fw-bold text-dark">
+                <i class="fas fa-calendar-alt text-primary me-2"></i> 
+                {{ selected_dept }} - {{ selected_year }} Year (Section {{ selected_section }}) Schedule
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="timetable-grid-wrapper">
+                <div class="timetable-grid" style="--cols: {{ max_periods }};">
+                    <!-- Header Row -->
+                    <div class="day-header" style="background:#4e73df; color:white;">DAY / PERIOD</div>
+                {% for i in range(1, max_periods + 1) %}
+                <div class="period-header">P{{ i }}</div>
+                {% endfor %}
+
+                <!-- Timings Row -->
+                <div class="day-header" style="background:#f1f5f9;">TIMINGS</div>
+                {% for i in range(1, max_periods + 1) %}
+                <div class="grid-cell" style="background:#f1f5f9;">
+                    {% set timing_val = getattr(timetable_data.get('Monday'), 'period_' ~ i ~ '_time') if timetable_data else '' %}
+                    <input type="text" class="period-timing-input w-100 border-0 bg-transparent text-center fw-bold small" 
+                           value="{{ timing_val if timing_val else (['09:30 - 10:20', '10:20 - 11:10', '11:10 - 12:00', '13:00 - 13:50', '13:50 - 14:40', '14:40 - 15:30', '15:30 - 16:20', '04:20 - 05:10', '05:10 - 06:00', '06:00 - 06:50'][i-1] if i <= 10 else '') }}" readonly>
+                </div>
+                {% endfor %}
+
+                <!-- Daily Rows -->
+                {% for day in active_days %}
+                <div class="day-header">{{ day }}</div>
+                {% set row_data = timetable_data.get(day) %}
+                {% for i in range(1, max_periods + 1) %}
+                <div class="grid-cell">
+                    {% set period_val = getattr(row_data, 'period_' ~ i) if row_data else '' %}
+                    <input type="text" class="period-input w-100 text-center fw-bold" 
+                           value="{{ period_val if period_val else '-' }}" readonly>
+                </div>
+                {% endfor %}
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

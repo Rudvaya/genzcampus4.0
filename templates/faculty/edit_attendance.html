@@ -47,6 +47,25 @@
         padding: 2rem 0;
         margin-bottom: 2rem;
     }
+
+    /* PA Badge Styles (Permission Approved) */
+    .pa-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #9333ea;
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 50px;
+        box-shadow: 0 2px 5px rgba(147, 51, 234, 0.4);
+        z-index: 2;
+        border: 2px solid var(--card-bg);
+    }
+    .student-node.has-pa {
+        border-color: #9333ea !important;
+    }
 </style>
 
 <div class="edit-header shadow-sm">
@@ -113,12 +132,17 @@
 
         // 1. Fetch Students
         $.ajax({
-            url: '/api/faculty/students',
-            data: { department: '{{ dept }}', section: '{{ sec }}', year: '{{ year }}' },
+            url: "{{ url_for('get_faculty_students', college_slug=current_college.slug) }}",
+            data: { 
+                department: '{{ dept }}', 
+                section: '{{ sec }}', 
+                year: '{{ year }}',
+                date: '{{ date }}' // Pass the date for permission checking
+            },
             success: function(students) {
                 // 2. Fetch existing attendance
                 $.ajax({
-                    url: '/api/faculty/attendance/load',
+                    url: "{{ url_for('load_attendance_data', college_slug=current_college.slug) }}",
                     data: { date: '{{ date }}', dept: '{{ dept }}', year: '{{ year }}', sec: '{{ sec }}', sub: '{{ sub }}' },
                     success: function(resp) {
                         loader.addClass('d-none');
@@ -129,10 +153,13 @@
                             attendanceStore[s.id] = status;
                             
                             const statusClass = status === 'present' ? 'present' : 'absent';
+                            const paClass = s.has_pa ? 'has-pa' : '';
+                            const paIndicator = s.has_pa ? `<span class="pa-badge" title="${s.pa_reason}">PA</span>` : '';
                             const iconClass = status === 'present' ? 'fa-check' : 'fa-times';
                             
                             nodesHtml += `
-                                <div class="student-node ${statusClass}" data-id="${s.id}">
+                                <div class="student-node ${statusClass} ${paClass}" data-id="${s.id}" title="${s.has_pa ? 'Permission Approved: ' + s.pa_reason : ''}">
+                                    ${paIndicator}
                                     <span class="roll-num">${s.roll_no.slice(-3)}</span>
                                     <i class="fas ${iconClass} status-icon"></i>
                                 </div>
@@ -174,7 +201,7 @@
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> UPDATING...');
 
             $.ajax({
-                url: '/faculty/attendance/save',
+                url: "{{ url_for('save_class_attendance', college_slug=current_college.slug) }}",
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({

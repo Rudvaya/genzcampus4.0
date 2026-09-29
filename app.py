@@ -7,7 +7,7 @@ from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction
+from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction, StudentPerformance
 from config import Config
 from utils import allowed_file, validate_roll_no
 from supabase import create_client, Client
@@ -42,8 +42,16 @@ if app.config.get('SUPABASE_URL') and app.config.get('SUPABASE_KEY'):
 db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    if request.path.startswith('/cc/') or request.path.startswith('/super-admin'):
+        return redirect(url_for('super_admin_login'))
+    if getattr(g, 'college_slug', None):
+        return redirect(url_for('login', college_slug=g.college_slug))
+    return redirect(url_for('login_global'))
+
 mail = Mail(app)
 migrate = Migrate(app, db)
 
@@ -219,6 +227,7 @@ def create_college():
             branding_logo=branding_logo,
             features=json.dumps({
                 'attendance': 'attendance' in request.form,
+                'timetable': 'timetable' in request.form,
                 'clubs': 'clubs' in request.form,
                 'permissions': 'permissions' in request.form,
                 'exams': 'exams' in request.form
@@ -259,7 +268,7 @@ def toggle_college_feature(college_id, feature):
     if not current_user.is_superadmin:
         return jsonify({'success': False}), 403
     college = College.query.get_or_404(college_id)
-    features = json.loads(college.features) if college.features else {}
+    features = college.get_features
     features[feature] = not features.get(feature, False)
     college.features = json.dumps(features)
     db.session.commit()
@@ -275,6 +284,23 @@ def update_college_admin(college_id):
     new_email = request.form.get('admin_email')
     new_password = request.form.get('admin_password')
     
+    # Handle Logo Update
+    logo_file = request.files.get('logo')
+    if logo_file and logo_file.filename != '' and allowed_file(logo_file.filename):
+        ext = logo_file.filename.rsplit('.', 1)[1].lower()
+        # Use a timestamp or unique hash to avoid browser caching issues on update
+        from time import time
+        logo_filename = secure_filename(f"{college.slug}_logo_{int(time())}.{ext}")
+        upload_path = os.path.join(app.static_folder, 'uploads', 'logos')
+        
+        # Ensure directory exists
+        os.makedirs(upload_path, exist_ok=True)
+        
+        # Save new logo
+        logo_file.save(os.path.join(upload_path, logo_filename))
+        college.branding_logo = f"uploads/logos/{logo_filename}"
+        db.session.commit()
+
     admin = college.admin
     
     # 1. Validate email uniqueness if changing email
@@ -314,6 +340,8 @@ def update_college_admin(college_id):
 def index():
     if current_user.is_authenticated:
         if current_user.is_superadmin:
+            if getattr(g, 'current_college', None):
+                return redirect(url_for('admin_dashboard', college_slug=g.current_college.slug))
             return redirect(url_for('super_admin_dashboard'))
         if current_user.is_admin():
             return redirect(url_for('admin_dashboard'))
@@ -502,7 +530,7 @@ def student_signup():
             return redirect(url_for('verify_otp', user_id=student.id))
     
     # Fetch departments for the dropdown
-    departments = Department.query.all()
+    departments = Department.query.filter_by(college_id=college.id).all()
     return render_template('student_signup.html', departments=departments)
 
 @app.route('/<college_slug>/verify-otp/<int:user_id>', methods=['GET', 'POST'])
@@ -753,15 +781,17 @@ def uploaded_file(filename):
 @app.route('/<college_slug>/admin/dashboard')
 @login_required
 def admin_dashboard():
-    if not current_user.is_admin():
+    if not (current_user.is_admin() or current_user.is_superadmin):
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
     
+    college_id = g.current_college.id if getattr(g, 'current_college', None) else current_user.college_id
+    
     stats = {
-        'total_students': User.query.filter_by(role='student').count(),
-        'total_faculty': User.query.filter(User.role.in_(['faculty', 'hod'])).count(),
-        'pending_permissions': Permission.query.filter_by(status='pending').count(),
-        'total_clubs': Club.query.count()
+        'total_students': User.query.filter_by(role='student', college_id=college_id).count(),
+        'total_faculty': User.query.filter(User.role.in_(['faculty', 'hod']), User.college_id==college_id).count(),
+        'pending_permissions': Permission.query.filter_by(status='pending', college_id=college_id).count(),
+        'total_clubs': Club.query.filter_by(college_id=college_id).count()
     }
     
     return render_template('admin/dashboard.html', stats=stats)
@@ -779,36 +809,32 @@ def manage_students():
     section = request.args.get('section')
     search = request.args.get('search', '').strip()
     
-    show_results = False
-    students = []
+    show_results = True
     
-    # Only perform query if at least one filter is applied
-    if year or dept or section or search:
-        show_results = True
-        query = User.query.filter_by(role='student')
-        
-        if year:
-            query = query.filter_by(year=year)
-        
-        if dept:
-            query = query.filter_by(department=dept)
+    query = User.query.filter_by(role='student', college_id=current_user.college_id)
+    
+    if year:
+        query = query.filter_by(year=year)
+    
+    if dept:
+        query = query.filter_by(department=dept)
 
-        if section:
-            query = query.filter_by(section=section)
-            
-        if search:
-            search_filter = f"%{search}%"
-            query = query.filter(
-                db.or_(
-                    User.roll_no.ilike(search_filter),
-                    User.first_name.ilike(search_filter),
-                    User.last_name.ilike(search_filter)
-                )
-            )
-            
-        students = query.order_by(User.year, User.department, User.section, User.roll_no).all()
+    if section:
+        query = query.filter_by(section=section)
         
-    departments = Department.query.order_by(Department.name).all()
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            db.or_(
+                User.roll_no.ilike(search_filter),
+                User.first_name.ilike(search_filter),
+                User.last_name.ilike(search_filter)
+            )
+        )
+        
+    students = query.order_by(User.year, User.department, User.section, User.roll_no).all()
+        
+    departments = Department.query.filter_by(college_id=current_user.college_id).order_by(Department.name).all()
     return render_template('admin/students.html', 
                          students=students, 
                          departments=departments, 
@@ -834,7 +860,7 @@ def add_student():
     year = request.form.get('year')
     section = request.form.get('section')
     
-    if User.query.filter_by(roll_no=roll_no).first():
+    if User.query.filter_by(roll_no=roll_no, college_id=current_user.college_id).first():
         flash('Roll number already exists', 'danger')
         return redirect(url_for('manage_students'))
 
@@ -851,6 +877,7 @@ def add_student():
         department=department,
         year=year,
         section=section,
+        college_id=current_user.college_id,
         is_verified=True # Admin created students are auto-verified
     )
     student.set_password(password)
@@ -859,6 +886,33 @@ def add_student():
     db.session.commit()
     
     flash('Student added successfully', 'success')
+    return redirect(url_for('manage_students'))
+
+@app.route('/<college_slug>/admin/students/promote', methods=['POST'])
+@login_required
+def promote_students():
+    if not current_user.is_admin():
+        flash('Access denied', 'danger')
+        return redirect(url_for('manage_students'))
+    
+    department = request.form.get('department')
+    year = request.form.get('year')
+    
+    query = User.query.filter_by(role='student', college_id=g.current_college.id)
+    if department:
+        query = query.filter_by(department=department)
+    if year:
+        query = query.filter_by(year=year)
+        
+    students = query.all()
+    promoted_count = 0
+    for student in students:
+        if student.year and int(student.year) < 4:
+            student.year = int(student.year) + 1
+            promoted_count += 1
+    
+    db.session.commit()
+    flash(f'Successfully promoted {promoted_count} students.', 'success')
     return redirect(url_for('manage_students'))
 
 @app.route('/<college_slug>/admin/students/edit/<int:student_id>', methods=['GET', 'POST'])
@@ -896,7 +950,7 @@ def edit_student(student_id):
         return redirect(url_for('manage_students'))
         
     # Fetch departments for the dropdown
-    departments = Department.query.all()
+    departments = Department.query.filter_by(college_id=current_user.college_id).all()
     return render_template('admin/edit_student.html', student=student, departments=departments)
 
 
@@ -959,7 +1013,7 @@ def bulk_upload_students():
                     continue
                     
                 if validate_roll_no(roll_no) and roll_no not in seen_rolls and email not in seen_emails:
-                    if not User.query.filter_by(roll_no=roll_no).first() and not User.query.filter_by(email=email).first():
+                    if not User.query.filter_by(roll_no=roll_no, college_id=current_user.college_id).first() and not User.query.filter_by(email=email).first():
                         student = User(
                             roll_no=roll_no,
                             email=email,
@@ -1003,14 +1057,22 @@ def manage_timetable():
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
     
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        flash('Timetable service is currently disabled for this institution.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+    
     depts = Department.query.all()
     selected_dept = request.args.get('department')
     selected_year = request.args.get('year')
     selected_section = request.args.get('section')
     
     timetable_data = {}
+    active_days = []
+    max_periods = 7
     if selected_dept and selected_year and selected_section:
-        records = TimeTable.query.filter_by(
+        records = TimeTable.query.filter_by(college_id=current_user.college_id, 
             department=selected_dept, 
             year=selected_year, 
             section=selected_section
@@ -1018,18 +1080,43 @@ def manage_timetable():
         for r in records:
             timetable_data[r.day] = r
             
+        if records:
+            day_order = {'Monday':1, 'Tuesday':2, 'Wednesday':3, 'Thursday':4, 'Friday':5, 'Saturday':6, 'Sunday':7}
+            active_days = sorted([r.day for r in records], key=lambda d: day_order.get(d, 99))
+            
+            max_p = 0
+            for r in records:
+                for i in range(10, 0, -1):
+                    if getattr(r, f'period_{i}') or getattr(r, f'period_{i}_time'):
+                        if i > max_p:
+                            max_p = i
+                        break
+            if max_p > 0:
+                max_periods = max_p
+
+    if not active_days:
+        active_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        max_periods = 7
+            
     return render_template('admin/manage_timetable.html', 
                            departments=depts,
                            selected_dept=selected_dept,
                            selected_year=selected_year,
                            selected_section=selected_section,
-                           timetable_data=timetable_data)
+                           timetable_data=timetable_data,
+                           active_days=active_days,
+                           max_periods=max_periods)
 
 @app.route('/<college_slug>/admin/timetable/analyze', methods=['POST'])
 @login_required
 def analyze_timetable():
     if not current_user.is_admin() and not current_user.is_hod():
         return jsonify({'error': 'Unauthorized'}), 403
+        
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        return jsonify({'error': 'Timetable service is disabled for this institution.'}), 403
         
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
@@ -1151,6 +1238,11 @@ def save_timetable():
     if not current_user.is_admin() and not current_user.is_hod():
         return jsonify({'error': 'Unauthorized'}), 403
         
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        return jsonify({'error': 'Timetable service is disabled for this institution.'}), 403
+        
     data = request.get_json()
     dept = data.get('department')
     year = data.get('year')
@@ -1162,10 +1254,35 @@ def save_timetable():
         return jsonify({'error': 'Missing data'}), 400
         
     try:
+        # Delete any days not in the new schedule to support row deletion
+        if schedule:
+            existing_records = TimeTable.query.filter_by(
+                college_id=current_user.college_id,
+                department=dept, 
+                year=year, 
+                section=sec
+            ).all()
+            for r in existing_records:
+                if r.day not in schedule:
+                    db.session.delete(r)
+
         for day, periods in schedule.items():
-            record = TimeTable.query.filter_by(department=dept, year=year, section=sec, day=day).first()
+            record = TimeTable.query.filter_by(
+                college_id=current_user.college_id,
+                department=dept, 
+                year=year, 
+                section=sec, 
+                day=day
+            ).first()
+            
             if not record:
-                record = TimeTable(department=dept, year=year, section=sec, day=day)
+                record = TimeTable(
+                    college_id=current_user.college_id,
+                    department=dept, 
+                    year=year, 
+                    section=sec, 
+                    day=day
+                )
                 db.session.add(record)
             
             # Update periods
@@ -1176,16 +1293,22 @@ def save_timetable():
             record.period_5 = periods[4] if len(periods) > 4 else None
             record.period_6 = periods[5] if len(periods) > 5 else None
             record.period_7 = periods[6] if len(periods) > 6 else None
+            record.period_8 = periods[7] if len(periods) > 7 else None
+            record.period_9 = periods[8] if len(periods) > 8 else None
+            record.period_10 = periods[9] if len(periods) > 9 else None
 
             # Update timings
             if timings:
-                record.period_1_time = timings[0] if len(timings) > 0 else record.period_1_time
-                record.period_2_time = timings[1] if len(timings) > 1 else record.period_2_time
-                record.period_3_time = timings[2] if len(timings) > 2 else record.period_3_time
-                record.period_4_time = timings[3] if len(timings) > 3 else record.period_4_time
-                record.period_5_time = timings[4] if len(timings) > 4 else record.period_5_time
-                record.period_6_time = timings[5] if len(timings) > 5 else record.period_6_time
-                record.period_7_time = timings[6] if len(timings) > 6 else record.period_7_time
+                record.period_1_time = timings[0] if len(timings) > 0 else None
+                record.period_2_time = timings[1] if len(timings) > 1 else None
+                record.period_3_time = timings[2] if len(timings) > 2 else None
+                record.period_4_time = timings[3] if len(timings) > 3 else None
+                record.period_5_time = timings[4] if len(timings) > 4 else None
+                record.period_6_time = timings[5] if len(timings) > 5 else None
+                record.period_7_time = timings[6] if len(timings) > 6 else None
+                record.period_8_time = timings[7] if len(timings) > 7 else None
+                record.period_9_time = timings[8] if len(timings) > 8 else None
+                record.period_10_time = timings[9] if len(timings) > 9 else None
             
         db.session.commit()
         return jsonify({'success': True, 'message': 'Timetable saved successfully!'})
@@ -1203,7 +1326,7 @@ def export_students():
     year = request.args.get('year')
     dept = request.args.get('dept')
     
-    query = User.query.filter_by(role='student')
+    query = User.query.filter_by(role='student', college_id=current_user.college_id)
     if year:
         query = query.filter_by(year=year)
     if dept:
@@ -1315,8 +1438,40 @@ def manage_departments():
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
     
-    departments = Department.query.order_by(Department.name).all()
+    departments = Department.query.filter_by(college_id=current_user.college_id).order_by(Department.name).all()
     return render_template('admin/departments.html', departments=departments)
+
+@app.route('/<college_slug>/admin/departments/view/<int:dept_id>')
+@login_required
+def view_department(dept_id):
+    if not current_user.is_admin():
+        flash('Access denied', 'danger')
+        return redirect(url_for('manage_departments'))
+    
+    department = Department.query.get_or_404(dept_id)
+    
+    students = User.query.filter_by(role='student', department=department.name, college_id=current_user.college_id).order_by(User.year, User.section, User.roll_no).all()
+    total_students = len(students)
+    
+    students_by_section = {}
+    for s in students:
+        sec = f"Year {s.year} - Sec {s.section}"
+        if sec not in students_by_section:
+            students_by_section[sec] = []
+        students_by_section[sec].append(s)
+        
+    faculty_list = User.query.filter(User.role.in_(['faculty', 'hod']), User.department==department.name, User.college_id==current_user.college_id).all()
+    
+    hods = [f for f in faculty_list if f.role == 'hod']
+    incharges = [f for f in faculty_list if f.incharge_department == department.name]
+    
+    return render_template('admin/department_details.html',
+                           department=department,
+                           total_students=total_students,
+                           students_by_section=students_by_section,
+                           hods=hods,
+                           incharges=incharges,
+                           faculty_list=faculty_list)
 
 @app.route('/<college_slug>/admin/departments/add', methods=['POST'])
 @login_required
@@ -1348,13 +1503,13 @@ def delete_department(dept_id):
     department = Department.query.get_or_404(dept_id)
     
     # Safe delete check: check if any users belong to this department
-    linked_users = User.query.filter_by(department=department.name).first()
+    linked_users = User.query.filter_by(department=department.name, college_id=current_user.college_id).first()
     if linked_users:
         flash(f'Cannot delete department "{department.name}" because it is linked to existing students or faculty.', 'danger')
         return redirect(url_for('manage_departments'))
     
     # Also check for class incharge assignments just in case
-    linked_incharge = User.query.filter_by(incharge_department=department.name).first()
+    linked_incharge = User.query.filter_by(incharge_department=department.name, college_id=current_user.college_id).first()
     if linked_incharge:
         flash(f'Cannot delete department "{department.name}" because it is assigned as an incharge department for faculty.', 'danger')
         return redirect(url_for('manage_departments'))
@@ -1380,11 +1535,11 @@ def manage_faculty():
                 User.department == current_user.department,
                 User.handling_departments.like(f"%{current_user.department}%")
             )
-        ).all()
-        departments = [Department.query.filter_by(name=current_user.department).first()]
+        , User.college_id == current_user.college_id).all()
+        departments = [Department.query.filter_by(name=current_user.department, college_id=current_user.college_id).first()]
     else:
-        faculty = User.query.filter(User.role.in_(['faculty', 'hod'])).all()
-        departments = Department.query.order_by(Department.name).all()
+        faculty = User.query.filter(User.role.in_(['faculty', 'hod']), User.college_id == current_user.college_id).all()
+        departments = Department.query.filter_by(college_id=current_user.college_id).order_by(Department.name).all()
         
     return render_template('admin/faculty.html', faculty=faculty, departments=departments)
 
@@ -1451,7 +1606,7 @@ def edit_faculty(faculty_id):
         return redirect(url_for('manage_faculty'))
         
     # Get departments for dropdown
-    departments = Department.query.all()
+    departments = Department.query.filter_by(college_id=current_user.college_id).all()
     return render_template('admin/edit_faculty.html', faculty=faculty, departments=departments)
 
 @app.route('/<college_slug>/admin/faculty/delete/<int:faculty_id>')
@@ -1512,7 +1667,8 @@ def add_faculty():
         role=role,
         department=department,
         handling_departments=handling_departments_str,
-        subjects=subjects_str
+        subjects=subjects_str,
+        college_id=current_user.college_id
     )
     
     password = request.form.get('password')
@@ -1536,14 +1692,14 @@ def manage_clubs():
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
     
-    clubs = Club.query.all()
+    clubs = Club.query.filter_by(college_id=current_user.college_id).all()
     
     # Calculate stats for the dashboard
     stats = {
         'total_clubs': len(clubs),
         'active_portals': Club.query.filter_by(is_active=True).count(),
-        'upcoming_events': Event.query.filter_by(status='upcoming').count(),
-        'active_events': Event.query.filter_by(status='active').count()
+        'upcoming_events': Event.query.filter_by(status='upcoming', college_id=current_user.college_id).count(),
+        'active_events': Event.query.filter_by(status='active', college_id=current_user.college_id).count()
     }
     
     return render_template('admin/clubs.html', clubs=clubs, stats=stats)
@@ -1690,7 +1846,7 @@ def admin_permissions():
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
     
-    permissions = Permission.query.order_by(Permission.applied_at.desc()).all()
+    permissions = Permission.query.filter_by(college_id=current_user.college_id).order_by(Permission.applied_at.desc()).all()
     return render_template('admin/permissions.html', permissions=permissions)
 
 @app.route('/<college_slug>/admin/permission/<int:permission_id>')
@@ -1727,6 +1883,64 @@ def admin_update_permission(permission_id, action):
     return redirect(url_for('admin_permissions'))
 
 # Faculty Routes
+@app.route('/<college_slug>/faculty/view-timetable')
+@login_required
+def faculty_view_timetable():
+    if not current_user.is_faculty():
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        flash('Timetable service is currently disabled by administrator.', 'warning')
+        return redirect(url_for('faculty_dashboard'))
+    
+    departments = Department.query.filter_by(college_id=current_user.college_id).order_by(Department.name).all()
+    
+    selected_dept = request.args.get('department')
+    selected_year = request.args.get('year')
+    selected_section = request.args.get('section')
+    
+    timetable_data = {}
+    active_days = []
+    max_periods = 7
+    if selected_dept and selected_year and selected_section:
+        records = TimeTable.query.filter_by(college_id=current_user.college_id, 
+            department=selected_dept, 
+            year=selected_year, 
+            section=selected_section
+        ).all()
+        for r in records:
+            timetable_data[r.day] = r
+            
+        if records:
+            day_order = {'Monday':1, 'Tuesday':2, 'Wednesday':3, 'Thursday':4, 'Friday':5, 'Saturday':6, 'Sunday':7}
+            active_days = sorted([r.day for r in records], key=lambda d: day_order.get(d, 99))
+            
+            max_p = 0
+            for r in records:
+                for i in range(10, 0, -1):
+                    if getattr(r, f'period_{i}') or getattr(r, f'period_{i}_time'):
+                        if i > max_p:
+                            max_p = i
+                        break
+            if max_p > 0:
+                max_periods = max_p
+
+    if not active_days:
+        active_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        max_periods = 7
+            
+    return render_template('faculty/view_timetable.html', 
+                           departments=departments,
+                           selected_dept=selected_dept,
+                           selected_year=selected_year,
+                           selected_section=selected_section,
+                           timetable_data=timetable_data,
+                           active_days=active_days,
+                           max_periods=max_periods)
+
 @app.route('/<college_slug>/faculty/dashboard')
 @login_required
 def faculty_dashboard():
@@ -1761,6 +1975,8 @@ def faculty_dashboard():
         return grouped
 
     is_incharge = current_user.is_incharge()
+    # To keep dashboards clean, hide permissions applied more than 15 days ago
+    visibility_cutoff = datetime.utcnow() - timedelta(days=15)
     
     if current_user.is_hod():
         # HOD sees pending permissions from their department
@@ -1768,7 +1984,8 @@ def faculty_dashboard():
             User, Permission.student_id == User.id
         ).filter(
             User.department == current_user.department,
-            Permission.status == 'pending'
+            Permission.status == 'pending',
+            Permission.applied_at >= visibility_cutoff
         ).all()
         
         pending_grouped = group_permissions(pending_permissions_query)
@@ -1779,7 +1996,8 @@ def faculty_dashboard():
             User, Permission.student_id == User.id
         ).filter(
             User.department == current_user.department,
-            Permission.status == 'approved'
+            Permission.status == 'approved',
+            Permission.applied_at >= visibility_cutoff
         ).all()
         
         approved_grouped = group_permissions(approved_permissions_query)
@@ -1792,7 +2010,8 @@ def faculty_dashboard():
         ).filter(
             User.department == current_user.incharge_department,
             User.section == current_user.incharge_section,
-            Permission.status == 'pending'
+            Permission.status == 'pending',
+            Permission.applied_at >= visibility_cutoff
         ).all()
         
         pending_grouped = group_permissions(pending_permissions_query)
@@ -1805,7 +2024,8 @@ def faculty_dashboard():
             User, Permission.student_id == User.id
         ).filter(
             User.department.in_(visible_depts),
-            Permission.status == 'approved'
+            Permission.status == 'approved',
+            Permission.applied_at >= visibility_cutoff
         ).all()
         
         approved_grouped = group_permissions(approved_permissions_query)
@@ -1822,7 +2042,8 @@ def faculty_dashboard():
             User, Permission.student_id == User.id
         ).filter(
             User.department.in_(visible_depts),
-            Permission.status == 'approved'
+            Permission.status == 'approved',
+            Permission.applied_at >= visibility_cutoff
         ).all()
         
         approved_grouped = group_permissions(approved_permissions_query)
@@ -1891,23 +2112,51 @@ def get_faculty_students():
         
     department = request.args.get('department')
     section = request.args.get('section')
-    
     year = request.args.get('year')
+    date_str = request.args.get('date')
+    
+    # Default to IST today if no date provided
+    if not date_str:
+        ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        query_date = ist_now.date()
+    else:
+        try:
+            query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            query_date = (datetime.utcnow() + timedelta(hours=5, minutes=30)).date()
     
     if not department or not section or not year:
         return jsonify({'error': 'Missing department, section or year'}), 400
         
     students = User.query.filter_by(role='student', department=department, section=section, year=year).order_by(User.roll_no).all()
     
+    # Fetch approved permissions for these students on this date
+    student_ids = [s.id for s in students]
+    permissions = Permission.query.filter(
+        Permission.student_id.in_(student_ids),
+        Permission.date == query_date,
+        Permission.status == 'approved'
+    ).all()
+    
+    # Map for easy lookup
+    od_map = {p.student_id: (p.event.name if p.event else p.custom_event or p.club.name) for p in permissions}
+    
     return jsonify([{
         'id': s.id,
         'roll_no': s.roll_no,
-        'name': s.get_full_name()
+        'name': s.get_full_name(),
+        'has_pa': s.id in od_map,
+        'pa_reason': od_map.get(s.id)
     } for s in students])
 
 @app.route('/<college_slug>/api/timetable/today')
 @login_required
 def get_today_timetable():
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        return jsonify({'error': 'Timetable service is disabled for this institution.', 'subjects': []}), 403
+        
     dept = request.args.get('department')
     year = request.args.get('year')
     sec = request.args.get('section')
@@ -1919,7 +2168,13 @@ def get_today_timetable():
     ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
     day = ist_now.strftime('%A')
     
-    record = TimeTable.query.filter_by(department=dept, year=year, section=sec, day=day).first()
+    record = TimeTable.query.filter_by(
+        college_id=college.id if college else current_user.college_id,
+        department=dept, 
+        year=year, 
+        section=sec, 
+        day=day
+    ).first()
     if not record:
         return jsonify({'subjects': []})
         
@@ -2081,6 +2336,12 @@ def incharge_timetable():
         flash('Access denied. Only Class Incharges can access this page.', 'danger')
         return redirect(url_for('faculty_dashboard'))
     
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        flash('Timetable service is currently disabled for this institution.', 'warning')
+        return redirect(url_for('faculty_dashboard'))
+    
     dept = current_user.incharge_department
     sec = current_user.incharge_section
     
@@ -2091,7 +2352,7 @@ def incharge_timetable():
     student = User.query.filter_by(department=dept, section=sec, role='student').first()
     year = student.year if student else 1
     
-    timetable_records = TimeTable.query.filter_by(department=dept, year=year, section=sec).all()
+    timetable_records = TimeTable.query.filter_by(college_id=current_user.college_id, department=dept, year=year, section=sec).all()
     timetable_data = {r.day: r for r in timetable_records}
     
     return render_template('faculty/incharge_timetable.html', 
@@ -2104,6 +2365,11 @@ def swap_periods():
     if not (current_user.is_faculty() and current_user.is_incharge()):
         return jsonify({'error': 'Unauthorized'}), 403
         
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        return jsonify({'error': 'Timetable service is disabled for this institution.'}), 403
+        
     data = request.json
     day = data.get('day')
     p1_idx = data.get('p1') # 1-7
@@ -2115,7 +2381,13 @@ def swap_periods():
     student = User.query.filter_by(department=dept, section=sec, role='student').first()
     year = student.year if student else 1
     
-    record = TimeTable.query.filter_by(department=dept, year=year, section=sec, day=day).first()
+    record = TimeTable.query.filter_by(
+        college_id=college.id if college else current_user.college_id,
+        department=dept, 
+        year=year, 
+        section=sec, 
+        day=day
+    ).first()
     if not record:
         return jsonify({'error': 'Timetable not found for this day'}), 404
         
@@ -2218,19 +2490,25 @@ def student_dashboard():
     
     # Update event statuses automatically
     now = datetime.utcnow() + timedelta(hours=5, minutes=30)
-    # Only need to check those that ARE currently marked as upcoming or active but might have expired
     potential_expired = Event.query.filter(Event.status.in_(['upcoming', 'active'])).all()
+    changed = False
     for event in potential_expired:
+        new_status = event.status
         if event.end_date and now > event.end_date:
-            event.status = 'expired'
+            new_status = 'expired'
         elif event.start_date and now >= event.start_date and (not event.end_date or now <= event.end_date):
-            event.status = 'active'
+            new_status = 'active'
         else:
-            event.status = 'upcoming'
-    db.session.commit()
+            new_status = 'upcoming'
+            
+        if event.status != new_status:
+            event.status = new_status
+            changed = True
+    if changed:
+        db.session.commit()
 
     # Show ALL events (Active, Upcoming, and Past) for the dashboard list
-    all_events = Event.query.order_by(Event.start_date.desc()).all()
+    all_events = Event.query.filter_by(college_id=g.current_college.id).order_by(Event.start_date.desc()).limit(20).all()
     
     student_events = []
     user_dept = current_user.department.strip().lower() if current_user.department else ""
@@ -2241,34 +2519,65 @@ def student_dashboard():
         if not allowed or any(d.strip().lower() == user_dept for d in allowed):
             student_events.append(event)
             
-    permissions = Permission.query.filter_by(student_id=current_user.id).order_by(Permission.applied_at.desc()).all()
+    # Only show permissions applied within the last 15 days
+    visibility_cutoff = datetime.utcnow() - timedelta(days=15)
+    permissions = Permission.query.filter_by(student_id=current_user.id).filter(
+        Permission.applied_at >= visibility_cutoff
+    ).order_by(Permission.applied_at.desc()).all()
     
     registrations = EventResponse.query.filter_by(student_id=current_user.id).order_by(EventResponse.submitted_at.desc()).all()
     registered_ids = [r.event_id for r in registrations]
     
     # --- Timetable Logic ---
-    ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
-    day = ist_now.strftime('%A')
-    today_timetable = TimeTable.query.filter_by(
-        department=current_user.department,
-        year=current_user.year,
-        section=current_user.section,
-        day=day
-    ).first()
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict):
+        features = {}
+
+    today_timetable = None
+    timetable_subjects = {}
+    
+    if features.get('timetable'):
+        ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        day = ist_now.strftime('%A')
+        
+        timetable_rows = TimeTable.query.filter_by(
+            college_id=college.id if college else current_user.college_id,
+            department=current_user.department,
+            year=current_user.year,
+            section=current_user.section
+        ).all()
+        
+        today_timetable = next((row for row in timetable_rows if row.day == day), None)
+        
+        for row in timetable_rows:
+            for p in row.get_periods():
+                if p and p.strip() and p.strip().upper() not in ['BREAK', 'LUNCH', 'LUNCH BREAK']:
+                    timetable_subjects[p.strip().lower()] = p.strip()
+    else:
+        ist_now = datetime.utcnow() + timedelta(hours=5, minutes=30)
     
     # --- Attendance Statistics ---
     attendance_records = ClassAttendance.query.filter_by(student_id=current_user.id).all()
     
     overall_stats = {'present': 0, 'total': 0, 'percentage': 0}
+    this_week_stats = {'present': 0, 'total': 0, 'percentage': 0}
     subject_stats = {} # { 'Subject Name': {'present': 0, 'total': 0, 'percentage': 0} }
     
     today_date = datetime.utcnow().date()
+    start_of_week = today_date - timedelta(days=today_date.weekday())
     today_attendance = []
+    today_subject_stats = {}
     
     for record in attendance_records:
         overall_stats['total'] += 1
         if record.status == 'present':
             overall_stats['present'] += 1
+            
+        if record.date >= start_of_week and record.date <= today_date:
+            this_week_stats['total'] += 1
+            if record.status == 'present':
+                this_week_stats['present'] += 1
             
         if record.subject not in subject_stats:
             subject_stats[record.subject] = {'present': 0, 'total': 0, 'percentage': 0}
@@ -2278,6 +2587,12 @@ def student_dashboard():
             subject_stats[record.subject]['present'] += 1
             
         if record.date == today_date:
+            if record.subject not in today_subject_stats:
+                today_subject_stats[record.subject] = {'present': 0, 'total': 0, 'percentage': 0}
+            today_subject_stats[record.subject]['total'] += 1
+            if record.status == 'present':
+                today_subject_stats[record.subject]['present'] += 1
+                
             category = 'Class'
             sub_name = record.subject.upper()
             if 'LAB' in sub_name or 'WORKSHOP' in sub_name or 'SEMINAR' in sub_name:
@@ -2294,9 +2609,37 @@ def student_dashboard():
     if overall_stats['total'] > 0:
         overall_stats['percentage'] = round((overall_stats['present'] / overall_stats['total']) * 100, 1)
         
+    if this_week_stats['total'] > 0:
+        this_week_stats['percentage'] = round((this_week_stats['present'] / this_week_stats['total']) * 100, 1)
+        
     for sub, stats in subject_stats.items():
         if stats['total'] > 0:
             stats['percentage'] = round((stats['present'] / stats['total']) * 100, 1)
+            
+    for sub, stats in today_subject_stats.items():
+        if stats['total'] > 0:
+            stats['percentage'] = round((stats['present'] / stats['total']) * 100, 1)
+            
+    if timetable_subjects:
+        new_subject_stats = {}
+        for sub, stats in subject_stats.items():
+            if sub.strip().lower() in timetable_subjects:
+                new_subject_stats[sub] = stats
+                
+        existing_lower = {k.strip().lower() for k in new_subject_stats.keys()}
+        for sub_lower, sub_original in timetable_subjects.items():
+            if sub_lower not in existing_lower:
+                new_subject_stats[sub_original] = {'present': 0, 'total': 0, 'percentage': 0}
+                
+        subject_stats = new_subject_stats
+        
+    from models import ExamResult
+    exam_results = ExamResult.query.filter_by(student_id=current_user.id).all()
+    total_marks = sum(r.marks for r in exam_results if r.marks)
+    avg_marks = round(total_marks / len(exam_results), 1) if exam_results else 0
+
+    # Mock data for UI removed to avoid confusion
+    attendance_rank = "Top 18%"
         
     return render_template('student/dashboard.html', 
                           events=student_events[:4],
@@ -2304,10 +2647,15 @@ def student_dashboard():
         registrations=registrations[:5],
         registered_ids=registered_ids, # Keep this from original
         overall_stats=overall_stats,
+        this_week_stats=this_week_stats,
         subject_stats=subject_stats,
+        today_subject_stats=today_subject_stats,
         today_attendance=today_attendance,
         today_timetable=today_timetable,
-        ist_now=ist_now
+        attendance_rank=attendance_rank,
+        ist_now=ist_now,
+        avg_marks=avg_marks,
+        exam_results=exam_results
     )
 
 @app.route('/<college_slug>/api/student/attendance/history')
@@ -2345,6 +2693,241 @@ def get_attendance_history():
         })
         
     return jsonify(result)
+
+@app.route('/<college_slug>/api/student/attendance_by_date')
+@login_required
+def get_attendance_by_date():
+    if not current_user.is_student():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    date_str = request.args.get('date')
+    if not date_str:
+        return jsonify({'error': 'Date is required'}), 400
+        
+    try:
+        query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid date format'}), 400
+        
+    attendance_records = ClassAttendance.query.filter_by(
+        student_id=current_user.id,
+        date=query_date
+    ).all()
+    
+    # Fetch timetable subjects to filter out non-timetable subjects
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    timetable_subjects = set()
+    if isinstance(features, dict) and features.get('timetable'):
+        timetable_rows = TimeTable.query.filter_by(
+            college_id=college.id if college else current_user.college_id,
+            department=current_user.department,
+            year=current_user.year,
+            section=current_user.section
+        ).all()
+        for row in timetable_rows:
+            for p in row.get_periods():
+                if p and p.strip() and p.strip().upper() not in ['BREAK', 'LUNCH', 'LUNCH BREAK']:
+                    timetable_subjects.add(p.strip().lower())
+    
+    date_subject_stats = {}
+    for record in attendance_records:
+        # Only include subjects present in the current timetable
+        if timetable_subjects and record.subject.strip().lower() not in timetable_subjects:
+            continue
+            
+        if record.subject not in date_subject_stats:
+            date_subject_stats[record.subject] = {'present': 0, 'total': 0, 'percentage': 0}
+        
+        date_subject_stats[record.subject]['total'] += 1
+        if record.status == 'present':
+            date_subject_stats[record.subject]['present'] += 1
+            
+    for sub, stats in date_subject_stats.items():
+        if stats['total'] > 0:
+            stats['percentage'] = round((stats['present'] / stats['total']) * 100, 1)
+            
+    return jsonify(date_subject_stats)
+
+@app.route('/<college_slug>/student/performance', methods=['GET', 'POST'])
+@login_required
+def student_performance():
+    if not current_user.is_student():
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        perf_type = request.form.get('type')
+        title = request.form.get('title')
+        description = request.form.get('description')
+        certificate_id = request.form.get('certificate_id')
+        
+        proof_filename = None
+        if 'proof' in request.files:
+            file = request.files['proof']
+            if file and file.filename != '':
+                filename = secure_filename(f"{current_user.id}_{int(datetime.now().timestamp())}_{file.filename}")
+                upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'performance')
+                os.makedirs(upload_folder, exist_ok=True)
+                file.save(os.path.join(upload_folder, filename))
+                proof_filename = filename
+                
+        perf = StudentPerformance(
+            student_id=current_user.id,
+            college_id=current_user.college_id,
+            type=perf_type,
+            title=title,
+            description=description,
+            certificate_id=certificate_id,
+            proof_filename=proof_filename
+        )
+        db.session.add(perf)
+        db.session.commit()
+        flash('Performance record added successfully!', 'success')
+        return redirect(url_for('student_performance'))
+        
+    records = StudentPerformance.query.filter_by(student_id=current_user.id).order_by(StudentPerformance.created_at.desc()).all()
+    skills = [r for r in records if r.type == 'skill']
+    certificates = [r for r in records if r.type == 'certificate']
+    internships = [r for r in records if r.type == 'internship']
+    achievements = [r for r in records if r.type == 'achievement']
+    
+    return render_template('student/performance.html', 
+                          skills=skills, 
+                          certificates=certificates, 
+                          internships=internships, 
+                          achievements=achievements)
+
+@app.route('/<college_slug>/analytics/performance')
+@login_required
+def performance_analytics():
+    if not (current_user.role in ['admin', 'superadmin'] or (current_user.is_faculty() and current_user.is_incharge())):
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    search_roll = request.args.get('roll_no', '').strip().upper()
+    
+    # Base query for students in their purview
+    students_query = User.query.filter_by(college_id=current_user.college_id, role='student')
+    
+    if current_user.is_faculty() and current_user.is_incharge():
+        students_query = students_query.filter_by(
+            department=current_user.incharge_department,
+            section=current_user.incharge_section
+        )
+        
+    student = None
+    records = []
+    
+    if search_roll:
+        student = students_query.filter_by(roll_no=search_roll).first()
+        if student:
+            records = StudentPerformance.query.filter_by(student_id=student.id).order_by(StudentPerformance.created_at.desc()).all()
+        else:
+            flash(f'Student with Roll Number {search_roll} not found in your purview.', 'warning')
+            
+    # Fetch recent updates grouped by student
+    from sqlalchemy import func
+    
+    subq = db.session.query(
+        StudentPerformance.student_id,
+        func.max(StudentPerformance.created_at).label('last_updated'),
+        func.count(StudentPerformance.id).label('total_updates')
+    ).group_by(StudentPerformance.student_id).subquery()
+    
+    recent_updates = db.session.query(User, subq.c.last_updated, subq.c.total_updates).join(
+        subq, User.id == subq.c.student_id
+    ).filter(
+        User.college_id == current_user.college_id,
+        User.role == 'student'
+    )
+    
+    if current_user.is_faculty() and current_user.is_incharge():
+        recent_updates = recent_updates.filter(
+            User.department == current_user.incharge_department,
+            User.section == current_user.incharge_section
+        )
+        
+    recent_updates = recent_updates.order_by(subq.c.last_updated.desc()).limit(20).all()
+    
+    # Process to handle string parsing (SQLite func.max behavior) and IST conversion
+    processed_updates = []
+    for row in recent_updates:
+        stu, last_upd, total_upd = row
+        if isinstance(last_upd, str):
+            try:
+                # SQLite datetime strings format: 'YYYY-MM-DD HH:MM:SS.mmmmmm'
+                last_upd = datetime.strptime(last_upd.split('.')[0], '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                pass
+        
+        # Convert UTC to IST (+5:30)
+        if isinstance(last_upd, datetime):
+            last_upd = last_upd + timedelta(hours=5, minutes=30)
+            
+        processed_updates.append((stu, last_upd, total_upd))
+    
+    return render_template('analytics/performance.html', 
+                          student=student, 
+                          records=records, 
+                          recent_updates=processed_updates,
+                          search_roll=search_roll)
+
+@app.route('/<college_slug>/api/student/timetable/full')
+@login_required
+def get_full_timetable():
+    if not current_user.is_student():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    college = g.current_college or current_user.college
+    features = college.get_features if college else {}
+    if not isinstance(features, dict) or not features.get('timetable'):
+        return jsonify({'error': 'Timetable service is disabled for your institution.', 'times': [], 'schedule': []}), 403
+        
+    timetable_rows = TimeTable.query.filter_by(
+        college_id=college.id if college else current_user.college_id,
+        department=current_user.department,
+        year=current_user.year,
+        section=current_user.section
+    ).all()
+    
+    # Sort days conventionally
+    day_order = {'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}
+    timetable_rows.sort(key=lambda x: day_order.get(x.day, 99))
+    
+    # Get standard period times from the first available row, or defaults
+    times = []
+    if timetable_rows:
+        first = timetable_rows[0]
+        times = [
+            first.period_1_time or '09:30 - 10:20',
+            first.period_2_time or '10:20 - 11:10',
+            first.period_3_time or '11:10 - 12:00',
+            first.period_4_time or '01:00 - 01:50',
+            first.period_5_time or '01:50 - 02:40',
+            first.period_6_time or '02:40 - 03:30',
+            first.period_7_time or '03:30 - 04:20'
+        ]
+    else:
+        times = [
+            '09:30 - 10:20', '10:20 - 11:10', '11:10 - 12:00',
+            '01:00 - 01:50', '01:50 - 02:40', '02:40 - 03:30', '03:30 - 04:20'
+        ]
+        
+    schedule = []
+    for row in timetable_rows:
+        schedule.append({
+            'day': row.day,
+            'periods': row.get_periods()
+        })
+        
+    return jsonify({
+        'times': times,
+        'schedule': schedule,
+        'department': current_user.department,
+        'year': current_user.year,
+        'section': current_user.section
+    })
 
 @app.route('/<college_slug>/api/student/timeline/history')
 @login_required
@@ -2485,7 +3068,7 @@ def get_student_week_timetable():
     if not current_user.is_student():
         return jsonify({'error': 'Unauthorized'}), 403
     
-    timetable_records = TimeTable.query.filter_by(
+    timetable_records = TimeTable.query.filter_by(college_id=current_user.college_id, 
         department=current_user.department,
         year=current_user.year,
         section=current_user.section
@@ -2537,11 +3120,18 @@ def apply_permission():
     # Pre-sync event statuses
     now = datetime.utcnow() + timedelta(hours=5, minutes=30)
     potential_events = Event.query.filter(Event.status.in_(['active', 'upcoming'])).all()
+    changed = False
     for e in potential_events:
-        if e.end_date and now > e.end_date: e.status = 'expired'
-        elif e.start_date and now >= e.start_date and (not e.end_date or now <= e.end_date): e.status = 'active'
-        else: e.status = 'upcoming'
-    db.session.commit()
+        new_status = e.status
+        if e.end_date and now > e.end_date: new_status = 'expired'
+        elif e.start_date and now >= e.start_date and (not e.end_date or now <= e.end_date): new_status = 'active'
+        else: new_status = 'upcoming'
+        
+        if e.status != new_status:
+            e.status = new_status
+            changed = True
+    if changed:
+        db.session.commit()
 
     # Only show clubs that have active or upcoming events for THIS student's department
     all_active_event_clubs = Club.query.join(Event).filter(Event.status.in_(['active', 'upcoming'])).all()
@@ -2574,7 +3164,10 @@ def student_permissions():
         flash('Access denied', 'danger')
         return redirect(url_for('index'))
     
-    permissions = Permission.query.filter_by(student_id=current_user.id).order_by(Permission.applied_at.desc()).all()
+    visibility_cutoff = datetime.utcnow() - timedelta(days=15)
+    permissions = Permission.query.filter_by(student_id=current_user.id).filter(
+        Permission.applied_at >= visibility_cutoff
+    ).order_by(Permission.applied_at.desc()).all()
     return render_template('student/permissions.html', permissions=permissions)
 
 @app.route('/<college_slug>/student/permission/<int:permission_id>')
@@ -2690,7 +3283,7 @@ def admin_ledger():
         return redirect(url_for('index'))
     
     # Get all clubs
-    clubs = Club.query.all()
+    clubs = Club.query.filter_by(college_id=current_user.college_id).all()
     
     # Get events that have collected funds but not fully settled
     from sqlalchemy import and_

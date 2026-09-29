@@ -15,22 +15,64 @@
     /* Club portal inherits GenZCampus design system. Override club-specific vars here. */
     .club-sidebar {
       width: var(--sidebar-w);
-      min-height: 100vh;
+      height: 100vh;
+      max-height: 100vh;
+      align-self: flex-start;
       background: var(--sidebar-bg);
       border-right: 1px solid var(--sidebar-border);
       display: flex;
       flex-direction: column;
-      position: fixed;
+      position: sticky;
       top: 0;
       left: 0;
       z-index: 200;
+      flex-shrink: 0;
+      transition: width var(--t-slow);
+      overflow-y: auto;
+      overflow-x: hidden;
       box-shadow: var(--shadow-sm);
     }
 
+    /* Sidebar Resizer (Horizontal Splitter) */
+    .sidebar-resizer {
+      width: 4px;
+      height: 100vh;
+      align-self: flex-start;
+      background: transparent;
+      cursor: col-resize;
+      z-index: 210;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      transition: background var(--t-fast);
+      margin-left: -2px;
+      margin-right: -2px;
+    }
+
+    .sidebar-resizer:hover,
+    .is-resizing .sidebar-resizer {
+      background: var(--clr-primary);
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.4);
+    }
+
+    body.is-resizing {
+      cursor: col-resize !important;
+      user-select: none !important;
+    }
+
+    body.is-resizing .club-sidebar,
+    body.is-resizing .club-main,
+    body.is-resizing .club-topbar,
+    body.is-resizing .sidebar-resizer {
+      transition: none !important;
+    }
+
     .club-main {
-      margin-left: var(--sidebar-w);
+      flex: 1;
+      min-width: 0;
       min-height: 100vh;
-      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .club-topbar {
@@ -50,7 +92,7 @@
     .club-content {
       padding: 24px;
       padding-bottom: calc(var(--bottom-nav-h) + 24px);
-      overflow-x: hidden;
+      flex: 1;
     }
 
     /* Mobile bottom nav */
@@ -70,6 +112,7 @@
 
     @media (max-width: 767.98px) {
       .club-sidebar { display: none; }
+      .sidebar-resizer { display: none; }
       .club-main { margin-left: 0; }
       .club-topbar { display: none !important; }
       .club-bottom-nav { display: block; }
@@ -79,7 +122,6 @@
 
     @media (min-width: 768px) and (max-width: 1023.98px) {
       .club-sidebar { width: var(--sidebar-collapsed); }
-      .club-main { margin-left: var(--sidebar-collapsed); }
       .sidebar-brand-text, .sidebar-user-info, .sidebar-section-label, .sidebar-link span { display: none; }
       .sidebar-user { justify-content: center; padding: 10px; }
       .sidebar-brand { justify-content: center; }
@@ -87,11 +129,15 @@
     }
   </style>
 
-  <!-- No-flash theme -->
+  <!-- No-flash theme & sidebar width load -->
   <script>
     (function() {
       var t = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
+      
+      // Load and apply persistent sidebar width immediately to prevent layout shift
+      var w = localStorage.getItem('pms_sidebar_width') || '240px';
+      document.documentElement.style.setProperty('--sidebar-w', w);
     })();
   </script>
 </head>
@@ -158,6 +204,9 @@
       </a>
     </div>
   </aside>
+
+  <!-- Sidebar Resizer Splitter -->
+  <div class="sidebar-resizer" id="sidebarResizer"></div>
 
   <!-- Main -->
   <div class="club-main">
@@ -282,6 +331,31 @@
         setTimeout(() => t.remove(), 300);
       }, 4000);
     });
+
+    // Sidebar Resizer System
+    const resizer = document.getElementById('sidebarResizer');
+    if (resizer) {
+      let isResizing = false;
+      resizer.addEventListener('mousedown', () => {
+        isResizing = true;
+        document.body.classList.add('is-resizing');
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        let newW = e.clientX;
+        if (newW < 180) newW = 180;
+        if (newW > 450) newW = 450;
+        const wStr = newW + 'px';
+        document.documentElement.style.setProperty('--sidebar-w', wStr);
+        localStorage.setItem('pms_sidebar_width', wStr);
+      });
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          document.body.classList.remove('is-resizing');
+        }
+      });
+    }
   });
 </script>
 {% block scripts %}{% endblock %}

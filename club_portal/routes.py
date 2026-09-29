@@ -272,8 +272,9 @@ def student_events():
         flash('Only students can access this page', 'danger')
         return redirect(url_for('index'))
     
-    # Show ALL events (Active, Upcoming, and Past)
-    all_events = Event.query.order_by(Event.start_date.desc()).all()
+    # Show events (limit 50 to avoid loading all DB records)
+    from flask import g
+    all_events = Event.query.filter_by(college_id=g.current_college.id).order_by(Event.start_date.desc()).limit(50).all()
     
     available_events = []
     user_dept = current_user.department.strip().lower() if current_user.department else ""

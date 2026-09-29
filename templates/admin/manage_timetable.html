@@ -44,7 +44,7 @@
     }
     .timetable-grid {
         display: grid;
-        grid-template-columns: 120px repeat(7, minmax(110px, 1fr));
+        grid-template-columns: 120px repeat(var(--cols, 7), minmax(110px, 1fr));
         gap: 1px;
         background: #e2e8f0;
         border: 1px solid #e2e8f0;
@@ -166,6 +166,12 @@
                 {{ selected_dept }} - {{ selected_year }} Year (Section {{ selected_section }}) Schedule
             </h5>
             <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary fw-bold shadow-sm" id="addColBtn">
+                    <i class="fas fa-plus me-1"></i> ADD PERIOD
+                </button>
+                <button type="button" class="btn btn-outline-info fw-bold shadow-sm" id="addRowBtn">
+                    <i class="fas fa-plus me-1"></i> ADD DAY
+                </button>
                 <button class="btn btn-success btn-save shadow" id="saveBtn">
                     <i class="fas fa-save me-2"></i> SAVE TIMETABLE
                 </button>
@@ -173,30 +179,36 @@
         </div>
         <div class="card-body p-0">
             <div class="timetable-grid-wrapper">
-                <div class="timetable-grid" id="timetableGrid">
+                <div class="timetable-grid" id="timetableGrid" style="--cols: {{ max_periods }};">
                     <!-- Header Row -->
                     <div class="day-header" style="background:#4e73df; color:white;">DAY / PERIOD</div>
-                {% for i in range(1, 8) %}
-                <div class="period-header">P{{ i }}</div>
+                {% for i in range(1, max_periods + 1) %}
+                <div class="period-header d-flex justify-content-between align-items-center px-2">
+                    <span>P{{ i }}</span>
+                    <i class="fas fa-trash-alt text-light clear-col-btn" data-col="{{ i }}" style="cursor:pointer; opacity: 0.8;" title="Clear Column"></i>
+                </div>
                 {% endfor %}
 
                 <!-- Timings Row -->
-                <div class="day-header" style="background:#f1f5f9;">TIMINGS</div>
-                {% for i in range(1, 8) %}
+                <div class="day-header row-marker" id="timings-row" style="background:#f1f5f9;">TIMINGS</div>
+                {% for i in range(1, max_periods + 1) %}
                 <div class="grid-cell" style="background:#f1f5f9;">
                     {% set timing_val = getattr(timetable_data.get('Monday'), 'period_' ~ i ~ '_time') if timetable_data else '' %}
                     <input type="text" class="period-timing-input w-100 border-0 bg-transparent text-center fw-bold small" 
                            data-period="{{ i }}" 
                            placeholder="00:00 - 00:00"
-                           value="{{ timing_val if timing_val else (['09:30 - 10:20', '10:20 - 11:10', '11:10 - 12:00', '13:00 - 13:50', '13:50 - 14:40', '14:40 - 15:30', '15:30 - 16:20'][i-1]) }}">
+                           value="{{ timing_val if timing_val else (['09:30 - 10:20', '10:20 - 11:10', '11:10 - 12:00', '13:00 - 13:50', '13:50 - 14:40', '14:40 - 15:30', '15:30 - 16:20', '04:20 - 05:10', '05:10 - 06:00', '06:00 - 06:50'][i-1] if i <= 10 else '') }}">
                 </div>
                 {% endfor %}
 
                 <!-- Daily Rows -->
-                {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
-                <div class="day-header">{{ day }}</div>
+                {% for day in active_days %}
+                <div class="day-header row-marker d-flex justify-content-between align-items-center px-2" data-day="{{ day }}">
+                    <span>{{ day }}</span>
+                    <i class="fas fa-trash-alt text-danger clear-row-btn" data-row="{{ day }}" style="cursor:pointer;" title="Clear Row"></i>
+                </div>
                 {% set row_data = timetable_data.get(day) %}
-                {% for i in range(1, 8) %}
+                {% for i in range(1, max_periods + 1) %}
                 <div class="grid-cell">
                     {% set period_val = getattr(row_data, 'period_' ~ i) if row_data else '' %}
                     <input type="text" class="period-input w-100" 
@@ -281,7 +293,7 @@ $(document).ready(function() {
         }, 500);
 
         $.ajax({
-            url: '/admin/timetable/analyze',
+            url: "{{ url_for('analyze_timetable', college_slug=current_college.slug) }}",
             method: 'POST',
             data: formData,
             processData: false,
@@ -338,6 +350,116 @@ $(document).ready(function() {
         });
     });
 
+    // Dynamic Row/Column Logic
+    let currentCols = {{ max_periods }};
+    
+    $(document).on('click', '.clear-row-btn', function() {
+        const day = $(this).data('row');
+        if(confirm(`Are you sure you want to completely remove ${day}?`)) {
+            $(this).closest('.day-header').remove();
+            $(`.period-input[data-day="${day}"]`).closest('.grid-cell').remove();
+        }
+    });
+
+    $(document).on('click', '.clear-col-btn', function() {
+        const col = $(this).data('col');
+        if(confirm(`Are you sure you want to completely remove Period ${col}?`)) {
+            $(this).closest('.period-header').remove();
+            $(`.period-timing-input[data-period="${col}"]`).closest('.grid-cell').remove();
+            $(`.period-input[data-period="${col}"]`).closest('.grid-cell').remove();
+            
+            currentCols--;
+            document.getElementById('timetableGrid').style.setProperty('--cols', currentCols);
+            reindexColumns();
+        }
+    });
+
+    function reindexColumns() {
+        $('.period-header').each(function(index) {
+            let newCol = index + 1;
+            $(this).find('span').text(`P${newCol}`);
+            $(this).find('.clear-col-btn').data('col', newCol).attr('data-col', newCol);
+        });
+
+        $('.period-timing-input').each(function(index) {
+            let newCol = index + 1;
+            $(this).data('period', newCol).attr('data-period', newCol);
+        });
+
+        $('.row-marker[data-day]').each(function() {
+            let day = $(this).data('day');
+            $(`.period-input[data-day="${day}"]`).each(function(index) {
+                let newCol = index + 1;
+                $(this).data('period', newCol).attr('data-period', newCol);
+            });
+        });
+    }
+
+    $('#addColBtn').on('click', function() {
+        if(currentCols >= 10) {
+            alert('Maximum 10 periods supported.');
+            return;
+        }
+        currentCols++;
+        document.getElementById('timetableGrid').style.setProperty('--cols', currentCols);
+        let newCol = currentCols;
+        
+        $(`<div class="period-header d-flex justify-content-between align-items-center px-2">
+            <span>P${newCol}</span>
+            <i class="fas fa-trash-alt text-light clear-col-btn" data-col="${newCol}" style="cursor:pointer; opacity: 0.8;" title="Remove Column"></i>
+        </div>`).insertBefore('#timings-row');
+        
+        let timingHtml = `<div class="grid-cell" style="background:#f1f5f9;">
+            <input type="text" class="period-timing-input w-100 border-0 bg-transparent text-center fw-bold small" 
+                   data-period="${newCol}" placeholder="00:00 - 00:00" value="">
+        </div>`;
+        let nextRowMarker = $('.row-marker[data-day]').first();
+        if (nextRowMarker.length) {
+            $(timingHtml).insertBefore(nextRowMarker);
+        } else {
+            $('#timetableGrid').append(timingHtml);
+        }
+        
+        $('.row-marker[data-day]').each(function(index, element) {
+            let day = $(this).data('day');
+            let nextMarker = $('.row-marker[data-day]').eq(index + 1);
+            let periodHtml = `<div class="grid-cell">
+                <input type="text" class="period-input w-100" data-day="${day}" data-period="${newCol}" placeholder="Subject..." value="">
+            </div>`;
+            if (nextMarker.length) {
+                $(periodHtml).insertBefore(nextMarker);
+            } else {
+                $('#timetableGrid').append(periodHtml);
+            }
+        });
+    });
+
+    $('#addRowBtn').on('click', function() {
+        let dayName = prompt("Enter the Day name (e.g., Sunday):");
+        if(!dayName || !dayName.trim()) return;
+        dayName = dayName.trim();
+        
+        if($(`.row-marker[data-day="${dayName}"]`).length > 0) {
+            alert('That day already exists in the grid.');
+            return;
+        }
+        
+        $('#timetableGrid').append(`
+            <div class="day-header row-marker d-flex justify-content-between align-items-center px-2" data-day="${dayName}">
+                <span>${dayName}</span>
+                <i class="fas fa-trash-alt text-danger clear-row-btn" data-row="${dayName}" style="cursor:pointer;" title="Remove Row"></i>
+            </div>
+        `);
+        
+        for(let i=1; i<=currentCols; i++) {
+            $('#timetableGrid').append(`
+                <div class="grid-cell">
+                    <input type="text" class="period-input w-100" data-day="${dayName}" data-period="${i}" placeholder="Subject..." value="">
+                </div>
+            `);
+        }
+    });
+
     // Save Logic
     $('#saveBtn').on('click', function() {
         const btn = $(this);
@@ -366,7 +488,7 @@ $(document).ready(function() {
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> SAVING...');
 
         $.ajax({
-            url: '/admin/timetable/save',
+            url: "{{ url_for('save_timetable', college_slug=current_college.slug) }}",
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),

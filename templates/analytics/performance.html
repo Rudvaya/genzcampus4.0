@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Student Performance Analytics - GenZCampus{% endblock %}
+{% block page_title %}Performance Analytics{% endblock %}
+
+{% block content %}
+<div class="card mb-4 border-0 shadow-sm rounded-4 overflow-hidden">
+  <div class="card-body p-0">
+    <div class="d-flex align-items-center justify-content-between p-3 p-md-4 border-bottom bg-main">
+      <div class="section-title mb-0"><i class="fas fa-chart-line me-2"></i>Student Performance Analytics</div>
+    </div>
+    
+    <div class="p-3 p-md-4">
+        <!-- Search Box -->
+        <div class="filters-section mb-4 p-3 p-md-4 bg-light border rounded-4">
+            <form method="GET">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-muted mb-2">Search Student by Roll Number</label>
+                        <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                            <span class="input-group-text bg-white border-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" name="roll_no" class="form-control border-0"
+                                placeholder="Enter Roll Number..." value="{{ search_roll }}">
+                            <button class="btn btn-primary px-4" type="submit">Track Performance</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {% if student %}
+        <h5 class="fw-bold mb-4 border-bottom pb-2">
+            Performance Record: {{ student.first_name }} {{ student.last_name }} 
+            <span class="badge bg-primary rounded-pill ms-2">{{ student.roll_no }}</span>
+            <span class="badge bg-secondary rounded-pill ms-1">{{ student.department }} - {{ student.year }} Yr - Sec {{ student.section }}</span>
+        </h5>
+        
+        <div class="row g-4 mb-4">
+            <!-- Skills -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 rounded-4">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-laptop-code text-primary me-2"></i>Skills</h6>
+                    </div>
+                    <div class="card-body">
+                        {% set skills = records|selectattr('type', 'equalto', 'skill')|list %}
+                        {% if skills %}
+                            <ul class="list-group list-group-flush">
+                            {% for s in skills %}
+                                <li class="list-group-item px-0 border-light">
+                                    <div class="fw-bold">{{ s.title }}</div>
+                                    <small class="text-muted">{{ s.description }}</small>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted small">No skills updated.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certifications -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 rounded-4">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-certificate text-warning me-2"></i>Certifications</h6>
+                    </div>
+                    <div class="card-body">
+                        {% set certs = records|selectattr('type', 'equalto', 'certificate')|list %}
+                        {% if certs %}
+                            <ul class="list-group list-group-flush">
+                            {% for c in certs %}
+                                <li class="list-group-item px-0 border-light">
+                                    <div class="fw-bold">{{ c.title }}</div>
+                                    <small class="text-muted d-block">ID: {{ c.certificate_id or 'N/A' }}</small>
+                                    {% if c.proof_filename %}
+                                        <a href="{{ url_for('static', filename='uploads/performance/' + c.proof_filename) }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-2"><i class="fas fa-external-link-alt me-1"></i> View Credential</a>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted small">No certifications updated.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Internships -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 rounded-4">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-briefcase text-success me-2"></i>Internships</h6>
+                    </div>
+                    <div class="card-body">
+                        {% set inters = records|selectattr('type', 'equalto', 'internship')|list %}
+                        {% if inters %}
+                            <ul class="list-group list-group-flush">
+                            {% for i in inters %}
+                                <li class="list-group-item px-0 border-light">
+                                    <div class="fw-bold">{{ i.title }}</div>
+                                    <small class="text-muted d-block">{{ i.description }}</small>
+                                    {% if i.proof_filename %}
+                                        <a href="{{ url_for('static', filename='uploads/performance/' + i.proof_filename) }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-2"><i class="fas fa-external-link-alt me-1"></i> View Proof</a>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted small">No internships updated.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Achievements -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 rounded-4">
+                    <div class="card-header bg-white border-0 pt-4 pb-0">
+                        <h6 class="fw-bold mb-0"><i class="fas fa-trophy text-purple me-2" style="color: #8b5cf6;"></i>Achievements</h6>
+                    </div>
+                    <div class="card-body">
+                        {% set achs = records|selectattr('type', 'equalto', 'achievement')|list %}
+                        {% if achs %}
+                            <ul class="list-group list-group-flush">
+                            {% for a in achs %}
+                                <li class="list-group-item px-0 border-light">
+                                    <div class="fw-bold">{{ a.title }}</div>
+                                    <small class="text-muted d-block">{{ a.description }}</small>
+                                    {% if a.proof_filename %}
+                                        <a href="{{ url_for('static', filename='uploads/performance/' + a.proof_filename) }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-2"><i class="fas fa-external-link-alt me-1"></i> View Proof</a>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted small">No achievements updated.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% elif not search_roll %}
+        <!-- Recent Updates Feed -->
+        <h5 class="fw-bold mb-4 border-bottom pb-2">Recent Performance Updates</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student</th>
+                        <th>Total Records Updated</th>
+                        <th>Last Updated</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stu, last_updated, total_updates in recent_updates %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ stu.first_name }} {{ stu.last_name }}</div>
+                            <small class="text-muted">{{ stu.roll_no }} | {{ stu.department }} - {{ stu.year }} Yr - Sec {{ stu.section }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3">{{ total_updates }} Updates</span>
+                        </td>
+                        <td><small class="text-muted">{{ last_updated.strftime('%Y-%m-%d %I:%M %p') }}</small></td>
+                        <td>
+                            <a href="{{ url_for('performance_analytics', college_slug=current_college.slug, roll_no=stu.roll_no) }}" class="btn btn-sm btn-outline-primary rounded-pill">View Profile</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No recent performance updates found in your purview.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

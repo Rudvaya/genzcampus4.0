@@ -121,6 +121,11 @@
             <i class="fas fa-users"></i>
             <span>Students</span>
           </a>
+          <a class="sidebar-link {% if request.endpoint == 'performance_analytics' %}active{% endif %}"
+             href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}">
+            <i class="fas fa-chart-line"></i>
+            <span>Performance Analytics</span>
+          </a>
           <a class="sidebar-link {% if request.endpoint == 'manage_faculty' %}active{% endif %}"
              href="{{ url_for('manage_faculty') }}">
             <i class="fas fa-chalkboard-teacher"></i>
@@ -142,7 +147,7 @@
           </a>
           {% endif %}
           
-          {% if features.get('attendance') %}
+          {% if features.get('timetable') %}
           <a class="sidebar-link {% if request.endpoint == 'manage_timetable' %}active{% endif %}"
              href="{{ url_for('manage_timetable') }}">
             <i class="fas fa-calendar-alt"></i>
@@ -169,6 +174,21 @@
             <i class="fas fa-tachometer-alt"></i>
             <span>Dashboard</span>
           </a>
+          {% if features.get('timetable') %}
+          <a class="sidebar-link {% if request.endpoint == 'faculty_view_timetable' %}active{% endif %}"
+             href="{{ url_for('faculty_view_timetable') }}">
+            <i class="fas fa-calendar-alt"></i>
+            <span>View Timetable</span>
+          </a>
+          {% endif %}
+          
+          {% if current_user.is_incharge() %}
+          <a class="sidebar-link {% if request.endpoint == 'performance_analytics' %}active{% endif %}"
+             href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}">
+            <i class="fas fa-chart-line"></i>
+            <span>Student Performance</span>
+          </a>
+          {% endif %}
           {% if current_user.is_hod() %}
             <a class="sidebar-link {% if request.endpoint == 'manage_faculty' %}active{% endif %}"
                href="{{ url_for('manage_faculty') }}">
@@ -366,6 +386,13 @@
           <i class="fas fa-clipboard-list"></i>
           <span>Attendance</span>
         </a>
+        {% if features.get('timetable') %}
+        <a class="bottom-nav-item {% if request.endpoint == 'faculty_view_timetable' %}active{% endif %}"
+           href="{{ url_for('faculty_view_timetable') }}">
+          <i class="fas fa-calendar-alt"></i>
+          <span>Timetable</span>
+        </a>
+        {% endif %}
         {% if current_user.is_hod() %}
         <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#pendingP">
           <i class="fas fa-inbox"></i>

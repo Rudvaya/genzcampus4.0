@@ -18,7 +18,8 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm">
+<!-- Desktop Table -->
+<div class="card border-0 shadow-sm d-none d-md-block">
     <div class="card-header bg-white py-3">
         <h5 class="mb-0 fw-bold">Recent Transactions</h5>
     </div>
@@ -59,6 +60,46 @@
             </tbody>
         </table>
     </div>
+</div>
+
+<!-- Mobile Card List -->
+<div class="d-block d-md-none">
+    <h6 class="fw-bold mb-3 text-muted small text-uppercase letter-spacing-1">Recent Transactions</h6>
+    {% for t in transactions %}
+    <div class="card border-0 shadow-sm rounded-4 mb-3 p-3" style="background: var(--card-bg);">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <div class="text-muted" style="font-size: 0.7rem;">
+                    <i class="fas fa-calendar-day me-1"></i> {{ t.created_at.strftime('%d %b, %Y') if t.created_at else 'N/A' }}
+                </div>
+                <div class="mt-1">
+                    <span class="badge bg-light text-dark border-0 shadow-xs" style="font-size: 0.65rem; padding: 4px 10px; border-radius: 6px;">
+                        {{ t.category }}
+                    </span>
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold {% if t.type == 'credit' %}text-success{% else %}text-danger{% endif %}" style="font-size: 1.05rem;">
+                    {% if t.type == 'credit' %}+{% else %}-{% endif %}₹{{ "%.2f"|format(t.amount) }}
+                </div>
+                <div class="fw-bold {% if t.type == 'credit' %}text-success{% else %}text-danger{% endif %} text-uppercase mt-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                    <i class="fas fa-arrow-{% if t.type == 'credit' %}up{% else %}down{% endif %} me-1"></i> {{ t.type }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-2 pt-2 border-top border-light">
+            <div class="text-secondary" style="font-size: 0.8rem; line-height: 1.4;">
+                {{ t.description if t.description else 'No description provided.' }}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm p-5 text-center rounded-4">
+        <i class="fas fa-receipt fa-3x text-muted opacity-25 mb-3"></i>
+        <div class="text-muted">No transactions recorded yet.</div>
+    </div>
+    {% endfor %}
 </div>
 
 <!-- Transaction Modal -->

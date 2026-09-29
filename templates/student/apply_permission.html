@@ -77,7 +77,7 @@
         $('#clubSelect').change(function () {
             var clubId = $(this).val();
             if (clubId) {
-                $.get('/api/events/' + clubId, function (data) {
+                $.get("{{ url_for('get_events', club_id=0, college_slug=current_college.slug) }}".replace('/0', '/' + clubId), function (data) {
                     $('#eventSelect').empty();
                     if (data.length > 0) {
                         $('#eventSelect').append('<option value="">Select Event</option>');

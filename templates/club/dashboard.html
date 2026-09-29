@@ -335,32 +335,6 @@
                             </button>
                             {% endif %}
 
-                            <!-- Deadline Modal -->
-                            <div class="modal fade" id="deadlineModal{{ event.id }}" tabindex="-1">
-                                <div class="modal-dialog modal-dialog-centered modal-sm">
-                                    <div class="modal-content border-0 shadow">
-                                        <div class="modal-header py-3 bg-light border-bottom-0">
-                                            <h6 class="modal-title fw-bold text-primary"><i class="fas fa-clock me-2"></i>Registration Deadline</h6>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form class="deadline-form" data-event-id="{{ event.id }}" action="{{ url_for('club_portal.update_deadline', event_id=event.id) }}"
-                                            method="POST">
-                                            <div class="modal-body py-4">
-                                                <label class="form-label small fw-bold text-secondary">New Deadline Date & Time</label>
-                                                <input type="datetime-local" name="registration_deadline"
-                                                    class="form-control"
-                                                    value="{{ event.registration_deadline.strftime('%Y-%m-%dT%H:%M') if event.registration_deadline else '' }}"
-                                                    required>
-                                            </div>
-                                            <div class="modal-footer py-2 border-top-0 bg-light">
-                                                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 shadow-sm">Update</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
                         </td>
                         <td>
                             <div class="dropdown">
@@ -451,6 +425,33 @@
         {% endfor %}
     </div>
     <!-- End mobile cards -->
+    
+    <!-- Deadline Modals (Placed outside table to prevent flickering) -->
+    {% for event in events %}
+    <div class="modal fade" id="deadlineModal{{ event.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header py-3 bg-light border-bottom-0">
+                    <h6 class="modal-title fw-bold text-primary"><i class="fas fa-clock me-2"></i>Registration Deadline</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form class="deadline-form" data-event-id="{{ event.id }}" action="{{ url_for('club_portal.update_deadline', event_id=event.id) }}" method="POST">
+                    <div class="modal-body py-4">
+                        <label class="form-label small fw-bold text-secondary">New Deadline Date & Time</label>
+                        <input type="datetime-local" name="registration_deadline"
+                            class="form-control"
+                            value="{{ event.registration_deadline.strftime('%Y-%m-%dT%H:%M') if event.registration_deadline else '' }}"
+                            required>
+                    </div>
+                    <div class="modal-footer py-2 border-top-0 bg-light">
+                        <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 shadow-sm">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}
 

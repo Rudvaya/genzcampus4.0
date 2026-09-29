@@ -130,6 +130,7 @@
       <div class="stat-icon-wrap"><i class="fas fa-clock"></i></div>
     </div>
   </div>
+  {% if features.get('clubs') %}
   <div class="col-6 col-lg-3 animate-in" style="animation-delay:0.18s;">
     <div class="stat-card-gradient" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">
       <div>
@@ -139,6 +140,7 @@
       <div class="stat-icon-wrap"><i class="fas fa-layer-group"></i></div>
     </div>
   </div>
+  {% endif %}
 </div>
 
 <!-- Quick Actions -->
@@ -162,24 +164,30 @@
         </div>
         <div class="tile-label">Faculty</div>
       </a>
+      {% if features.get('clubs') %}
       <a href="{{ url_for('manage_clubs') }}" class="action-tile">
         <div class="tile-icon" style="background:rgba(59,130,246,0.1);color:var(--clr-info);">
           <i class="fas fa-layer-group"></i>
         </div>
         <div class="tile-label">Clubs & Events</div>
       </a>
+      {% endif %}
+      {% if features.get('permissions') %}
       <a href="{{ url_for('admin_permissions') }}" class="action-tile">
         <div class="tile-icon" style="background:rgba(245,158,11,0.1);color:var(--clr-warning);">
           <i class="fas fa-clipboard-check"></i>
         </div>
         <div class="tile-label">Permissions</div>
       </a>
+      {% endif %}
+      {% if features.get('timetable') %}
       <a href="{{ url_for('manage_timetable') }}" class="action-tile">
         <div class="tile-icon" style="background:rgba(239,68,68,0.1);color:var(--clr-danger);">
           <i class="fas fa-calendar-alt"></i>
         </div>
         <div class="tile-label">Timetable</div>
       </a>
+      {% endif %}
       <a href="{{ url_for('manage_departments') }}" class="action-tile">
         <div class="tile-icon" style="background:rgba(100,116,139,0.1);color:#64748B;">
           <i class="fas fa-sitemap"></i>
@@ -217,15 +225,21 @@
       <div class="col-md-6">
         <ul class="info-list list-unstyled m-0">
           <li><i class="fas fa-check-circle"></i> Manage student and faculty accounts</li>
+          {% if features.get('clubs') %}
           <li><i class="fas fa-check-circle"></i> Oversee club activities and events</li>
+          {% endif %}
+          {% if features.get('permissions') %}
           <li><i class="fas fa-check-circle"></i> Monitor all permission requests</li>
+          {% endif %}
         </ul>
       </div>
       <div class="col-md-6">
         <ul class="info-list list-unstyled m-0">
           <li><i class="fas fa-check-circle"></i> Bulk upload data via Excel/CSV</li>
           <li><i class="fas fa-check-circle"></i> Track system-wide metrics</li>
+          {% if features.get('timetable') %}
           <li><i class="fas fa-check-circle"></i> Configure timetables per department</li>
+          {% endif %}
         </ul>
       </div>
     </div>

@@ -111,11 +111,25 @@
                         <td class="align-middle text-center">
                             <div class="d-flex justify-content-center gap-2">
                                 <a href="/cc/college/{{ college.id }}/toggle-feature/attendance" 
-                                   class="btn btn-sm {% if 'attendance' in college.features %}btn-primary{% else %}btn-outline-primary{% endif %}">Attendance</a>
+                                   class="btn btn-sm {% if college.get_features.get('attendance') %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                   <i class="fas {% if college.get_features.get('attendance') %}fa-toggle-on{% else %}fa-toggle-off{% endif %} me-1"></i> Attendance
+                                </a>
+                                <a href="/cc/college/{{ college.id }}/toggle-feature/timetable" 
+                                   class="btn btn-sm {% if college.get_features.get('timetable') %}btn-success{% else %}btn-outline-success{% endif %}">
+                                   <i class="fas {% if college.get_features.get('timetable') %}fa-toggle-on{% else %}fa-toggle-off{% endif %} me-1"></i> Timetable
+                                </a>
                                 <a href="/cc/college/{{ college.id }}/toggle-feature/clubs" 
-                                   class="btn btn-sm {% if 'clubs' in college.features %}btn-info{% else %}btn-outline-info{% endif %}">Clubs</a>
+                                   class="btn btn-sm {% if college.get_features.get('clubs') %}btn-info{% else %}btn-outline-info{% endif %}">
+                                   <i class="fas {% if college.get_features.get('clubs') %}fa-toggle-on{% else %}fa-toggle-off{% endif %} me-1"></i> Clubs
+                                </a>
+                                <a href="/cc/college/{{ college.id }}/toggle-feature/permissions" 
+                                   class="btn btn-sm {% if college.get_features.get('permissions') %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+                                   <i class="fas {% if college.get_features.get('permissions') %}fa-toggle-on{% else %}fa-toggle-off{% endif %} me-1"></i> Permissions
+                                </a>
                                 <a href="/cc/college/{{ college.id }}/toggle-feature/exams" 
-                                   class="btn btn-sm {% if 'exams' in college.features %}btn-warning{% else %}btn-outline-warning{% endif %}">Exams</a>
+                                   class="btn btn-sm {% if college.get_features.get('exams') %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                                   <i class="fas {% if college.get_features.get('exams') %}fa-toggle-on{% else %}fa-toggle-off{% endif %} me-1"></i> Exams
+                                </a>
                             </div>
                         </td>
                         <td class="align-middle">
@@ -135,12 +149,26 @@
                     <div class="modal fade" id="adminModal{{ college.id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content border-0 shadow">
-                                <form action="{{ url_for('update_college_admin', college_id=college.id) }}" method="POST">
+                                <form action="{{ url_for('update_college_admin', college_id=college.id) }}" method="POST" enctype="multipart/form-data">
                                     <div class="modal-header bg-light border-0">
-                                        <h5 class="modal-title fw-bold">Manage Admin: {{ college.name }}</h5>
+                                        <h5 class="modal-title fw-bold">Manage Institution: {{ college.name }}</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body p-4">
+                                        <!-- Branding Update -->
+                                        <div class="mb-4 text-center">
+                                            <label class="form-label text-xs fw-bold text-uppercase d-block mb-3">Institutional Logo</label>
+                                            <div class="position-relative d-inline-block mb-3">
+                                                <img src="{{ get_logo_url(college.branding_logo) }}" 
+                                                     class="rounded-circle border p-2" 
+                                                     style="width: 80px; height: 80px; object-fit: contain; background: #fff;">
+                                            </div>
+                                            <input type="file" name="logo" class="form-control form-control-sm" accept="image/*">
+                                            <small class="text-muted d-block mt-1" style="font-size: 10px;">Upload a new logo to update branding.</small>
+                                        </div>
+
+                                        <hr class="horizontal dark my-4">
+
                                         <div class="mb-3">
                                             <label class="form-label text-xs fw-bold text-uppercase">Current Admin Email</label>
                                             <input type="email" name="admin_email" class="form-control" 

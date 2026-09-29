@@ -1769,3 +1769,655 @@ Result: FAILED
 
 --- 2026-04-14 21:31:25.746537 ---
 Attempt: [superadmin@pms.com]
+
+--- 2026-04-14 22:22:46.795032 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: False
+Result: FAILED
+
+--- 2026-04-14 22:22:51.986798 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: False
+Result: FAILED
+
+--- 2026-04-14 22:23:01.713982 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-14 22:41:21.674075 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 22:41:48.730269 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 22:43:05.567932 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 22:43:06.210340 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 23:04:56.968045 ---
+Attempt: [revathikandhula@gmail.com]
+Result: FAILED
+
+--- 2026-04-14 23:05:32.599069 ---
+Attempt: [sandhyaranids@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-14 23:09:20.723394 ---
+Attempt: [mjptab2@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 23:14:04.499033 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: False
+Result: FAILED
+
+--- 2026-04-14 23:14:17.813108 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-14 23:15:36.021124 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: False
+Result: FAILED
+
+--- 2026-04-14 23:15:51.713240 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-14 23:18:10.913141 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 23:18:11.524483 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 23:32:47.423168 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 23:35:12.931352 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-14 23:35:57.603091 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 23:35:58.146128 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-14 23:36:07.988904 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-14 23:36:57.348034 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-14 23:39:25.956580 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: False
+Result: FAILED
+
+--- 2026-04-14 23:39:55.246048 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-15 00:32:33.186634 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-15 00:33:01.562069 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-15 00:37:14.357276 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-15 00:45:56.548627 ---
+Attempt: [aifusionclub@gmail.com]
+Result: FAILED
+
+--- 2026-04-15 00:46:08.579709 ---
+Attempt: [aifusionclub@gmail.com]
+Result: FAILED
+
+--- 2026-04-15 00:46:25.547555 ---
+Attempt: [aifusionclub@gmail.com]
+Result: FAILED
+
+--- 2026-04-15 00:46:51.797392 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-04-15 00:51:51.741061 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-15 00:56:18.675863 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-15 00:57:32.501137 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-04-15 01:05:42.714567 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-15 01:07:02.224855 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-15 01:07:57.066417 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-15 01:10:12.844124 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: False
+Result: FAILED
+
+--- 2026-04-15 01:10:32.945958 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-04-15 01:17:50.566082 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-04-15 01:18:50.481101 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-16 09:32:52.213821 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-04-16 09:35:11.535842 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-16 17:35:51.817086 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-04-16 17:36:18.174238 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-04-16 17:37:08.745204 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-02 00:07:46.869482 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-02 00:11:08.598470 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-02 00:16:36.068163 ---
+Attempt: [admin@pms.com]
+Result: FAILED
+
+--- 2026-08-02 00:16:48.707960 ---
+Attempt: [admin@pms.com]
+Result: FAILED
+
+--- 2026-08-02 00:17:10.146780 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-02 00:18:12.739026 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-08-02 00:21:04.148133 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-08-02 00:23:53.528324 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-08-02 16:24:50.696599 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-03 18:05:56.949631 ---
+Attempt: [admin@gmail.com]
+Result: FAILED
+
+--- 2026-08-03 18:06:07.586483 ---
+Attempt: [admin@gmail.com]
+Result: FAILED
+
+--- 2026-08-03 18:07:21.556523 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-03 18:18:24.720828 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-08-03 18:21:26.377792 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-08-03 18:23:21.480197 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-08-03 18:24:02.871958 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-08-03 18:25:34.905550 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-03 22:21:23.570351 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-08-03 22:22:00.208427 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 00:15:29.446629 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 00:16:32.525877 ---
+Attempt: [superadmin@pms.com]
+
+--- 2026-09-25 00:17:18.236962 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 00:18:48.212527 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 00:31:14.891866 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: False
+Result: FAILED
+
+--- 2026-09-25 00:31:26.619718 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 00:41:19.687974 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 00:43:48.374849 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 01:12:02.374281 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 12:57:23.107425 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 12:59:12.541994 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 13:07:09.515379 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 13:07:38.282729 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 22:35:59.562599 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 22:36:52.160252 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 22:36:56.908707 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 22:38:38.420292 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-09-25 22:39:34.166946 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-09-25 22:43:14.672982 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 22:57:18.701021 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: False
+Result: FAILED
+
+--- 2026-09-25 22:57:33.282756 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 23:00:12.826556 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 23:02:11.206261 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:02:23.080407 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:02:40.486167 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:02:51.751643 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 23:03:39.902941 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:04:08.132104 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:04:19.417027 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 23:05:34.630460 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:05:52.492506 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:06:42.865641 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 23:07:34.268110 ---
+Attempt: [kanchana@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-09-25 23:08:40.538950 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 23:08:40.563237 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 23:09:30.089328 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:09:41.922836 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:09:47.395319 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:10:10.288261 ---
+Attempt: [faisal@gmail.com]
+Result: FAILED
+
+--- 2026-09-25 23:10:24.042796 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-25 23:17:26.109415 ---
+Attempt: [faisal@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-09-25 23:18:31.738166 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: False
+Result: FAILED
+
+--- 2026-09-25 23:18:45.068875 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 23:31:41.078863 ---
+Attempt: [faisal@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-09-25 23:32:41.196691 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-25 23:42:19.438721 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-26 00:12:55.563630 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-26 00:22:34.178515 ---
+Attempt: [aifusion@gmail.com]
+Found Club: AI Fusion Club. Password Match: True
+
+--- 2026-09-26 00:41:54.342558 ---
+Attempt: [admin@pms.com]
+Result: FAILED
+
+--- 2026-09-26 00:44:30.193693 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 13:30:24.067436 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 13:32:42.838171 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 13:57:54.777920 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 21:40:31.216211 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 22:11:18.467292 ---
+Attempt: [beerlavamshi2@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-28 22:13:57.412674 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 22:26:40.350924 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 22:28:12.313833 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 22:31:48.149627 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-28 22:32:25.252269 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-28 22:38:40.898954 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-28 22:46:02.577352 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 06:06:04.544679 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 06:08:42.216161 ---
+Attempt: [adminmvsr@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 06:09:21.221533 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 06:09:50.294775 ---
+Attempt: [Nehakatoon@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-09-29 06:20:50.840654 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 06:21:40.050969 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-29 06:22:04.723286 ---
+Attempt: [Nehakatoon@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-09-29 06:22:06.611872 ---
+Attempt: [Nehakatoon@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-09-29 06:34:19.985026 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 06:52:13.575275 ---
+Attempt: [Nehakatoon@gmail.com]
+Found User. Role: faculty. Password Match: True
+
+--- 2026-09-29 06:57:09.927263 ---
+Attempt: [Nehakatoon@gmail.com]
+Result: FAILED
+
+--- 2026-09-29 06:57:11.831950 ---
+Attempt: [Nehakatoon@gmail.com]
+Result: FAILED
+
+--- 2026-09-29 06:57:13.505487 ---
+Attempt: [Nehakatoon@gmail.com]
+Result: FAILED
+
+--- 2026-09-29 06:57:23.865379 ---
+Attempt: [Nehakatoon@gmail.com]
+Result: FAILED
+
+--- 2026-09-29 06:57:41.167829 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-29 06:58:48.330762 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 06:59:27.039819 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-29 07:40:02.420557 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 07:41:17.460085 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 07:44:28.951059 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 07:46:01.845017 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-29 07:46:31.160950 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 07:54:00.494860 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 07:55:36.323050 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 08:01:28.486887 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-29 13:30:46.693817 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 20:08:55.047240 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 20:16:17.296430 ---
+Attempt: [adminkits@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 20:17:16.382395 ---
+Attempt: [admi@pms.com]
+Result: FAILED
+
+--- 2026-09-29 20:17:32.425425 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 20:19:37.045417 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True
+
+--- 2026-09-29 20:20:28.847731 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-29 20:32:44.148853 ---
+Attempt: [mandotisaikiran@gmail.com]
+Found User. Role: student. Password Match: True
+
+--- 2026-09-29 20:33:52.445542 ---
+Attempt: [nehakatoon@gmail.com]
+Result: FAILED

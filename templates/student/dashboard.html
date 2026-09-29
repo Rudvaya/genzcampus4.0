@@ -1,854 +1,614 @@
 {% extends "base.html" %}
 {% block title %}Student Dashboard - GenZCampus{% endblock %}
-{% block page_title %}Student Dashboard{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
-    :root {
-        --primary-gradient: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
-        --glass-bg: rgba(255, 255, 255, 0.15);
-        --glass-border: rgba(255, 255, 255, 0.3);
-        --header-shadow: rgba(124, 58, 237, 0.3);
+    /* Add specific styles for the new design */
+    body {
+        background-color: #F8F9FE;
+        padding-bottom: 80px; /* Space for bottom nav */
     }
-
-    [data-theme="dark"] {
-        --glass-bg: rgba(0, 0, 0, 0.2);
-        --glass-border: rgba(255, 255, 255, 0.1);
-        --header-shadow: rgba(0, 0, 0, 0.5);
+    
+    @media (min-width: 768px) {
+        .bottom-nav { display: none !important; }
+        body { padding-bottom: 0 !important; }
     }
-
-    /* Unified Premium Header */
+    @media (max-width: 767px) {
+        .sidebar, .topbar { display: none !important; }
+        #page-content-wrapper { width: 100%; padding: 0 !important; }
+    }
+    
     .dashboard-header {
-        background: var(--primary-gradient);
-        border-radius: 30px;
-        padding: 3rem 2rem 5rem 2rem;
+        background: linear-gradient(135deg, #021B79 0%, #0575E6 100%);
+        border-radius: 0 0 30px 30px;
+        padding: 3rem 1.5rem 2rem 1.5rem;
         color: white;
-        margin-bottom: -3rem;
+        margin-top: -1.5rem; /* pull up under nav if needed */
         position: relative;
-        overflow: hidden;
-        box-shadow: 0 10px 30px var(--header-shadow);
-    }
-    
-    .dashboard-header::before {
-        content: '';
-        position: absolute;
-        top: -50px;
-        right: -50px;
-        width: 200px;
-        height: 200px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 50%;
-    }
-
-    .glass-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border: 1px solid var(--glass-border);
-        border-radius: 24px;
-        padding: 1.5rem;
-        color: white;
-        transition: all 0.3s ease;
-    }
-    .glass-card:hover { border-color: rgba(255,255,255,0.5); transform: translateY(-3px); }
-
-    /* Timeline Section */
-    .timeline-container {
-        overflow-x: auto;
-        display: flex;
-        gap: 15px;
-        padding: 10px 5px;
-        scrollbar-width: none;
-        align-items: stretch; /* Ensure all cards stretch to the tallest one */
-    }
-    .timeline-container::-webkit-scrollbar { display: none; }
-
-    .timeline-node {
-        min-width: 140px;
-        flex: 0 0 auto;
-        background: var(--card-bg);
-        border-radius: 20px;
-        padding: 1.25rem;
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-    .timeline-node.active {
-        border-color: var(--clr-primary);
-        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.15);
-        transform: scale(1.02);
-    }
-    .timeline-node.active::before {
-        content: 'LIVE';
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: #ef4444;
-        color: white;
-        font-size: 0.6rem;
-        font-weight: 800;
-        padding: 2px 8px;
-        border-radius: 50px;
-        letter-spacing: 0.5px;
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.6; }
-        100% { opacity: 1; }
-    }
-
-    .period-time { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: block; }
-    .period-subject { font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px; flex-grow: 1; }
-    .period-tag { font-size: 0.65rem; font-weight: 700; color: var(--clr-primary); opacity: 0.8; margin-top: auto; }
-
-    /* Modern Progress Node */
-    .day-progress-card {
-        background: var(--bg-color);
-        border-radius: 20px;
-        padding: 1rem 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
-    }
-    .progress-info { flex-grow: 1; margin-right: 20px; }
-    .progress-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.75rem; font-weight: 700; color: var(--text-main); }
-
-    /* Timeline Live Animations */
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.6; }
-        100% { opacity: 1; }
-    }
-
-    /* Attendance Breakdown Premium Grid */
-    .attendance-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.5rem;
-    }
-
-    /* Mobile: 1-column grid, smaller cards */
-    @media (max-width: 767.98px) {
-        .attendance-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-
-        .subject-stat-card {
-            border-radius: 18px;
-            padding: 1rem 1.25rem;
-        }
-
-        .stat-circle {
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-        }
-
-        .stat-circle::after {
-            width: 50px;
-            height: 50px;
-        }
-
-        .dashboard-header {
-            padding: 1.25rem !important;
-            margin-bottom: 1rem !important;
-        }
-
-        .dashboard-header h2 {
-            font-size: 1.4rem !important;
-        }
-
-        .dashboard-header .col-md-5 {
-            display: none;
-        }
-
-        .timeline-scroll {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scroll-snap-type: x mandatory;
-        }
-
-        .timeline-node {
-            min-width: 140px;
-            scroll-snap-align: start;
-        }
-    }
-    
-    .subject-stat-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--glass-border);
-        border-radius: 28px;
-        padding: 1.5rem;
-        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        cursor: default;
-    }
-    .subject-stat-card:hover {
-        transform: translateY(-8px);
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.4);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-    }
-
-    .stat-circle {
-        width: 75px;
-        height: 75px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        background: conic-gradient(var(--p-color) calc(var(--p-val) * 1%), rgba(255,255,255,0.05) 0);
-        margin-left: 1rem;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-    }
-    .stat-circle::after {
-        content: "";
-        position: absolute;
-        width: 63px;
-        height: 63px;
-        background: var(--card-bg);
-        border-radius: 50%;
         z-index: 1;
     }
 
-    .stat-circle span {
-        position: relative;
-        z-index: 2;
-        font-size: 0.85rem;
-        font-weight: 800;
-        color: var(--text-main);
+    .profile-img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.2);
     }
 
-    .sub-meta { flex: 1; min-width: 0; }
-    .sub-title {
-        font-size: 0.95rem;
-        font-weight: 800;
-        color: var(--text-main);
-        margin-bottom: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .sub-status-pill {
-        display: inline-block;
-        font-size: 0.65rem;
-        font-weight: 800;
-        padding: 2px 10px;
-        border-radius: 50px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .header-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
     }
     
-    /* Animations */
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    .notification-bell {
+        position: absolute;
+        right: 1.5rem;
+        top: 2rem;
+        font-size: 1.5rem;
+        color: white;
+        text-decoration: none;
     }
-    .animate-in { animation: fadeInUp 0.5s ease backwards; }
-    /* Bottom Cards Modern List Item */
-    .list-item-modern {
-        background: var(--bg-color);
-        border-radius: 16px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 0.75rem;
-        transition: all 0.2s ease;
-        border: 1px solid transparent;
+    
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        font-size: 0.6rem;
+        padding: 2px 5px;
+        font-weight: bold;
     }
-    .list-item-modern:hover {
-        background: var(--card-bg);
-        border-color: var(--border-color);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+
+    .stats-scroll {
+        display: flex;
+        overflow-x: auto;
+        gap: 15px;
+        padding: 0 1.5rem;
+        margin-top: 1.5rem;
+        padding-bottom: 1rem;
+        scrollbar-width: none; /* Firefox */
+        position: relative;
+        z-index: 10;
+    }
+    .stats-scroll::-webkit-scrollbar { display: none; } /* Chrome */
+    
+    .stat-card {
+        background: white;
+        min-width: 130px;
+        border-radius: 20px;
+        padding: 1.25rem 1rem;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        flex: 0 0 auto;
+        border: 1px solid #f0f0f0;
+    }
+    
+    .stat-icon-wrapper {
+        margin-bottom: 10px;
+        font-size: 1.5rem;
+    }
+    
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    
+    .action-item {
+        text-align: center;
+        text-decoration: none;
+        color: #333;
+    }
+    
+    .action-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px auto;
+        font-size: 1.2rem;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1A1A24;
+    }
+    
+    .view-all {
+        font-size: 0.85rem;
+        color: #0d6efd;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .subject-list-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        margin-bottom: 20px;
+    }
+    
+    .subject-item {
+        margin-bottom: 18px;
+    }
+    .subject-item:last-child { margin-bottom: 0; }
+    
+    .subject-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .custom-progress {
+        height: 6px;
+        background: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .custom-progress-bar {
+        height: 100%;
+        border-radius: 10px;
+    }
+    
+    .timeline-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 20px;
+        padding-bottom: 20px;
+        border-left: 2px solid #f0f0f0;
+    }
+    .timeline-item:last-child {
+        border-left: 2px solid transparent;
+        padding-bottom: 0;
+    }
+    
+    .timeline-dot {
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+    
+    .timeline-content {
+        display: flex;
+        justify-content: space-between;
+        top: -4px;
+        position: relative;
+    }
+    
+    .timeline-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 2px;
+    }
+    
+    .timeline-time {
+        font-size: 0.75rem;
+        color: #888;
+    }
+    
+    .timeline-room {
+        font-size: 0.8rem;
+        color: #666;
+        text-align: right;
+    }
+    
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        box-shadow: 0 -2px 15px rgba(0,0,0,0.05);
+        border-radius: 20px 20px 0 0;
+        z-index: 1000;
+    }
+    
+    .nav-item {
+        text-align: center;
+        text-decoration: none;
+        color: #888;
+        font-size: 0.7rem;
+        font-weight: 500;
+        position: relative;
+    }
+    
+    .nav-item.active {
+        color: #0d6efd;
+    }
+    
+    .nav-icon {
+        font-size: 1.3rem;
+        margin-bottom: 3px;
+        display: block;
+    }
+    
+    .nav-badge {
+        position: absolute;
+        top: -2px;
+        right: 5px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        font-size: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
     }
 </style>
 
-<div class="dashboard-header animate-in">
-    <div class="row align-items-center">
-        <div class="col-md-7 welcome-section">
-            <p class="mb-1 opacity-75 fw-bold text-uppercase small" style="letter-spacing: 1px;">Academy Command center</p>
-            <h2 class="fw-bold" style="font-size: clamp(1.3rem, 5vw, 2rem); margin-bottom: 0.5rem;">Hi, {{ current_user.first_name }}! 👋</h2>
-            <p class="mb-4 opacity-75" style="font-size: clamp(0.8rem, 3vw, 1rem);">Your academic performance is looking {% if overall_stats.percentage >= 75 %}excellent{% else %}steady{% endif %}! Overall Attendance: <strong>{{ overall_stats.percentage }}%</strong></p>
-            
-            <div class="mt-4">
-                <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
-                    <i class="fas fa-check-circle me-1"></i> UPDATED REAL-TIME
-                </span>
-            </div>
-        </div>
-        <div class="col-md-5 mt-4 mt-md-0 d-none d-md-block">
-            <div class="glass-card shadow-lg">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 fw-bold">Overall Attendance</h6>
-                        <small class="opacity-75">Status: {% if overall_stats.percentage >= 75 %}Safe{% else %}Critical{% endif %}</small>
-                    </div>
-                    <div class="overall-progress">
-                        {{ overall_stats.percentage }}%
-                    </div>
-                </div>
-                <div class="progress mt-3" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                    <div class="progress-bar bg-white" style="width: {{ overall_stats.percentage|default(0) }}%"></div>
-                </div>
+<!-- HEADER -->
+<div class="dashboard-header">
+    <!-- Removed notification bell -->
+    <div class="header-info">
+        <img src="https://ui-avatars.com/api/?name={{ current_user.first_name }}+{{ current_user.last_name }}&background=random" alt="Profile" class="profile-img">
+        <div>
+            <h5 class="mb-1 fw-bold">Hello, {{ current_user.first_name }} 👋</h5>
+            <div style="font-size: 0.8rem; opacity: 0.9;">
+                {{ current_user.department }} - {{ current_user.year }} Year | Roll No: {{ current_user.roll_no }}<br>
+                {{ current_college.name }}
             </div>
         </div>
     </div>
 </div>
 
-<div class="dashboard-content">
-    <!-- Subject Attendance Breakdown -->
-    <div class="mb-5 animate-in" style="animation-delay: 0.1s;">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold text-main m-0"><i class="fas fa-chart-pie text-primary me-2"></i> Attendance Analysis</h5>
+<!-- STATS CARDS -->
+<div class="stats-scroll">
+    <!-- Overall Attendance -->
+    <div class="stat-card" style="background-color: #f6fcf8;">
+        <div class="stat-icon-wrapper text-success">
+            <i class="far fa-calendar-check"></i>
         </div>
-        
-        <div class="attendance-grid">
-            {% for subject, stats in subject_stats.items() %}
-            {% set s_color = '#10b981' if stats.percentage >= 75 else ('#f59e0b' if stats.percentage >= 65 else '#ef4444') %}
-            {% set s_status = 'Excellent' if stats.percentage >= 75 else ('Warning' if stats.percentage >= 65 else 'Critical') %}
-            <div class="subject-stat-card shadow-lg">
-                <div class="sub-meta">
-                    <div class="sub-title" title="{{ subject }}">{{ subject }}</div>
-                    <div class="sub-status-pill mt-2" style="background: {{ s_color }}20; color: {{ s_color }};">
-                        {{ s_status }}
-                    </div>
-                </div>
-                <div class="stat-circle" style="--p-color: {{ s_color }}; --p-val: {{ stats.percentage }};">
-                    <span>{{ stats.percentage }}%</span>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+        <div style="font-size: 0.75rem; font-weight: 600; color: #555;">Overall<br>Attendance</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #10b981; margin: 5px 0;">{{ overall_stats.percentage }}%</div>
+        <div style="font-size: 0.7rem; color: #10b981; font-weight: 600;">Good <i class="fas fa-circle" style="font-size: 0.4rem; vertical-align: middle;"></i></div>
     </div>
-    <!-- Today's Timeline View -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <!-- Mobile Trigger: Replaces timeline on small screens -->
-            <div class="mobile-schedule-trigger" id="mobileScheduleBtn">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-uppercase fw-bold text-primary mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">Schedule</p>
-                        <h5 class="fw-extrabold mb-1 text-main">Today's Classes</h5>
-                        <p class="text-muted small mb-0">{{ ist_now.strftime('%A, %d %B') }}</p>
-                    </div>
-                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                        <i class="fas fa-calendar-alt fa-lg"></i>
-                    </div>
-                </div>
-                <div class="mt-3 d-flex align-items-center">
-                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 me-2" style="font-size: 0.65rem;">
-                        <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i> LIVE
-                    </span>
-                    <span class="text-muted extra-small" style="font-size: 0.75rem;" id="mobileNextClass">Loading next class...</span>
-                </div>
-            </div>
-
-            <!-- Desktop View: Hidden on mobile via CSS -->
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden desktop-timeline-view">
-                <div class="card-header bg-transparent py-4 px-4 border-0 d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="m-0 fw-bold text-main"><i class="fas fa-calendar-day me-2 text-indigo"></i> <span id="timelineTitle">Today's Timeline</span></h5>
-                        <p class="text-muted small mb-0" id="timelineDateText">{{ ist_now.strftime('%A, %d %B %Y') }}</p>
-                    </div>
-                    <div class="position-relative">
-                        <button class="btn btn-light rounded-circle shadow-sm" style="width: 40px; height: 40px; border: 1px solid var(--border-color);" id="timelineDatePickerBtn">
-                            <i class="fas fa-calendar-alt text-indigo"></i>
-                        </button>
-                        <input type="text" id="timelineDateInput" style="position: absolute; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0; border: none; padding: 0;">
-                    </div>
-                </div>
-                <div class="card-body p-4 pt-0">
-                    <div id="timelinePlaceholder" class="text-center py-5 bg-surface-secondary rounded-4 {% if today_timetable %}d-none{% endif %}">
-                        {% if ist_now.strftime('%A') == 'Sunday' %}
-                            <i class="fas fa-couch fa-2x text-primary mb-3"></i>
-                            <h5 class="fw-bold">Relax, it's Sunday!</h5>
-                            <p class="text-muted small mb-0">No classes are scheduled for today. Enjoy your break!</p>
-                        {% else %}
-                            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
-                            <p class="text-muted small mb-0" id="placeholderText">No classes scheduled for today.</p>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="timeline-container {% if not today_timetable %}d-none{% endif %}" id="todayTimeline">
-                        {% if today_timetable %}
-                        {% set periods = [
-                            {'time': today_timetable.period_1_time | format_time_range if today_timetable and today_timetable.period_1_time else '09:30 AM - 10:20 AM', 'start': today_timetable.period_1_time.split(' - ')[0] if today_timetable and today_timetable.period_1_time else '09:30', 'end': today_timetable.period_1_time.split(' - ')[1] if today_timetable and today_timetable.period_1_time else '10:20', 'sub': today_timetable.period_1 if today_timetable else None, 'num': 'P1'},
-                            {'time': today_timetable.period_2_time | format_time_range if today_timetable and today_timetable.period_2_time else '10:20 AM - 11:10 AM', 'start': today_timetable.period_2_time.split(' - ')[0] if today_timetable and today_timetable.period_2_time else '10:20', 'end': today_timetable.period_2_time.split(' - ')[1] if today_timetable and today_timetable.period_2_time else '11:10', 'sub': today_timetable.period_2 if today_timetable else None, 'num': 'P2'},
-                            {'time': today_timetable.period_3_time | format_time_range if today_timetable and today_timetable.period_3_time else '11:10 AM - 12:00 PM', 'start': today_timetable.period_3_time.split(' - ')[0] if today_timetable and today_timetable.period_3_time else '11:10', 'end': today_timetable.period_3_time.split(' - ')[1] if today_timetable and today_timetable.period_3_time else '12:00', 'sub': today_timetable.period_3 if today_timetable else None, 'num': 'P3'},
-                            {'time': '12:00 PM - 01:00 PM', 'start': '12:00', 'end': '13:00', 'sub': 'BREAK', 'num': '--'},
-                            {'time': today_timetable.period_4_time | format_time_range if today_timetable and today_timetable.period_4_time else '01:00 PM - 01:50 PM', 'start': today_timetable.period_4_time.split(' - ')[0] if today_timetable and today_timetable.period_4_time else '13:00', 'end': today_timetable.period_4_time.split(' - ')[1] if today_timetable and today_timetable.period_4_time else '13:50', 'sub': today_timetable.period_4 if today_timetable else None, 'num': 'P4'},
-                            {'time': today_timetable.period_5_time | format_time_range if today_timetable and today_timetable.period_5_time else '01:50 PM - 02:40 PM', 'start': today_timetable.period_5_time.split(' - ')[0] if today_timetable and today_timetable.period_5_time else '13:50', 'end': today_timetable.period_5_time.split(' - ')[1] if today_timetable and today_timetable.period_5_time else '14:40', 'sub': today_timetable.period_5 if today_timetable else None, 'num': 'P5'},
-                            {'time': today_timetable.period_6_time | format_time_range if today_timetable and today_timetable.period_6_time else '02:40 PM - 03:30 PM', 'start': today_timetable.period_6_time.split(' - ')[0] if today_timetable and today_timetable.period_6_time else '14:40', 'end': today_timetable.period_6_time.split(' - ')[1] if today_timetable and today_timetable.period_6_time else '15:30', 'sub': today_timetable.period_6 if today_timetable else None, 'num': 'P6'},
-                            {'time': today_timetable.period_7_time | format_time_range if today_timetable and today_timetable.period_7_time else '03:30 PM - 04:20 PM', 'start': today_timetable.period_7_time.split(' - ')[0] if today_timetable and today_timetable.period_7_time else '15:30', 'end': today_timetable.period_7_time.split(' - ')[1] if today_timetable and today_timetable.period_7_time else '16:20', 'sub': today_timetable.period_7 if today_timetable else None, 'num': 'P7'}
-                        ] %}
-                        {% for p in periods %}
-                            {% set ns = namespace(status_class='', status_icon='') %}
-                            {% if today_attendance and p.sub %}
-                                {% for att in today_attendance %}
-                                    {% if att.subject|lower|trim == p.sub|lower|trim %}
-                                        {% if att.status == 'present' %}
-                                            {% set ns.status_class = 'bg-success-subtle border-success' %}
-                                            {% set ns.status_icon = '<i class="fas fa-check-circle text-success ms-2"></i>' %}
-                                        {% elif att.status == 'absent' %}
-                                            {% set ns.status_class = 'bg-danger-subtle border-danger' %}
-                                            {% set ns.status_icon = '<i class="fas fa-times-circle text-danger ms-2"></i>' %}
-                                        {% endif %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                            
-                            <div class="timeline-node {{ ns.status_class }}" data-start="{{ p.start }}" data-end="{{ p.end }}">
-                                <span class="period-time">{{ p.time }}</span>
-                                <h6 class="period-subject text-truncate">{{ p.sub or 'Free Study' }}{{ ns.status_icon|safe }}</h6>
-                                <span class="period-tag">{{ p.num }} • {% if p.sub == 'BREAK' %}Relax{% elif 'LAB' in (p.sub|upper if p.sub else '') %}Practical{% else %}Theory{% endif %}</span>
-                            </div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+    
+    <!-- Performance -->
+    <div class="stat-card" style="background-color: #f0fdf4;">
+        <div class="stat-icon-wrapper text-success">
+            <i class="fas fa-graduation-cap"></i>
         </div>
+        <div style="font-size: 0.75rem; font-weight: 600; color: #555;">Academic<br>Performance</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #16a34a; margin: 5px 0;">{{ avg_marks }}<span style="font-size:0.9rem; color:#888;">%</span></div>
+        <div style="font-size: 0.7rem; color: #888;">Average</div>
     </div>
-
-    <!-- Mobile Schedule Overlay -->
-    <div class="schedule-overlay" id="scheduleOverlay">
-        <div class="overlay-header">
-            <div class="d-flex align-items-center">
-                <button class="btn btn-link text-main p-0 me-3" id="closeOverlayBtn">
-                    <i class="fas fa-arrow-left fa-lg"></i>
-                </button>
-                <h5 class="fw-bold mb-0">Class Schedule</h5>
-            </div>
-            <span class="text-muted extra-small fw-bold" id="overlayDateLabel">TODAY</span>
+    
+    <!-- Classes Attended -->
+    <div class="stat-card" style="background-color: #f4f8fe;">
+        <div class="stat-icon-wrapper text-primary">
+            <i class="fas fa-chart-bar"></i>
         </div>
-        
-        <div class="day-strip" id="overlayDayStrip">
-            {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] %}
-            <div class="day-pill {% if day == ist_now.strftime('%A') %}active{% endif %}" data-day="{{ day }}">
-                {{ day[:3] }}
-            </div>
-            {% endfor %}
-        </div>
-        
-        <div class="overlay-body" id="overlayScheduleBody">
-            <!-- Dynamically loaded via JS -->
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
-                <p class="mt-2 text-muted small">Syncing schedule...</p>
-            </div>
-        </div>
+        <div style="font-size: 0.75rem; font-weight: 600; color: #555;">Classes<br>Attended</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #0d6efd; margin: 5px 0;">{{ overall_stats.present }} <span style="font-size:0.9rem; color:#888;">/ {{ overall_stats.total }}</span></div>
+        <div style="font-size: 0.7rem; color: #888;">This Semester</div>
     </div>
-
-    <!-- Events Section replaces weekly schedule top space -->
-    <div class="row">
-        <!-- Events Component -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 animate-in" style="animation-delay: 0.1s;">
-                <div class="card-header bg-transparent py-4 border-0 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-primary"><i class="fas fa-bullhorn me-2"></i> Events</h6>
-                    <a href="{{ url_for('club_portal.student_events') }}" class="btn btn-light btn-sm rounded-pill px-3 shadow-sm text-primary fw-bold" style="font-size: 0.75rem;">View All</a>
-                </div>
-                <div class="card-body px-4 pt-0 pb-4">
-                    {% if events %}
-                        {% for event in events[:3] %}
-                        <a href="{{ url_for('club_portal.apply_event', event_id=event.id) }}" class="text-decoration-none">
-                            <div class="list-item-modern d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1 fw-bold text-main text-truncate" style="max-width: 200px; font-size: 0.85rem;">{{ event.name }}</h6>
-                                    <div class="d-flex align-items-center text-muted opacity-75" style="font-size: 0.7rem;">
-                                        <i class="fas fa-calendar-alt me-1"></i>
-                                        <span>{{ event.start_date.strftime('%B %d') if event.start_date else 'TBD' }}</span>
-                                    </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-muted opacity-50 small"></i>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    {% else %}
-                        <div class="d-flex flex-column justify-content-center align-items-center h-100 py-4 opacity-50">
-                            <i class="fas fa-ghost fa-2x mb-2"></i>
-                            <span style="font-size: 0.8rem;">No upcoming events</span>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+    
+    <!-- Classes This Week -->
+    <div class="stat-card" style="background-color: #fff9f2;">
+        <div class="stat-icon-wrapper text-warning">
+            <i class="far fa-calendar-alt"></i>
         </div>
-
-        <!-- Permissions Component -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 animate-in" style="animation-delay: 0.2s;">
-                <div class="card-header bg-transparent py-4 border-0 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-info"><i class="fas fa-stamp me-2"></i> Permissions</h6>
-                    <a href="{{ url_for('apply_permission') }}" class="btn btn-light btn-sm text-info rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="fas fa-plus"></i></a>
-                </div>
-                <div class="card-body px-4 pt-0 pb-4">
-                    {% if permissions %}
-                        {% for perm in permissions[:3] %}
-                        <a href="{{ url_for('student_permissions') }}" class="text-decoration-none">
-                            <div class="list-item-modern d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1 fw-bold text-main text-truncate" style="max-width: 160px; font-size: 0.85rem;">{{ perm.club.name if perm.club else 'Academic OD' }}</h6>
-                                    <div class="d-flex align-items-center text-muted opacity-75" style="font-size: 0.7rem;">
-                                        <i class="far fa-clock me-1"></i>
-                                        <span>{{ perm.date.strftime('%d %b') }}</span>
-                                    </div>
-                                </div>
-                                {% if perm.status == 'approved' %}
-                                    <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1" style="font-size: 0.65rem;"><i class="fas fa-check me-1"></i>Approved</span>
-                                {% elif perm.status == 'pending' %}
-                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1" style="font-size: 0.65rem;"><i class="fas fa-clock me-1"></i>Pending</span>
-                                {% else %}
-                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1" style="font-size: 0.65rem;"><i class="fas fa-times me-1"></i>Rejected</span>
-                                {% endif %}
-                            </div>
-                        </a>
-                        {% endfor %}
-                    {% else %}
-                        <div class="d-flex flex-column justify-content-center align-items-center h-100 py-4 opacity-50">
-                            <i class="fas fa-folder-open fa-2x mb-2"></i>
-                            <span style="font-size: 0.8rem;">No active permissions</span>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+        <div style="font-size: 0.75rem; font-weight: 600; color: #555;">Classes<br>This Week</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #f59e0b; margin: 5px 0;">{{ this_week_stats.present }} <span style="font-size:0.9rem; color:#888;">/ {{ this_week_stats.total }}</span></div>
+        <div style="font-size: 0.7rem; color: #888;">{{ this_week_stats.percentage }}%</div>
+    </div>
+    
+    <!-- Attendance Rank -->
+    <div class="stat-card" style="background-color: #f9f5ff;">
+        <div class="stat-icon-wrapper text-purple" style="color: #8b5cf6;">
+            <i class="fas fa-trophy"></i>
         </div>
-
-        <!-- Tickets Component -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 animate-in" style="animation-delay: 0.3s;">
-                <div class="card-header bg-transparent py-4 border-0 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-success"><i class="fas fa-ticket-alt me-2"></i> My Tickets</h6>
-                </div>
-                <div class="card-body px-4 pt-0 pb-4">
-                    {% if registrations %}
-                        {% for reg in registrations[:3] %}
-                        <div class="list-item-modern d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1 fw-bold text-main text-truncate" style="max-width: 160px; font-size: 0.85rem;">{{ reg.event.name }}</h6>
-                                <div class="d-flex align-items-center text-muted opacity-75" style="font-size: 0.7rem;">
-                                    <i class="fas fa-hashtag me-1"></i>
-                                    <span>{{ reg.ticket_id }}</span>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2 align-items-center">
-                                {% if reg.event.is_paid and reg.payment_status in ['pending', 'on-hold'] %}
-                                    <button onclick="payNow(this, {{ reg.id }})" class="btn btn-primary btn-sm rounded-pill px-3 shadow-none fw-bold" style="font-size: 0.7rem;">Pay Now</button>
-                                {% endif %}
-                                <a href="{{ url_for('club_portal.registration_ticket', response_id=reg.id) }}" class="btn btn-light btn-sm rounded-pill px-3 shadow-none text-success fw-bold" style="font-size: 0.7rem; background-color: rgba(25, 135, 84, 0.1);">View</a>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="d-flex flex-column justify-content-center align-items-center h-100 py-4 opacity-50">
-                            <i class="fas fa-inbox fa-2x mb-2"></i>
-                            <span style="font-size: 0.8rem;">No tickets found</span>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+        <div style="font-size: 0.75rem; font-weight: 600; color: #555;">Attendance<br>Rank</div>
+        <div style="font-size: 1.2rem; font-weight: 800; color: #8b5cf6; margin: 10px 0;">{{ attendance_rank }}</div>
+        <div style="font-size: 0.7rem; color: #888;">In Your Batch</div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<div class="container px-3 pb-4">
+    
+    <!-- QUICK ACTIONS -->
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h6 class="section-title mb-0">Quick Actions</h6>
+        <a href="#" class="view-all">View All</a>
+    </div>
+    
+    <div class="quick-actions-grid">
+        <a href="{{ url_for('apply_permission') }}" class="action-item">
+            <div class="action-icon" style="background-color: #e6f6f1; color: #10b981;">
+                <i class="far fa-file-alt"></i>
+            </div>
+            <div style="font-size: 0.7rem; font-weight: 600;">Leave<br>Request</div>
+        </a>
+        {% if features.get('timetable') %}
+        <a href="#" class="action-item" onclick="showFullTimetable(event)">
+            <div class="action-icon" style="background-color: #e6efff; color: #0d6efd;">
+                <i class="far fa-calendar"></i>
+            </div>
+            <div style="font-size: 0.7rem; font-weight: 600;">Time<br>Table</div>
+        </a>
+        {% endif %}
+        <a href="{{ url_for('student_performance', college_slug=current_college.slug) }}" class="action-item">
+            <div class="action-icon" style="background-color: #f3ebff; color: #8b5cf6;">
+                <i class="fas fa-laptop-code"></i>
+            </div>
+            <div style="font-size: 0.7rem; font-weight: 600;">Performance</div>
+        </a>
+        <a href="#" class="action-item">
+            <div class="action-icon" style="background-color: #ffefe6; color: #f59e0b;">
+                <i class="fas fa-download"></i>
+            </div>
+            <div style="font-size: 0.7rem; font-weight: 600;">Download<br>Report</div>
+        </a>
+    </div>
+    
+    <!-- ATTENDANCE BY SUBJECT -->
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h6 class="section-title mb-0">Attendance by Subject</h6>
+        <div class="d-flex align-items-center">
+            <input type="date" id="subjectAttDate" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 me-2" style="width: 25px; outline: none; box-shadow: none; cursor: pointer; color: transparent; background: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 width=%2224%22 height=%2224%22><path fill=%22%23f4f4f4%22 d=%22M8 24v28c0 4.4 3.6 8 8 8h32c4.4 0 8-3.6 8-8V24H8z%22/><path fill=%22%23d32f2f%22 d=%22M8 24h48v-8c0-4.4-3.6-8-8-8H16c-4.4 0-8 3.6-8 8v8z%22/><rect x=%228%22 y=%2224%22 width=%2248%22 height=%224%22 fill=%22%23b71c1c%22/><g fill=%22%23eeeeee%22 stroke=%22%239e9e9e%22 stroke-width=%221.5%22><rect x=%2212%22 y=%224%22 width=%223%22 height=%2210%22 rx=%221.5%22/><rect x=%2218%22 y=%224%22 width=%223%22 height=%2210%22 rx=%221.5%22/><rect x=%2224%22 y=%224%22 width=%223%22 height=%2210%22 rx=%221.5%22/><rect x=%2230%22 y=%224%22 width=%223%22 height=%2210%22 rx=%221.5%22/><rect x=%2236%22 y=%224%22 width=%223%22 height=%2210%22 rx=%221.5%22/><rect x=%2242%22 y=%224%22 width=%223%22 height=%2210%22 rx=%221.5%22/><rect x=%2248%22 y=%224%22 width=%223%22 height=%2210%22 rx=%221.5%22/></g><g stroke=%22%23e0e0e0%22 stroke-width=%221%22><line x1=%2219%22 y1=%2232%22 x2=%2219%22 y2=%2256%22/><line x1=%2230%22 y1=%2232%22 x2=%2230%22 y2=%2256%22/><line x1=%2241%22 y1=%2232%22 x2=%2241%22 y2=%2256%22/><line x1=%2252%22 y1=%2232%22 x2=%2252%22 y2=%2256%22/><line x1=%228%22 y1=%2236%22 x2=%2256%22 y2=%2236%22/><line x1=%228%22 y1=%2246%22 x2=%2256%22 y2=%2246%22/></g></svg>') no-repeat center right;" value="{{ ist_now.strftime('%Y-%m-%d') }}" onchange="fetchSubjectAttendanceByDate(this.value)">
+            <a href="#" class="view-all" onclick="showAllSubjectsAttendance(event)">View All</a>
+        </div>
+    </div>
+    
+    <div class="subject-list-card" id="attendanceSubjectContainer">
+        {% set iter_stats = today_subject_stats %}
+        {% for subject, stats in iter_stats.items() %}
+        {% set color = '#10b981' if stats.percentage >= 75 else ('#f59e0b' if stats.percentage >= 65 else '#ef4444') %}
+        <div class="subject-item" {% if features.get('timetable') %}style="cursor: pointer;" onclick="showFullTimetable(event)"{% endif %}>
+            <div class="subject-info">
+                <span>{{ subject }}</span>
+                <span>{{ stats.percentage }}%</span>
+            </div>
+            <div class="custom-progress">
+                <div class="custom-progress-bar" style="width: {{ stats.percentage }}%; background-color: {{ color }};"></div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not today_subject_stats %}
+        <div class="text-center text-muted small py-3">No attendance data for today.</div>
+        {% endif %}
+    </div>
+    
+    <!-- PERFORMANCE DETAILS -->
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h6 class="section-title mb-0">Recent Exam Results</h6>
+        <a href="#" class="view-all">View All</a>
+    </div>
+    
+    <div class="subject-list-card">
+        {% for result in exam_results[:5] %}
+        <div class="subject-item">
+            <div class="subject-info">
+                <span>{{ result.subject }} <small class="text-muted">({{ result.exam.name if result.exam else 'Exam' }})</small></span>
+                <span class="{% if result.status == 'pass' %}text-success{% else %}text-danger{% endif %}">{{ result.marks }}%</span>
+            </div>
+            <div class="custom-progress">
+                <div class="custom-progress-bar" style="width: {{ result.marks }}%; background-color: {% if result.status == 'pass' %}#10b981{% else %}#ef4444{% endif %};"></div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not exam_results %}
+        <div class="text-center text-muted small py-3">No exam results available.</div>
+        {% endif %}
+    </div>
+    
+    <!-- TODAY'S SCHEDULE -->
+    {% if features.get('timetable') %}
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h6 class="section-title mb-0">Today's Schedule</h6>
+        <span class="text-muted" style="font-size: 0.8rem;">{{ ist_now.strftime('%d %b %Y') }}</span>
+    </div>
+    
+    <div class="timeline-card">
+        {% if today_timetable %}
+            {% set colors = ['#10b981', '#0d6efd', '#8b5cf6', '#ef4444', '#f59e0b', '#14b8a6', '#6366F1', '#ec4899', '#f97316', '#06b6d4'] %}
+            {% for i in range(1, 11) %}
+                {% set sub = getattr(today_timetable, 'period_' ~ i) %}
+                {% set time_val = getattr(today_timetable, 'period_' ~ i ~ '_time') %}
+                {% if sub and sub != 'BREAK' %}
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background-color: {{ colors[i-1] }};"></div>
+                    <div class="timeline-content">
+                        <div>
+                            <div class="timeline-title">{{ sub }}</div>
+                            <div class="timeline-time">{{ time_val | format_time_range if time_val else '' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="text-center text-muted small py-3">No classes scheduled for today.</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- TIMETABLE MODAL -->
+{% if features.get('timetable') %}
+<div class="modal fade" id="fullTimetableModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" style="color: var(--main-color);">Weekly Timetable</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="table-responsive">
+          <table class="table table-bordered text-center align-middle" id="timetableGrid" style="font-size: 0.85rem;">
+             <!-- populated by JS -->
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+    <a href="{{ url_for('student_dashboard', college_slug=current_college.slug) }}" class="nav-item active">
+        <i class="fas fa-home nav-icon"></i>
+        Home
+    </a>
+    <a href="{{ url_for('student_performance', college_slug=current_college.slug) }}" class="nav-item">
+        <i class="fas fa-laptop-code nav-icon"></i>
+        Performance
+    </a>
+    {% if features.get('timetable') %}
+    <a href="#" class="nav-item" onclick="showFullTimetable(event)">
+        <i class="far fa-calendar-alt nav-icon"></i>
+        Time Table
+    </a>
+    {% endif %}
+    <a href="{{ url_for('club_portal.student_events') }}" class="nav-item">
+        <i class="fas fa-bullhorn nav-icon"></i>
+        Announcements
+    </a>
+    <a href="#" class="nav-item">
+        <i class="far fa-user nav-icon"></i>
+        Profile
+    </a>
+</div>
 <script>
-    function payNow(btn, responseId) {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        btn.disabled = true;
+    const cumulativeSubjectStats = {{ subject_stats | tojson }};
+    const collegeSlug = "{{ current_college.slug }}";
+    const isTimetableEnabled = {{ 'true' if features.get('timetable') else 'false' }};
 
-        fetch(`/club/pay-existing/${responseId}`, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'pay') {
-                const options = {
-                    "key": data.key,
-                    "amount": data.amount,
-                    "currency": "INR",
-                    "name": "GenZCampus",
-                    "description": data.event_name,
-                    "order_id": data.order_id,
-                    "handler": function (response) {
-                        fetch("{{ url_for('club_portal.verify_payment') }}", {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                            body: JSON.stringify({
-                                response_id: data.response_id,
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature
-                            })
-                        })
-                        .then(r => r.json())
-                        .then(v => {
-                            if (v.success) window.location.href = v.redirect;
-                            else alert(v.message);
-                        });
-                    },
-                    "prefill": {
-                        "name": data.user_name,
-                        "email": data.user_email
-                    },
-                    "theme": { "color": "#7C3AED" },
-                    "modal": {
-                        "ondismiss": () => {
-                            btn.innerHTML = originalText;
-                            btn.disabled = false;
-                        }
-                    }
-                };
-                new Razorpay(options).open();
-            } else {
-                alert(data.message || "Error starting payment");
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Connection error");
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+    function renderSubjectStats(statsObj) {
+        const container = document.getElementById('attendanceSubjectContainer');
+        container.innerHTML = '';
+        
+        const keys = Object.keys(statsObj);
+        if(keys.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted small py-3">No attendance data available.</div>';
+            return;
+        }
+        
+        keys.forEach(subject => {
+            const stats = statsObj[subject];
+            const pct = stats.percentage;
+            const color = pct >= 75 ? '#10b981' : (pct >= 65 ? '#f59e0b' : '#ef4444');
+            const clickAttr = isTimetableEnabled ? 'style="cursor: pointer;" onclick="showFullTimetable(event)"' : '';
+            
+            const html = `
+                <div class="subject-item" ${clickAttr}>
+                    <div class="subject-info">
+                        <span>${subject}</span>
+                        <span>${pct}%</span>
+                    </div>
+                    <div class="custom-progress">
+                        <div class="custom-progress-bar" style="width: ${pct}%; background-color: ${color};"></div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
         });
     }
 
-    $(document).ready(function() {
-        const overlay = $('#scheduleOverlay');
-        const overlayBody = $('#overlayScheduleBody');
-        const dayPills = $('.day-pill');
+    function showAllSubjectsAttendance(e) {
+        e.preventDefault();
+        document.getElementById('subjectAttDate').value = '';
+        renderSubjectStats(cumulativeSubjectStats);
+    }
+
+    function fetchSubjectAttendanceByDate(dateStr) {
+        if(!dateStr) {
+            showAllSubjectsAttendance({preventDefault: () => {}});
+            return;
+        }
         
-        // 1. Live Timeline Tracking (Desktop)
-        function updateLiveTimeline(isHistorical = false) {
-            const nowTime = new Date();
-            const currentTimeStr = nowTime.getHours().toString().padStart(2, '0') + ':' + nowTime.getMinutes().toString().padStart(2, '0');
-            
-            let nextClass = "No more classes today";
-            
-            $('.timeline-node').each(function() {
-                const start = $(this).data('start');
-                const end = $(this).data('end');
-                const sub = $(this).find('.period-subject').text().trim();
+        fetch(`/${collegeSlug}/api/student/attendance_by_date?date=${dateStr}`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.error) {
+                    console.error(data.error);
+                    return;
+                }
+                renderSubjectStats(data);
+            })
+            .catch(e => console.error(e));
+    }
+    
+    function showFullTimetable(e) {
+        if(e) e.preventDefault();
+        const modalElem = document.getElementById('fullTimetableModal');
+        if(!modalElem) return;
+        const modal = new bootstrap.Modal(modalElem);
+        modal.show();
+        
+        const grid = document.getElementById('timetableGrid');
+        grid.innerHTML = '<tr><td class="text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i>Loading Timetable...</td></tr>';
+        
+        fetch(`/${collegeSlug}/api/student/timetable/full`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.error) {
+                    grid.innerHTML = `<tr><td class="text-danger py-4">${data.error}</td></tr>`;
+                    return;
+                }
                 
-                // Only show LIVE badge if it's the current real-time and it's TODAY's view
-                if (!isHistorical && currentTimeStr >= start && currentTimeStr < end) {
-                    $(this).addClass('active');
-                    const container = $('#todayTimeline');
-                    if (container.length) {
-                        const scrollLeft = $(this).position().left - container.width()/2 + $(this).width()/2 + container.scrollLeft();
-                        container.animate({ scrollLeft: scrollLeft }, 1000);
-                    }
-                    nextClass = "Ongoing: " + sub;
+                let html = '<thead class="table-light"><tr><th>Day</th>';
+                data.times.forEach((t, i) => {
+                    html += `<th>P${i+1}<br><small class="text-muted" style="font-size:0.7rem;">${t}</small></th>`;
+                });
+                html += '</tr></thead><tbody>';
+                
+                if(data.schedule.length === 0) {
+                    html += `<tr><td colspan="${data.times.length + 1}" class="py-4 text-muted">No timetable available for your class.</td></tr>`;
                 } else {
-                    $(this).removeClass('active');
-                    if (!isHistorical && start > currentTimeStr && nextClass === "No more classes today") {
-                        nextClass = "Next: " + sub;
-                    }
-                }
-            });
-            
-            if (!isHistorical) {
-                $('#mobileNextClass').text(nextClass);
-            }
-        }
-        
-        updateLiveTimeline();
-        setInterval(() => updateLiveTimeline($('#timelineTitle').text().includes('Historical')), 60000);
-
-        // 2. Mobile Overlay Logic
-        $('#mobileScheduleBtn').click(function() {
-            overlay.addClass('show');
-            document.body.style.overflow = 'hidden'; // Prevent background scroll
-            loadScheduleForDay($('.day-pill.active').data('day'));
-        });
-
-        $('#closeOverlayBtn').click(function() {
-            overlay.removeClass('show');
-            document.body.style.overflow = '';
-        });
-
-        dayPills.click(function() {
-            dayPills.removeClass('active');
-            $(this).addClass('active');
-            loadScheduleForDay($(this).data('day'));
-        });
-
-        async function loadScheduleForDay(dayName) {
-            overlayBody.html('<div class="text-center py-5"><div class="spinner-border text-primary spinner-border-sm" role="status"></div><p class="mt-2 text-muted small">Loading...</p></div>');
-            
-            // Get date for the selected day of current week
-            const today = new Date();
-            const todayDayIdx = today.getDay(); // 0-Sun, 1-Mon
-            const targetDayIdx = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(dayName);
-            
-            const diff = targetDayIdx - todayDayIdx;
-            const targetDate = new Date(today);
-            targetDate.setDate(today.getDate() + diff);
-            const dateStr = targetDate.toISOString().split('T')[0];
-            
-            $('#overlayDateLabel').text(targetDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
-
-            try {
-                const resp = await $.ajax({
-                    url: '/api/student/timeline/history',
-                    data: { date: dateStr },
-                    dataType: 'json'
-                });
-
-                if (resp.is_holiday) {
-                    overlayBody.html(`
-                        <div class="holiday-banner animate-in">
-                            <i class="fas fa-calendar-check"></i>
-                            <h4>Holiday Declared</h4>
-                            <p class="mb-0">${resp.holiday_reason || 'Enjoy your day off!'}</p>
-                        </div>
-                    `);
-                    return;
-                }
-
-                if (!resp.has_classes || resp.is_sunday) {
-                    overlayBody.html(`
-                        <div class="text-center py-5 opacity-75">
-                            <i class="fas fa-couch fa-2x text-muted mb-3"></i>
-                            <h6 class="fw-bold">No Classes</h6>
-                            <p class="small text-muted">Nothing scheduled for ${dayName}.</p>
-                        </div>
-                    `);
-                    return;
-                }
-
-                let html = '<div class="accordion animate-in" id="periodAccordion">';
-                resp.timeline.forEach((p, idx) => {
-                    const isBreak = p.subject === 'BREAK';
-                    const statusIcon = p.status === 'present' ? '<i class="fas fa-check-circle text-success ms-2"></i>' : 
-                                     (p.status === 'absent' ? '<i class="fas fa-times-circle text-danger ms-2"></i>' : '');
-                    
-                    html += `
-                        <div class="period-accordion-item">
-                            <div class="period-header" data-bs-toggle="collapse" data-bs-target="#collapse${idx}">
-                                <div class="period-info">
-                                    <div class="period-num-circle">${p.num}</div>
-                                    <div class="period-details">
-                                        <span class="period-time-small">${p.timeDisplay}</span>
-                                        <div class="period-subject-bold">${p.subject || 'Free Study'}${statusIcon}</div>
-                                    </div>
-                                </div>
-                                <i class="fas fa-chevron-down text-muted small"></i>
-                            </div>
-                            <div id="collapse${idx}" class="accordion-collapse collapse" data-bs-parent="#periodAccordion">
-                                <div class="px-4 pb-4 pt-1">
-                                    <hr class="mt-0 mb-3 opacity-5">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <div class="bg-surface-secondary rounded p-2 me-3"><i class="fas fa-info-circle text-primary"></i></div>
-                                        <div>
-                                            <div class="small fw-bold">Period Type</div>
-                                            <div class="extra-small text-muted">${isBreak ? 'Lunch/Break' : (p.subject && p.subject.toUpperCase().includes('LAB') ? 'Laboratory/Practical' : 'Lecture/Theory')}</div>
-                                        </div>
-                                    </div>
-                                    ${p.status ? `
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-surface-secondary rounded p-2 me-3"><i class="fas fa-fingerprint text-info"></i></div>
-                                        <div>
-                                            <div class="small fw-bold">Attendance Status</div>
-                                            <div class="extra-small text-muted text-capitalize">${p.status}</div>
-                                        </div>
-                                    </div>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                overlayBody.html(html);
-
-            } catch(e) {
-                console.error("Schedule Load Error:", e);
-                overlayBody.html('<div class="text-center py-5 text-danger"><i class="fas fa-exclamation-triangle mb-2"></i> Error loading schedule</div>');
-            }
-        }
-
-        // 3. Desktop Flatpickr logic (Keep for desktop view)
-        const fp = flatpickr("#timelineDateInput", {
-            dateFormat: "Y-m-d",
-            onChange: function(selectedDates, dateStr) {
-                if(selectedDates.length > 0) {
-                    const timelineTitle = $('#timelineTitle');
-                    const dateText = $('#timelineDateText');
-                    const placeholder = $('#timelinePlaceholder');
-                    const container = $('#todayTimeline');
-
-                    timelineTitle.text("Historical Timeline");
-                    dateText.text("Loading...");
-                    placeholder.addClass('d-none');
-                    container.empty().removeClass('d-none').html('<div class="col-12 text-center py-5"><div class="spinner-border text-primary spinner-border-sm"></div></div>');
-
-                    $.ajax({
-                        url: '/api/student/timeline/history',
-                        data: { date: dateStr },
-                        dataType: 'json',
-                        success: function(resp) {
-                            dateText.text(resp.date);
-                            container.empty();
-                            
-                            if (resp.is_holiday) {
-                                container.addClass('d-none');
-                                placeholder.removeClass('d-none').html(`<div class="text-center py-4 w-100">
-                                    <i class="fas fa-calendar-check fa-2x text-danger mb-3"></i>
-                                    <h5 class="fw-bold">Holiday: ${resp.holiday_reason}</h5>
-                                </div>`);
-                            } else if (resp.has_classes) {
-                                container.removeClass('d-none');
-                                resp.timeline.forEach(function(p) {
-                                    let statusClass = p.status === 'present' ? 'bg-success-subtle border-success' : (p.status === 'absent' ? 'bg-danger-subtle border-danger' : '');
-                                    let statusIcon = p.status === 'present' ? '<i class="fas fa-check-circle text-success ms-2"></i>' : (p.status === 'absent' ? '<i class="fas fa-times-circle text-danger ms-2"></i>' : '');
-                                    container.append(`
-                                        <div class="timeline-node ${statusClass}" data-start="${p.start}" data-end="${p.end}">
-                                            <span class="period-time">${p.timeDisplay}</span>
-                                            <h6 class="period-subject text-truncate">${p.subject || 'Free Study'} ${statusIcon}</h6>
-                                            <span class="period-tag">${p.num} • ${p.subject === 'BREAK' ? 'Relax' : (p.subject && p.subject.toUpperCase().includes('LAB') ? 'Practical' : 'Theory')}</span>
-                                        </div>
-                                    `);
-                                });
-                                
-                                // Check if the selected date is today to decide whether to show LIVE indicators
-                                const selectedDate = new Date(dateStr).setHours(0,0,0,0);
-                                const todayDate = new Date().setHours(0,0,0,0);
-                                updateLiveTimeline(selectedDate !== todayDate);
-                            } else {
-                                container.addClass('d-none');
-                                placeholder.removeClass('d-none').html('<div class="py-5 w-100"><p class="text-muted mb-0">No classes scheduled.</p></div>');
-                            }
-                        },
-                        error: function() {
-                            dateText.text("Error loading");
-                            container.html('<div class="col-12 text-center py-5 text-danger"><i class="fas fa-exclamation-triangle mb-2"></i> Failed to load schedule</div>');
-                        }
+                    data.schedule.forEach(row => {
+                        html += `<tr><td class="fw-bold bg-light">${row.day.substring(0,3)}</td>`;
+                        row.periods.forEach(p => {
+                            html += `<td>${p ? p : '-'}</td>`;
+                        });
+                        html += '</tr>';
                     });
                 }
-            }
-        });
-        
-        $('#timelineDatePickerBtn').click(() => fp.open());
-    });
+                html += '</tbody>';
+                grid.innerHTML = html;
+            })
+            .catch(e => {
+                grid.innerHTML = `<tr><td class="text-danger py-4">Failed to load timetable.</td></tr>`;
+                console.error(e);
+            });
+    }
 </script>
+
 {% endblock %}
-
-
-
