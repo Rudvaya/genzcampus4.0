@@ -2421,3 +2421,7 @@ Found User. Role: student. Password Match: True
 --- 2026-09-29 20:33:52.445542 ---
 Attempt: [nehakatoon@gmail.com]
 Result: FAILED
+
+--- 2026-09-30 20:52:48.681820 ---
+Attempt: [admin@pms.com]
+Found User. Role: admin. Password Match: True

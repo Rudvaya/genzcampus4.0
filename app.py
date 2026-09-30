@@ -773,9 +773,17 @@ def edit_profile(college_slug=None):
 
 
  # Serve uploaded files
-@app.route('/<college_slug>/uploads/<filename>')
+@app.route('/<college_slug>/uploads/<path:filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    download = request.args.get('download', 'false').lower() == 'true'
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=download)
+
+@app.route('/<college_slug>/performance/file/<path:filename>')
+@login_required
+def get_performance_file(filename):
+    download = request.args.get('download', 'false').lower() == 'true'
+    perf_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'performance')
+    return send_from_directory(perf_folder, filename, as_attachment=download)
 
 # Admin Routes
 @app.route('/<college_slug>/admin/dashboard')
@@ -2801,7 +2809,7 @@ def student_performance():
 @app.route('/<college_slug>/analytics/performance')
 @login_required
 def performance_analytics():
-    if not (current_user.role in ['admin', 'superadmin'] or (current_user.is_faculty() and current_user.is_incharge())):
+    if not (current_user.role in ['admin', 'superadmin'] or current_user.is_faculty()):
         flash('Unauthorized access', 'danger')
         return redirect(url_for('index'))
         
@@ -2810,11 +2818,16 @@ def performance_analytics():
     # Base query for students in their purview
     students_query = User.query.filter_by(college_id=current_user.college_id, role='student')
     
-    if current_user.is_faculty() and current_user.is_incharge():
-        students_query = students_query.filter_by(
-            department=current_user.incharge_department,
-            section=current_user.incharge_section
-        )
+    if current_user.is_faculty():
+        if current_user.is_incharge() and current_user.incharge_department and current_user.incharge_section:
+            students_query = students_query.filter_by(
+                department=current_user.incharge_department,
+                section=current_user.incharge_section
+            )
+        elif current_user.department:
+            students_query = students_query.filter_by(
+                department=current_user.department
+            )
         
     student = None
     records = []
@@ -2842,11 +2855,16 @@ def performance_analytics():
         User.role == 'student'
     )
     
-    if current_user.is_faculty() and current_user.is_incharge():
-        recent_updates = recent_updates.filter(
-            User.department == current_user.incharge_department,
-            User.section == current_user.incharge_section
-        )
+    if current_user.is_faculty():
+        if current_user.is_incharge() and current_user.incharge_department and current_user.incharge_section:
+            recent_updates = recent_updates.filter(
+                User.department == current_user.incharge_department,
+                User.section == current_user.incharge_section
+            )
+        elif current_user.department:
+            recent_updates = recent_updates.filter(
+                User.department == current_user.department
+            )
         
     recent_updates = recent_updates.order_by(subq.c.last_updated.desc()).limit(20).all()
     

@@ -182,13 +182,11 @@
           </a>
           {% endif %}
           
-          {% if current_user.is_incharge() %}
           <a class="sidebar-link {% if request.endpoint == 'performance_analytics' %}active{% endif %}"
              href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}">
             <i class="fas fa-chart-line"></i>
             <span>Student Performance</span>
           </a>
-          {% endif %}
           {% if current_user.is_hod() %}
             <a class="sidebar-link {% if request.endpoint == 'manage_faculty' %}active{% endif %}"
                href="{{ url_for('manage_faculty') }}">

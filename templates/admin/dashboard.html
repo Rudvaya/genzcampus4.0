@@ -194,6 +194,12 @@
         </div>
         <div class="tile-label">Departments</div>
       </a>
+      <a href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}" class="action-tile">
+        <div class="tile-icon" style="background:rgba(139,92,246,0.1);color:#8B5CF6;">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="tile-label">Performance</div>
+      </a>
       <a href="{{ url_for('admin_ledger') }}" class="action-tile">
         <div class="tile-icon" style="background:rgba(16,185,129,0.1);color:var(--clr-success);">
           <i class="fas fa-file-invoice-dollar"></i>
