@@ -13,3 +13,10 @@ desktop.ini
 # Environment/DB (Included for dev collaboration as requested)
 #!.env
 #!instance/
+
+node_modules/
+scratch/
+*.log
+scratch_*.js
+test_*.js
+formatted.js
