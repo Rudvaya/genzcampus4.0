@@ -8,7 +8,7 @@ from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction, StudentPerformance, Notice, StudentMark, Assignment, AssignmentSubmission
+from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction, StudentPerformance, Notice, StudentMark, Assignment, AssignmentSubmission, DirectMessage, ClassAnnouncement, DiscussionGroup, DiscussionTopic, DiscussionReply, InAppNotification
 from config import Config
 from utils import allowed_file, validate_roll_no
 from cloudinary_storage import upload_document, serve_document, is_cloudinary_enabled
@@ -84,6 +84,7 @@ def inject_branding():
             except:
                 features = {}
         
+        logo = None
         if college:
             # Look for college-specific logo in SystemConfig
             logo_config = SystemConfig.query.filter_by(key='college_logo', college_id=college.id).first()
@@ -93,15 +94,25 @@ def inject_branding():
             if logo and not logo.startswith('http'):
                 logo = url_for('static', filename=logo)
                 
-            return {
-                'college_logo': logo,
-                'current_college': college,
-                'features': features
-            }
-        return {'college_logo': None, 'current_college': None, 'features': {}}
+        unread_notifs = 0
+        recent_notifs = []
+        if current_user.is_authenticated:
+            try:
+                unread_notifs = InAppNotification.query.filter_by(user_id=current_user.id, is_read=False).count()
+                recent_notifs = InAppNotification.query.filter_by(user_id=current_user.id).order_by(InAppNotification.created_at.desc()).limit(8).all()
+            except Exception:
+                pass
+                
+        return {
+            'college_logo': logo,
+            'current_college': college,
+            'features': features,
+            'unread_notifications_count': unread_notifs,
+            'recent_notifications': recent_notifs
+        }
     except Exception as e:
         print(f"Context processor error: {e}")
-        return {'college_logo': None, 'current_college': None, 'features': {}}
+        return {'college_logo': None, 'current_college': None, 'features': {}, 'unread_notifications_count': 0, 'recent_notifications': []}
 
 from models import College
 
@@ -2224,9 +2235,8 @@ def faculty_dashboard():
     ).order_by(Notice.created_at.desc()).limit(4).all()
 
     faculty_assignments = Assignment.query.filter_by(
-        college_id=current_user.college_id
-    ).filter(
-        (Assignment.faculty_id == current_user.id) | (Assignment.department == current_user.department)
+        college_id=current_user.college_id,
+        faculty_id=current_user.id
     ).order_by(Assignment.created_at.desc()).all()
 
     return render_template('faculty/dashboard.html', 
@@ -2516,13 +2526,64 @@ def delete_faculty_assignment(assignment_id):
         return redirect(url_for('index'))
         
     assignment = Assignment.query.filter_by(id=assignment_id, college_id=current_user.college_id).first_or_404()
-    if assignment.faculty_id != current_user.id and not current_user.is_admin() and not current_user.is_hod():
-        flash('Unauthorized to delete this assignment', 'danger')
+    
+    # Only the faculty who created the assignment is permitted to delete it
+    if assignment.faculty_id != current_user.id:
+        flash('You can only delete assignments created by you.', 'danger')
         return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
         
+    # Delete any related submissions first
+    AssignmentSubmission.query.filter_by(assignment_id=assignment.id).delete()
+    
     db.session.delete(assignment)
     db.session.commit()
     flash('Assignment deleted successfully.', 'success')
+    return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+
+
+@app.route('/<college_slug>/faculty/assignments/<int:assignment_id>/edit-deadline', methods=['POST'])
+@login_required
+def edit_faculty_assignment_deadline(assignment_id):
+    col_slug = current_user.college.slug if current_user.college else getattr(g, 'college_slug', '')
+    if not current_user.is_faculty():
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    assignment = Assignment.query.filter_by(id=assignment_id, college_id=current_user.college_id).first_or_404()
+    
+    # Strictly only the faculty who created the assignment is permitted to edit the deadline
+    if assignment.faculty_id != current_user.id:
+        flash('You can only edit the deadline for assignments created by you.', 'danger')
+        return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+        
+    new_due_date_str = request.form.get('due_date')
+    if not new_due_date_str:
+        flash('Please select a valid deadline date and time.', 'danger')
+        return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+        
+    try:
+        new_due_date = datetime.strptime(new_due_date_str, '%Y-%m-%dT%H:%M')
+    except ValueError:
+        try:
+            new_due_date = datetime.strptime(new_due_date_str, '%Y-%m-%d')
+        except ValueError:
+            flash('Invalid date format provided.', 'danger')
+            return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+            
+    assignment.due_date = new_due_date
+    
+    if request.form.get('title'):
+        assignment.title = request.form.get('title').strip()
+    if request.form.get('description'):
+        assignment.description = request.form.get('description').strip()
+    if request.form.get('max_marks'):
+        try:
+            assignment.max_marks = float(request.form.get('max_marks'))
+        except (ValueError, TypeError):
+            pass
+            
+    db.session.commit()
+    flash(f'Deadline for "{assignment.title}" updated to {new_due_date.strftime("%d %b %Y, %I:%M %p")}.', 'success')
     return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
 
 
@@ -2891,20 +2952,21 @@ def get_today_timetable():
     subjects = [s for s in record.get_periods() if s and s.strip()]
     return jsonify({'subjects': list(set(subjects))}) # Return unique scheduled subjects
 
+@app.route('/<college_slug>/api/faculty/attendance/save', methods=['POST'])
 @app.route('/<college_slug>/faculty/attendance/save', methods=['POST'])
 @login_required
 def save_class_attendance():
     if not current_user.is_faculty():
         return jsonify({'error': 'Unauthorized'}), 403
         
-    data = request.json
-    if not data or not data.get('department') or not data.get('section') or not data.get('attendance') or not data.get('subject'):
+    data = request.json or request.form
+    if not data or not data.get('department') or not data.get('attendance') or not data.get('subject'):
         return jsonify({'error': 'Invalid data format'}), 400
         
     department = data['department']
-    section = data['section']
+    section = data.get('section', 'ALL')
     subject = data['subject']
-    year = data.get('year')
+    year_raw = data.get('year')
     attendance_data = data['attendance'] # {"student_id": "present"|"absent"}
     
     date_str = data.get('date')
@@ -2916,41 +2978,46 @@ def save_class_attendance():
     else:
         target_date = datetime.utcnow().date()
     
-    # Optional: Delete existing records for this class/faculty today to avoid duplicates
-    existing_records = ClassAttendance.query.filter_by(
+    # Delete existing records for this faculty, date, department, section, and subject today to prevent duplicates
+    del_query = ClassAttendance.query.filter_by(
+        college_id=current_user.college_id,
         faculty_id=current_user.id,
         date=target_date,
         department=department,
-        section=section,
         subject=subject
-    ).all()
-    # If the user selects the same class but year is different, we should probably only delete if year matches
-    # but ClassAttendance model doesn't have a year column currently (it has student_id).
-    # We should probably add 'year' to ClassAttendance model too for easier reporting.
-    for record in existing_records:
-        db.session.delete(record)
+    )
+    if section and section != 'ALL':
+        del_query = del_query.filter_by(section=section)
+    del_query.delete(synchronize_session=False)
         
     for student_id_str, status in attendance_data.items():
         try:
             student_id = int(student_id_str)
-            student = User.query.get(student_id)
-            if student and student.role == 'student' and student.department == department and student.section == section:
+            student = User.query.filter_by(id=student_id, college_id=current_user.college_id).first()
+            if student and student.role == 'student':
+                try:
+                    target_yr = int(year_raw) if year_raw else int(student.year or 1)
+                except (ValueError, TypeError):
+                    target_yr = int(student.year or 1) if str(student.year).isdigit() else 1
+                    
+                target_sec = section if section and section != 'ALL' else (student.section or 'A')
                 record = ClassAttendance(
                     student_id=student_id,
                     faculty_id=current_user.id,
+                    college_id=current_user.college_id,
                     date=target_date,
                     department=department,
-                    year=year,
-                    section=section,
+                    year=target_yr,
+                    section=target_sec,
                     subject=subject,
                     status=status
                 )
                 db.session.add(record)
-        except ValueError:
+        except (ValueError, TypeError):
             continue
             
     db.session.commit()
-    return jsonify({'success': True, 'message': 'Attendance saved effectively'})
+    return jsonify({'success': True, 'message': 'Attendance saved successfully'})
 
 @app.route('/<college_slug>/faculty/attendance/history')
 @login_required
@@ -4328,13 +4395,496 @@ def upload_results(exam_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# =========================================================================
+# --- COMMUNICATION HUB MODULE (MESSAGES, ANNOUNCEMENTS, GROUPS, NOTIFS) ---
+# =========================================================================
+
+def send_in_app_notification(college_id, user_id, title, message, notification_type='message', link_url=None):
+    """Utility helper to create and store in-app notifications."""
+    try:
+        if not user_id or not college_id:
+            return None
+        target_user = User.query.get(user_id)
+        if not target_user:
+            return None
+            
+        notif = InAppNotification(
+            college_id=college_id,
+            user_id=user_id,
+            title=title[:150],
+            message=message,
+            notification_type=notification_type,
+            link_url=link_url,
+            is_read=False
+        )
+        db.session.add(notif)
+        db.session.commit()
+        return notif
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating in-app notification: {e}")
+        return None
+
+@app.route('/<college_slug>/faculty/communications')
+@login_required
+def faculty_communications():
+    if not current_user.is_faculty():
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    return render_template('faculty/communications.html')
+
+@app.route('/<college_slug>/student/communications')
+@login_required
+def student_communications():
+    if not current_user.is_student():
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    return render_template('student/communications.html')
+
+@app.route('/<college_slug>/api/communication/contacts')
+@login_required
+def get_communication_contacts():
+    try:
+        college_id = current_user.college_id
+        current_uid = current_user.id
+        
+        # Query all active users in same college
+        query = User.query.filter_by(college_id=college_id, is_blocked=False).filter(User.id != current_uid)
+        
+        # Optional search query
+        search_q = request.args.get('q', '').strip().lower()
+        contacts_raw = query.all()
+        
+        # Pre-fetch unread counts for all senders in one single query
+        unread_counts = dict(
+            db.session.query(DirectMessage.sender_id, db.func.count(DirectMessage.id))
+            .filter(DirectMessage.receiver_id == current_uid, DirectMessage.is_read == False)
+            .group_by(DirectMessage.sender_id)
+            .all()
+        )
+        
+        # Pre-fetch all relevant direct messages for current user in one single query
+        from sqlalchemy import or_, and_
+        user_dms = (
+            DirectMessage.query.filter(
+                DirectMessage.college_id == college_id,
+                or_(
+                    DirectMessage.sender_id == current_uid,
+                    DirectMessage.receiver_id == current_uid
+                )
+            )
+            .order_by(DirectMessage.created_at.desc())
+            .all()
+        )
+        
+        # Build map of other_user_id -> most recent DirectMessage
+        last_msg_map = {}
+        for dm in user_dms:
+            other_id = dm.receiver_id if dm.sender_id == current_uid else dm.sender_id
+            if other_id not in last_msg_map:
+                last_msg_map[other_id] = dm
+        
+        result = {
+            'students': [],
+            'faculty': [],
+            'hod': [],
+            'admin': []
+        }
+        
+        today_date = datetime.utcnow().date()
+        
+        for u in contacts_raw:
+            full_name = u.get_full_name() or u.username or 'User'
+            roll = u.roll_no or ''
+            dept = u.department or ''
+            
+            # Filter if search query exists
+            if search_q:
+                match = (search_q in full_name.lower() or 
+                         search_q in roll.lower() or 
+                         search_q in dept.lower() or
+                         search_q in (u.email or '').lower())
+                if not match:
+                    continue
+                    
+            unread = unread_counts.get(u.id, 0)
+            last_msg = last_msg_map.get(u.id)
+            
+            last_snippet = ""
+            last_time = ""
+            if last_msg:
+                msg_text = (last_msg.message or "").strip()
+                if msg_text:
+                    last_snippet = (msg_text[:45] + '...') if len(msg_text) > 45 else msg_text
+                elif last_msg.file_path:
+                    last_snippet = "📎 Attachment"
+                
+                if last_msg.created_at:
+                    try:
+                        is_today = last_msg.created_at.date() == today_date
+                        last_time = last_msg.created_at.strftime('%I:%M %p') if is_today else last_msg.created_at.strftime('%d %b')
+                    except Exception:
+                        last_time = ""
+                
+            avatar_letter = (u.first_name[0] if u.first_name else (full_name[0] if full_name else 'U')).upper()
+            
+            c_item = {
+                'id': u.id,
+                'name': full_name,
+                'roll_no': u.roll_no,
+                'role': u.role,
+                'department': u.department,
+                'year': u.year,
+                'section': u.section,
+                'email': u.email,
+                'phone': u.phone if (current_user.is_faculty() or current_user.is_admin()) else None,
+                'unread_count': unread,
+                'last_message': last_snippet,
+                'last_time': last_time,
+                'avatar_letter': avatar_letter
+            }
+            
+            if u.role == 'student':
+                result['students'].append(c_item)
+            elif u.role == 'hod':
+                result['hod'].append(c_item)
+            elif u.role in ['admin', 'principal', 'secretary']:
+                result['admin'].append(c_item)
+            else:
+                result['faculty'].append(c_item)
+                
+        # Sort each category: unread first, then by name/roll
+        for cat in result:
+            result[cat].sort(key=lambda x: (0 if x['unread_count'] > 0 else 1, x['name']))
+            
+        return jsonify({
+            'success': True,
+            'contacts': result,
+            'total_unread': sum(unread_counts.values())
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e), 'contacts': {'students': [], 'faculty': [], 'hod': [], 'admin': []}}), 500
+
+@app.route('/<college_slug>/api/communication/messages/<int:contact_id>')
+@login_required
+def get_direct_messages(contact_id):
+    college_id = current_user.college_id
+    current_uid = current_user.id
+    
+    contact = User.query.filter_by(id=contact_id, college_id=college_id).first_or_404()
+    
+    from sqlalchemy import or_, and_
+    messages = DirectMessage.query.filter(
+        DirectMessage.college_id == college_id,
+        or_(
+            and_(DirectMessage.sender_id == current_uid, DirectMessage.receiver_id == contact_id),
+            and_(DirectMessage.sender_id == contact_id, DirectMessage.receiver_id == current_uid)
+        )
+    ).order_by(DirectMessage.created_at.asc()).all()
+    
+    # Mark incoming unread messages as read
+    unreads = [m for m in messages if m.sender_id == contact_id and not m.is_read]
+    if unreads:
+        now = datetime.utcnow()
+        for m in unreads:
+            m.is_read = True
+            m.read_at = now
+        db.session.commit()
+        
+    msg_list = []
+    for m in messages:
+        msg_list.append({
+            'id': m.id,
+            'sender_id': m.sender_id,
+            'receiver_id': m.receiver_id,
+            'is_mine': m.sender_id == current_uid,
+            'message': m.message,
+            'file_path': m.file_path,
+            'file_original_name': m.file_original_name,
+            'is_read': m.is_read,
+            'created_at': m.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'formatted_time': m.created_at.strftime('%I:%M %p')
+        })
+        
+    return jsonify({
+        'success': True,
+        'contact': {
+            'id': contact.id,
+            'name': contact.get_full_name(),
+            'role': contact.role.upper(),
+            'department': contact.department,
+            'roll_no': contact.roll_no,
+            'section': contact.section,
+            'year': contact.year,
+            'avatar_letter': (contact.first_name[0] if contact.first_name else 'U').upper()
+        },
+        'messages': msg_list
+    })
+
+@app.route('/<college_slug>/api/communication/messages/send', methods=['POST'])
+@login_required
+def send_direct_message():
+    college_id = current_user.college_id
+    college_slug = g.college_slug if hasattr(g, 'college_slug') else ''
+    receiver_id = request.form.get('receiver_id') or (request.json.get('receiver_id') if request.is_json else None)
+    message_text = (request.form.get('message') or (request.json.get('message') if request.is_json else '') or '').strip()
+    
+    if not receiver_id:
+        return jsonify({'success': False, 'error': 'Recipient required'}), 400
+        
+    try:
+        receiver_id = int(receiver_id)
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid recipient ID'}), 400
+        
+    receiver = User.query.filter_by(id=receiver_id, college_id=college_id).first_or_404()
+    
+    file_path = None
+    file_original_name = None
+    file = request.files.get('file') or request.files.get('attachment')
+    if file and file.filename != '':
+        file_original_name = file.filename
+        upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'messages')
+        file_path = upload_document(
+            file,
+            subfolder='messages',
+            prefix=f"msg_{current_user.id}_{receiver_id}",
+            local_folder_path=upload_folder
+        )
+        
+    if not message_text and not file_path:
+        return jsonify({'success': False, 'error': 'Message or attachment required'}), 400
+        
+    msg = DirectMessage(
+        college_id=college_id,
+        sender_id=current_user.id,
+        receiver_id=receiver_id,
+        message=message_text,
+        file_path=file_path,
+        file_original_name=file_original_name,
+        is_read=False,
+        created_at=datetime.utcnow()
+    )
+    db.session.add(msg)
+    db.session.commit()
+    
+    # Dispatch notification to recipient
+    sender_name = current_user.get_full_name()
+    notif_snippet = message_text[:80] if message_text else "Sent an attachment"
+    chat_url = f"/{college_slug}/faculty/communications?chat_user={current_user.id}" if receiver.is_faculty() else f"/{college_slug}/student/communications?chat_user={current_user.id}"
+    
+    send_in_app_notification(
+        college_id=college_id,
+        user_id=receiver.id,
+        title=f"💬 New message from {sender_name}",
+        message=f"{sender_name} ({current_user.role.capitalize()}): {notif_snippet}",
+        notification_type='message',
+        link_url=chat_url
+    )
+    
+    return jsonify({
+        'success': True,
+        'message': {
+            'id': msg.id,
+            'sender_id': msg.sender_id,
+            'receiver_id': msg.receiver_id,
+            'is_mine': True,
+            'message': msg.message,
+            'file_path': msg.file_path,
+            'file_original_name': msg.file_original_name,
+            'is_read': False,
+            'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'formatted_time': msg.created_at.strftime('%I:%M %p')
+        }
+    })
+
+# --- Class Announcements APIs ---
+@app.route('/<college_slug>/api/communication/announcements')
+@login_required
+def get_class_announcements():
+    college_id = current_user.college_id
+    query = ClassAnnouncement.query.filter_by(college_id=college_id)
+    
+    if current_user.is_student():
+        dept = current_user.department
+        yr = current_user.year
+        sec = current_user.section
+        query = query.filter(
+            (ClassAnnouncement.department.in_(['ALL', dept])),
+            (ClassAnnouncement.year.in_([0, yr])),
+            (ClassAnnouncement.section.in_(['ALL', sec]))
+        )
+    elif current_user.is_faculty():
+        dept = current_user.department
+        handling_depts = [d.strip() for d in (current_user.handling_departments or '').split(',') if d.strip()]
+        allowed_depts = ['ALL', dept] + handling_depts
+        query = query.filter(
+            (ClassAnnouncement.faculty_id == current_user.id) | 
+            (ClassAnnouncement.department.in_(allowed_depts))
+        )
+        
+    announcements = query.order_by(ClassAnnouncement.created_at.desc()).limit(100).all()
+    
+    data = []
+    for a in announcements:
+        author = a.faculty
+        data.append({
+            'id': a.id,
+            'title': a.title,
+            'content': a.content,
+            'department': a.department,
+            'year': a.year,
+            'section': a.section,
+            'subject': a.subject,
+            'priority': a.priority,
+            'file_path': a.file_path,
+            'file_original_name': a.file_original_name,
+            'faculty_name': author.get_full_name() if author else 'Faculty',
+            'faculty_id': a.faculty_id,
+            'is_author': a.faculty_id == current_user.id or current_user.is_admin(),
+            'created_at': a.created_at.strftime('%d %b %Y, %I:%M %p'),
+            'relative_time': a.created_at.strftime('%d %b %Y')
+        })
+        
+    return jsonify({'success': True, 'announcements': data})
+
+@app.route('/<college_slug>/api/communication/announcements/create', methods=['POST'])
+@login_required
+def create_class_announcement():
+    if not current_user.is_faculty() and not current_user.is_admin():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    college_id = current_user.college_id
+    college_slug = g.college_slug if hasattr(g, 'college_slug') else ''
+    title = (request.form.get('title') or '').strip()
+    content = (request.form.get('content') or '').strip()
+    department = request.form.get('department') or current_user.department or 'ALL'
+    year = int(request.form.get('year') or 0)
+    section = request.form.get('section') or 'ALL'
+    subject = (request.form.get('subject') or 'General').strip()
+    priority = request.form.get('priority') or 'normal'
+    
+    if not title or not content:
+        return jsonify({'success': False, 'error': 'Title and content are required'}), 400
+        
+    file_path = None
+    file_original_name = None
+    file = request.files.get('file') or request.files.get('attachment')
+    if file and file.filename != '':
+        file_original_name = file.filename
+        upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'announcements')
+        file_path = upload_document(
+            file,
+            subfolder='announcements',
+            prefix=f"anc_{current_user.id}",
+            local_folder_path=upload_folder
+        )
+        
+    anc = ClassAnnouncement(
+        college_id=college_id,
+        faculty_id=current_user.id,
+        department=department,
+        year=year,
+        section=section,
+        subject=subject,
+        title=title,
+        content=content,
+        priority=priority,
+        file_path=file_path,
+        file_original_name=file_original_name,
+        created_at=datetime.utcnow()
+    )
+    db.session.add(anc)
+    db.session.commit()
+    
+    # Broadcast notification to targeted students
+    target_student_query = User.query.filter_by(college_id=college_id, role='student', is_blocked=False)
+    if department != 'ALL':
+        target_student_query = target_student_query.filter_by(department=department)
+    if year > 0:
+        target_student_query = target_student_query.filter_by(year=year)
+    if section != 'ALL':
+        target_student_query = target_student_query.filter_by(section=section)
+        
+    target_students = target_student_query.all()
+    badge_prio = f"[{priority.upper()}] " if priority in ['urgent', 'important'] else ""
+    for st in target_students:
+        send_in_app_notification(
+            college_id=college_id,
+            user_id=st.id,
+            title=f"📢 {badge_prio}New Announcement: {title[:40]}",
+            message=f"{current_user.get_full_name()} ({subject}): {content[:100]}",
+            notification_type='announcement',
+            link_url=f"/{college_slug}/student/communications"
+        )
+        
+    return jsonify({'success': True, 'message': 'Announcement published successfully!'})
+
+@app.route('/<college_slug>/api/communication/announcements/<int:announcement_id>/delete', methods=['POST'])
+@login_required
+def delete_class_announcement(announcement_id):
+    college_id = current_user.college_id
+    anc = ClassAnnouncement.query.filter_by(id=announcement_id, college_id=college_id).first_or_404()
+    
+    if anc.faculty_id != current_user.id and not current_user.is_admin():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    db.session.delete(anc)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Announcement deleted successfully'})
+
+
+
+# --- In-App Notifications APIs ---
+@app.route('/<college_slug>/api/notifications')
+@login_required
+def get_user_notifications():
+    notifs = InAppNotification.query.filter_by(user_id=current_user.id).order_by(InAppNotification.created_at.desc()).limit(30).all()
+    unread_count = InAppNotification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    
+    data = []
+    for n in notifs:
+        data.append({
+            'id': n.id,
+            'title': n.title,
+            'message': n.message,
+            'notification_type': n.notification_type,
+            'link_url': n.link_url,
+            'is_read': n.is_read,
+            'created_at': n.created_at.strftime('%d %b %Y, %I:%M %p')
+        })
+        
+    return jsonify({
+        'success': True,
+        'unread_count': unread_count,
+        'notifications': data
+    })
+
+@app.route('/<college_slug>/api/notifications/mark-read', methods=['POST'])
+@login_required
+def mark_notifications_read():
+    notif_id = request.form.get('notification_id') or (request.json.get('notification_id') if request.is_json else None)
+    
+    if notif_id:
+        notif = InAppNotification.query.filter_by(id=notif_id, user_id=current_user.id).first()
+        if notif:
+            notif.is_read = True
+            db.session.commit()
+    else:
+        InAppNotification.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
+        db.session.commit()
+        
+    return jsonify({'success': True})
+
 @app.route('/<college_slug>/exams/<int:exam_id>/results/manual', methods=['POST'])
 @login_required
 def manual_result(exam_id):
     if current_user.role not in ['exam_admin', 'admin']:
         return redirect(url_for('index'))
     
-    roll_no = request.form.get('roll_no').strip().upper()
+    roll_no = request.form.get('roll_no', '').strip().upper()
     student = User.query.filter_by(roll_no=roll_no, college_id=g.current_college.id).first()
     
     if student:
@@ -4354,6 +4904,7 @@ def manual_result(exam_id):
         flash(f'Student with roll number {roll_no} not found', 'danger')
         
     return redirect(url_for('exam_dashboard'))
+
 
 if __name__ == '__main__':
     with app.app_context():

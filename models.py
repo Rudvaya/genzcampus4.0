@@ -509,4 +509,102 @@ class AssignmentSubmission(db.Model):
     student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('assignment_submissions', lazy=True, cascade='all, delete-orphan'))
     graded_by = db.relationship('User', foreign_keys=[graded_by_id], backref=db.backref('graded_submissions', lazy=True))
 
+# --- In-App Direct Messaging Model ---
+class DirectMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_original_name = db.Column(db.String(255), nullable=True)
+    is_read = db.Column(db.Boolean, default=False)
+    read_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', lazy='dynamic'))
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref=db.backref('received_messages', lazy='dynamic'))
+    college = db.relationship('College', backref=db.backref('college_messages', lazy='dynamic'))
+
+# --- Class Announcements Model ---
+class ClassAnnouncement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    faculty_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    department = db.Column(db.String(100), nullable=False) # e.g., 'AIML', 'CSE', or 'ALL'
+    year = db.Column(db.Integer, nullable=False, default=1) # 1, 2, 3, 4, or 0 for all
+    section = db.Column(db.String(10), nullable=False, default='ALL') # 'A', 'B', 'ALL'
+    subject = db.Column(db.String(150), nullable=False, default='General')
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    priority = db.Column(db.String(20), default='normal') # 'urgent', 'important', 'normal'
+    file_path = db.Column(db.String(500), nullable=True)
+    file_original_name = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    faculty = db.relationship('User', backref=db.backref('posted_class_announcements', lazy=True))
+    college = db.relationship('College', backref=db.backref('college_class_announcements', lazy=True))
+
+# --- Discussion Groups & Channels Model ---
+class DiscussionGroup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    group_type = db.Column(db.String(30), default='class_subject') # 'class_subject', 'department_faculty', 'college_staff', 'general'
+    department = db.Column(db.String(100), default='ALL')
+    year = db.Column(db.Integer, default=0) # 0 means all years
+    section = db.Column(db.String(10), default='ALL')
+    subject = db.Column(db.String(150), nullable=True)
+    is_private = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    created_by = db.relationship('User', backref=db.backref('created_discussion_groups', lazy=True))
+    college = db.relationship('College', backref=db.backref('college_discussion_groups', lazy=True))
+    topics = db.relationship('DiscussionTopic', backref='group', lazy=True, cascade='all, delete-orphan')
+
+class DiscussionTopic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('discussion_group.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(250), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_original_name = db.Column(db.String(255), nullable=True)
+    is_pinned = db.Column(db.Boolean, default=False)
+    views_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    author = db.relationship('User', backref=db.backref('discussion_topics', lazy=True))
+    replies = db.relationship('DiscussionReply', backref='topic', lazy=True, cascade='all, delete-orphan')
+
+class DiscussionReply(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey('discussion_topic.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_original_name = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    author = db.relationship('User', backref=db.backref('discussion_replies', lazy=True))
+
+# --- In-App Notifications Model ---
+class InAppNotification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(150), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    notification_type = db.Column(db.String(50), default='message') # 'message', 'announcement', 'discussion_reply', 'assignment', 'system'
+    link_url = db.Column(db.String(255), nullable=True)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('notifications', lazy='dynamic', cascade='all, delete-orphan'))
+    college = db.relationship('College', backref=db.backref('college_notifications', lazy='dynamic'))
+
+
 

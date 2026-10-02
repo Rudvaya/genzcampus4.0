@@ -206,6 +206,11 @@
             <i class="fas fa-bullhorn"></i>
             <span>Notice Board</span>
           </a>
+          <a class="sidebar-link"
+             href="{{ url_for('faculty_dashboard') }}#communicationsP" data-tab-target="#communicationsP">
+            <i class="fas fa-comments"></i>
+            <span>Communications Hub</span>
+          </a>
           {% if current_user.is_hod() %}
             <div class="sidebar-section-label" style="margin-top:8px;">HOD Operations</div>
             <a class="sidebar-link {% if request.endpoint == 'manage_faculty' %}active{% endif %}"
@@ -230,6 +235,11 @@
              href="{{ url_for('student_dashboard') }}">
             <i class="fas fa-tachometer-alt"></i>
             <span>Dashboard</span>
+          </a>
+          <a class="sidebar-link {% if request.endpoint == 'student_communications' %}active{% endif %}"
+             href="{{ url_for('student_communications', college_slug=current_college.slug) }}">
+            <i class="fas fa-comments"></i>
+            <span>Communications</span>
           </a>
           <a class="sidebar-link {% if request.endpoint == 'apply_permission' %}active{% endif %}"
              href="{{ url_for('apply_permission') }}">
@@ -277,7 +287,55 @@
       <!-- Desktop Top Bar -->
       <header class="pms-topbar d-none d-md-flex">
         <h1 class="topbar-title mb-0">{% block page_title %}Dashboard{% endblock %}</h1>
-        <div class="topbar-actions">
+        <div class="topbar-actions d-flex align-items-center gap-2">
+          <!-- Notification Bell Dropdown -->
+          <div class="dropdown">
+            <button class="theme-toggle-btn position-relative" type="button" id="desktopNotifDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+              <i class="fas fa-bell"></i>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notif-badge {% if not unread_notifications_count or unread_notifications_count == 0 %}d-none{% endif %}" style="font-size: 0.65rem;">
+                {{ unread_notifications_count if unread_notifications_count else 0 }}
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow-lg p-0" style="width: 320px; max-height: 420px; overflow: hidden; border-radius: 14px; border: 1px solid var(--border-color); background: var(--card-bg);">
+              <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="background: var(--bg-color);">
+                <span class="fw-bold text-main small text-uppercase letter-spacing-1"><i class="fas fa-bell text-primary me-1.5"></i> Notifications</span>
+                <button class="btn btn-link btn-sm text-primary p-0 text-decoration-none extra-small fw-semibold mark-all-notifs-read">Mark all read</button>
+              </div>
+              <div class="notif-list-container" style="max-height: 300px; overflow-y: auto;">
+                {% if recent_notifications and recent_notifications|length > 0 %}
+                  {% for n in recent_notifications %}
+                    <a href="{{ n.link_url if n.link_url else '#' }}" class="d-block p-2.5 border-bottom text-decoration-none text-main notif-item {% if not n.is_read %}bg-primary bg-opacity-10{% endif %}" style="transition: background 0.15s ease;">
+                      <div class="d-flex align-items-start gap-2">
+                        <div class="p-1.5 rounded-circle bg-primary bg-opacity-20 text-primary small mt-0.5">
+                          <i class="fas {% if n.notification_type == 'message' %}fa-comment-alt{% elif n.notification_type == 'announcement' %}fa-bullhorn{% else %}fa-info-circle{% endif %}"></i>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                          <div class="fw-bold small text-truncate">{{ n.title }}</div>
+                          <div class="text-muted extra-small text-truncate">{{ n.message }}</div>
+                          <div class="text-muted extra-small mt-0.5" style="font-size: 0.68rem;">{{ n.created_at.strftime('%d %b, %I:%M %p') }}</div>
+                        </div>
+                      </div>
+                    </a>
+                  {% endfor %}
+                {% else %}
+                  <div class="text-center py-4 text-muted small">
+                    <i class="fas fa-bell-slash fa-2x mb-2 opacity-50"></i>
+                    <div>No new notifications</div>
+                  </div>
+                {% endif %}
+              </div>
+              {% if current_user.is_faculty() %}
+                <a href="{{ url_for('faculty_dashboard') }}#communicationsP" class="d-block text-center py-2 bg-light text-primary text-decoration-none small fw-bold border-top">
+                  Open Communications Hub <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+              {% elif current_user.is_student() %}
+                <a href="{{ url_for('student_communications', college_slug=current_college.slug) }}" class="d-block text-center py-2 bg-light text-primary text-decoration-none small fw-bold border-top">
+                  Open Communications <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+
           <!-- Theme Toggle -->
           <button class="theme-toggle-btn" id="desktopThemeToggle" title="Toggle theme" aria-label="Toggle theme">
             <i class="fas fa-moon" id="desktopThemeIcon"></i>
@@ -328,6 +386,34 @@
           </a>
         </div>
         <div class="d-flex align-items-center gap-2">
+          <!-- Mobile Notification Bell -->
+          <div class="dropdown">
+            <button class="theme-toggle-btn position-relative" type="button" id="mobileNotifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-bell"></i>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notif-badge {% if not unread_notifications_count or unread_notifications_count == 0 %}d-none{% endif %}" style="font-size: 0.6rem;">
+                {{ unread_notifications_count if unread_notifications_count else 0 }}
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow-lg p-0" style="width: 290px; max-height: 380px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border-color); background: var(--card-bg);">
+              <div class="d-flex justify-content-between align-items-center p-2.5 border-bottom" style="background: var(--bg-color);">
+                <span class="fw-bold text-main small"><i class="fas fa-bell text-primary me-1"></i> Alerts</span>
+                <button class="btn btn-link btn-sm text-primary p-0 text-decoration-none extra-small fw-semibold mark-all-notifs-read">Clear</button>
+              </div>
+              <div class="notif-list-container" style="max-height: 250px; overflow-y: auto;">
+                {% if recent_notifications and recent_notifications|length > 0 %}
+                  {% for n in recent_notifications %}
+                    <a href="{{ n.link_url if n.link_url else '#' }}" class="d-block p-2 border-bottom text-decoration-none text-main notif-item {% if not n.is_read %}bg-primary bg-opacity-10{% endif %}">
+                      <div class="fw-bold extra-small text-truncate">{{ n.title }}</div>
+                      <div class="text-muted extra-small text-truncate">{{ n.message }}</div>
+                    </a>
+                  {% endfor %}
+                {% else %}
+                  <div class="text-center py-3 text-muted extra-small">No alerts</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
           <!-- Theme Toggle Mobile -->
           <button class="theme-toggle-btn" id="mobileThemeToggle" title="Toggle theme" aria-label="Toggle theme">
             <i class="fas fa-moon" id="mobileThemeIcon"></i>
@@ -560,10 +646,15 @@
           <span>View Timetable</span>
         </a>
         {% endif %}
-        <a class="mobile-drawer-link {% if request.endpoint == 'faculty_notices' %}active{% endif %}"
-           href="{{ url_for('faculty_notices', college_slug=current_college.slug) }}">
+        <a class="mobile-drawer-link"
+           href="{{ url_for('faculty_dashboard') }}#noticesP" data-tab-target="#noticesP">
           <i class="fas fa-bullhorn"></i>
           <span>Notice Board</span>
+        </a>
+        <a class="mobile-drawer-link"
+           href="{{ url_for('faculty_dashboard') }}#communicationsP" data-tab-target="#communicationsP">
+          <i class="fas fa-comments"></i>
+          <span>Communications Hub</span>
         </a>
         {% if current_user.is_hod() %}
         <div class="mobile-drawer-section-label" style="margin-top:6px;">HOD Operations</div>
@@ -588,6 +679,11 @@
            href="{{ url_for('student_dashboard') }}">
           <i class="fas fa-home"></i>
           <span>Home Dashboard</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'student_communications' %}active{% endif %}"
+           href="{{ url_for('student_communications', college_slug=current_college.slug) }}">
+          <i class="fas fa-comments"></i>
+          <span>Communications</span>
         </a>
         <a class="mobile-drawer-link {% if request.endpoint == 'apply_permission' %}active{% endif %}"
            href="{{ url_for('apply_permission') }}">
@@ -965,14 +1061,21 @@
       }
     });
 
-    // Close when clicking a link inside the drawer
-    if (drawer) {
-      drawer.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', function () {
-          closeDrawer();
-        });
+    // Notification Handler: Mark All Read
+    $(document).on('click', '.mark-all-notifs-read', function(e) {
+      e.preventDefault();
+      const colSlug = '{{ current_college.slug if current_college else "" }}';
+      if (!colSlug) return;
+      
+      $.ajax({
+        url: `/${colSlug}/api/notifications/mark-read`,
+        type: 'POST',
+        success: function() {
+          $('.notif-badge').addClass('d-none').text('0');
+          $('.notif-item').removeClass('bg-primary bg-opacity-10');
+        }
       });
-    }
+    });
   });
 </script>
 
