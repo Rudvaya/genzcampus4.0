@@ -160,6 +160,11 @@
             <i class="fas fa-sitemap"></i>
             <span>Departments</span>
           </a>
+          <a class="sidebar-link {% if request.endpoint == 'admin_notices' %}active{% endif %}"
+             href="{{ url_for('admin_notices', college_slug=current_college.slug) }}">
+            <i class="fas fa-bullhorn"></i>
+            <span>Notice Board</span>
+          </a>
 
           <div class="sidebar-section-label" style="margin-top:8px;">System</div>
           <a class="sidebar-link {% if request.endpoint == 'admin_settings' %}active{% endif %}"
@@ -169,10 +174,25 @@
           </a>
 
         {% elif current_user.is_faculty() %}
-          <a class="sidebar-link {% if request.endpoint == 'faculty_dashboard' %}active{% endif %}"
-             href="{{ url_for('faculty_dashboard') }}">
-            <i class="fas fa-tachometer-alt"></i>
-            <span>Dashboard</span>
+          <a class="sidebar-link {% if request.endpoint == 'faculty_dashboard' and not request.path.endswith('#') %}active{% endif %}"
+             href="{{ url_for('faculty_dashboard') }}" data-tab-target="#attendanceP">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Class Attendance</span>
+          </a>
+          <a class="sidebar-link"
+             href="{{ url_for('faculty_dashboard') }}#studentsP" data-tab-target="#studentsP">
+            <i class="fas fa-user-graduate"></i>
+            <span>Student Management</span>
+          </a>
+          <a class="sidebar-link"
+             href="{{ url_for('faculty_dashboard') }}#performanceP" data-tab-target="#performanceP">
+            <i class="fas fa-chart-line"></i>
+            <span>Marks &amp; Evaluation</span>
+          </a>
+          <a class="sidebar-link"
+             href="{{ url_for('faculty_dashboard') }}#assignmentsP" data-tab-target="#assignmentsP">
+            <i class="fas fa-tasks"></i>
+            <span>Assignments</span>
           </a>
           {% if features.get('timetable') %}
           <a class="sidebar-link {% if request.endpoint == 'faculty_view_timetable' %}active{% endif %}"
@@ -181,26 +201,26 @@
             <span>View Timetable</span>
           </a>
           {% endif %}
-          
-          <a class="sidebar-link {% if request.endpoint == 'performance_analytics' %}active{% endif %}"
-             href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}">
-            <i class="fas fa-chart-line"></i>
-            <span>Student Performance</span>
+          <a class="sidebar-link"
+             href="{{ url_for('faculty_dashboard') }}#noticesP" data-tab-target="#noticesP">
+            <i class="fas fa-bullhorn"></i>
+            <span>Notice Board</span>
           </a>
           {% if current_user.is_hod() %}
+            <div class="sidebar-section-label" style="margin-top:8px;">HOD Operations</div>
             <a class="sidebar-link {% if request.endpoint == 'manage_faculty' %}active{% endif %}"
                href="{{ url_for('manage_faculty') }}">
               <i class="fas fa-chalkboard-teacher"></i>
               <span>Manage Faculty</span>
             </a>
             <a class="sidebar-link"
-               href="{{ url_for('faculty_dashboard') }}#pendingP">
+               href="{{ url_for('faculty_dashboard') }}#pendingP" data-tab-target="#pendingP">
               <i class="fas fa-inbox"></i>
               <span>Pending Permissions</span>
             </a>
           {% endif %}
           <a class="sidebar-link"
-             href="{{ url_for('faculty_dashboard') }}#approvedP">
+             href="{{ url_for('faculty_dashboard') }}#approvedP" data-tab-target="#approvedP">
             <i class="fas fa-check-circle"></i>
             <span>Approved Roster</span>
           </a>
@@ -225,6 +245,11 @@
              href="{{ url_for('club_portal.student_events') }}">
             <i class="fas fa-calendar-star"></i>
             <span>Event Portal</span>
+          </a>
+          <a class="sidebar-link {% if request.endpoint == 'student_notices' %}active{% endif %}"
+             href="{{ url_for('student_notices', college_slug=current_college.slug) }}">
+            <i class="fas fa-bullhorn"></i>
+            <span>Notice Board</span>
           </a>
         {% endif %}
       </nav>
@@ -286,15 +311,21 @@
 
       <!-- Mobile Top Bar -->
       <header class="pms-mobile-topbar d-md-none" id="mobileTopbar">
-        <div class="mobile-brand">
-          <div class="mobile-brand-icon {% if college_logo %}bg-transparent shadow-none{% endif %}" style="width: 36px; height: 36px;">
-            {% if college_logo %}
-              <img src="{{ college_logo }}" alt="Logo" style="height: 100%; width: 100%; object-fit: contain;">
-            {% else %}
-              <i class="fas fa-shield-alt"></i>
-            {% endif %}
-          </div>
-          <span class="mobile-brand-text">GenZCampus</span>
+        <div class="d-flex align-items-center gap-2">
+          <!-- Mobile Menu Button to trigger drawer -->
+          <button class="mobile-menu-btn" id="mobileMenuOpenBtn" type="button" title="Open Navigation Menu" aria-label="Open Navigation Menu">
+            <i class="fas fa-bars"></i>
+          </button>
+          <a href="{{ url_for('admin_dashboard') if current_user.is_admin() else (url_for('faculty_dashboard') if current_user.is_faculty() else (url_for('student_dashboard') if current_user.is_student() else (url_for('super_admin_dashboard') if current_user.is_superadmin else '#'))) }}" class="mobile-brand">
+            <div class="mobile-brand-icon {% if college_logo %}bg-transparent shadow-none{% endif %}" style="width: 32px; height: 32px;">
+              {% if college_logo %}
+                <img src="{{ college_logo }}" alt="Logo" style="height: 100%; width: 100%; object-fit: contain;">
+              {% else %}
+                <i class="fas fa-shield-alt"></i>
+              {% endif %}
+            </div>
+            <span class="mobile-brand-text">{{ current_college.name if current_college else 'GenZCampus' }}</span>
+          </a>
         </div>
         <div class="d-flex align-items-center gap-2">
           <!-- Theme Toggle Mobile -->
@@ -305,11 +336,11 @@
           <div class="dropdown">
             <button class="theme-toggle-btn dropdown-toggle" type="button"
               data-bs-toggle="dropdown" aria-expanded="false" style="border: none;">
-              <div class="user-avatar-sm" style="width:24px;height:24px;font-size:10px;">
+              <div class="user-avatar-sm" style="width:26px;height:26px;font-size:11px;">
                 {{ current_user.first_name[0] }}
               </div>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end">
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg">
               <li>
                 <div style="padding: 10px 14px; border-bottom: 1px solid var(--border);">
                   <div style="font-size:13px;font-weight:700;color:var(--text-main);">{{ current_user.get_full_name() }}</div>
@@ -317,15 +348,20 @@
                 </div>
               </li>
               <li>
+                <a class="dropdown-item" href="{{ url_for('admin_dashboard') if current_user.is_admin() else (url_for('faculty_dashboard') if current_user.is_faculty() else (url_for('student_dashboard') if current_user.is_student() else '#')) }}">
+                  <i class="fas fa-home me-2"></i> Home Dashboard
+                </a>
+              </li>
+              <li>
                 <a class="dropdown-item" href="{{ url_for('edit_profile') }}">
-                  <i class="fas fa-user-edit"></i> Edit Profile
+                  <i class="fas fa-user-edit me-2"></i> Edit Profile
                 </a>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <a class="dropdown-item" href="{{ url_for('logout') }}"
                    style="color: var(--clr-danger) !important;">
-                  <i class="fas fa-sign-out-alt"></i> Logout
+                  <i class="fas fa-sign-out-alt me-2"></i> Logout
                 </a>
               </li>
             </ul>
@@ -342,6 +378,257 @@
   </div>
 
   <!-- ====================================================
+       MOBILE SLIDE-OUT NAVIGATION DRAWER
+       ==================================================== -->
+  <div class="pms-mobile-backdrop d-md-none" id="mobileDrawerBackdrop"></div>
+  <aside class="pms-mobile-drawer d-md-none" id="mobileNavDrawer" aria-label="Mobile Navigation Drawer">
+    
+    <!-- Drawer Header -->
+    <div class="mobile-drawer-header">
+      <div class="d-flex align-items-center gap-2 overflow-hidden">
+        <div class="mobile-brand-icon flex-shrink-0 {% if college_logo %}bg-transparent shadow-none{% endif %}" style="width: 32px; height: 32px;">
+          {% if college_logo %}
+            <img src="{{ college_logo }}" alt="Logo" style="height: 100%; width: 100%; object-fit: contain;">
+          {% else %}
+            <i class="fas fa-shield-alt"></i>
+          {% endif %}
+        </div>
+        <div class="mobile-drawer-brand-title">{{ current_college.name if current_college else 'GenZCampus' }}</div>
+      </div>
+      <button class="mobile-drawer-close" id="mobileDrawerCloseBtn" type="button" aria-label="Close navigation menu">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- User Profile Strip -->
+    <div class="mobile-drawer-user">
+      <div class="sidebar-avatar">
+        {{ current_user.first_name[0] }}{{ current_user.last_name[0] if current_user.last_name else '' }}
+      </div>
+      <div class="sidebar-user-info overflow-hidden">
+        <div class="sidebar-user-name text-truncate">{{ current_user.get_full_name() }}</div>
+        <div class="sidebar-user-role"><span class="badge bg-primary bg-opacity-15 text-primary py-1 px-2 rounded-pill">{{ current_user.role }}</span></div>
+      </div>
+    </div>
+
+    <!-- Drawer Navigation Links -->
+    <div class="mobile-drawer-nav">
+      
+      {% if current_user.is_superadmin %}
+        <div class="mobile-drawer-section-label">Super Admin</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'super_admin_dashboard' %}active{% endif %}"
+           href="{{ url_for('super_admin_dashboard') }}">
+          <i class="fas fa-home"></i>
+          <span>Home / Platform</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'create_college' %}active{% endif %}"
+           href="{{ url_for('create_college') }}">
+          <i class="fas fa-plus-circle"></i>
+          <span>Add College</span>
+        </a>
+
+      {% elif current_user.is_principal() %}
+        <div class="mobile-drawer-section-label">Navigation</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'principal_dashboard' %}active{% endif %}"
+           href="{{ url_for('principal_dashboard') }}">
+          <i class="fas fa-home"></i>
+          <span>Home Dashboard</span>
+        </a>
+        <a class="mobile-drawer-link" href="{{ url_for('exam_dashboard') }}">
+          <i class="fas fa-file-invoice"></i>
+          <span>Academic Overview</span>
+        </a>
+
+      {% elif current_user.is_secretary() %}
+        <div class="mobile-drawer-section-label">Navigation</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'secretary_dashboard' %}active{% endif %}"
+           href="{{ url_for('secretary_dashboard') }}">
+          <i class="fas fa-home"></i>
+          <span>Home Dashboard</span>
+        </a>
+        <a class="mobile-drawer-link" href="{{ url_for('admin_ledger') }}">
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Finance Ledger</span>
+        </a>
+
+      {% elif current_user.is_exam_admin() %}
+        <div class="mobile-drawer-section-label">Navigation</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'exam_dashboard' %}active{% endif %}"
+           href="{{ url_for('exam_dashboard') }}">
+          <i class="fas fa-home"></i>
+          <span>Home Dashboard</span>
+        </a>
+
+      {% elif current_user.is_admin() %}
+        <div class="mobile-drawer-section-label">Main Navigation</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
+           href="{{ url_for('admin_dashboard') }}">
+          <i class="fas fa-home"></i>
+          <span>Home Dashboard</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'manage_students' %}active{% endif %}"
+           href="{{ url_for('manage_students') }}">
+          <i class="fas fa-users"></i>
+          <span>Student Directory</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'performance_analytics' %}active{% endif %}"
+           href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}">
+          <i class="fas fa-chart-line"></i>
+          <span>Performance Analytics</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'manage_faculty' %}active{% endif %}"
+           href="{{ url_for('manage_faculty') }}">
+          <i class="fas fa-chalkboard-teacher"></i>
+          <span>Faculty Directory</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'manage_departments' %}active{% endif %}"
+           href="{{ url_for('manage_departments') }}">
+          <i class="fas fa-sitemap"></i>
+          <span>Departments</span>
+        </a>
+
+        <div class="mobile-drawer-section-label">Features & Management</div>
+        {% if features.get('permissions') %}
+        <a class="mobile-drawer-link {% if request.endpoint == 'admin_permissions' %}active{% endif %}"
+           href="{{ url_for('admin_permissions') }}">
+          <i class="fas fa-clipboard-check"></i>
+          <span>Permissions</span>
+        </a>
+        {% endif %}
+        
+        {% if features.get('clubs') %}
+        <a class="mobile-drawer-link {% if request.endpoint == 'manage_clubs' %}active{% endif %}"
+           href="{{ url_for('manage_clubs') }}">
+          <i class="fas fa-layer-group"></i>
+          <span>Clubs &amp; Events</span>
+        </a>
+        {% endif %}
+
+        {% if features.get('timetable') %}
+        <a class="mobile-drawer-link {% if request.endpoint == 'manage_timetable' %}active{% endif %}"
+           href="{{ url_for('manage_timetable') }}">
+          <i class="fas fa-calendar-alt"></i>
+          <span>Timetable Management</span>
+        </a>
+        {% endif %}
+
+        <a class="mobile-drawer-link {% if request.endpoint == 'admin_notices' %}active{% endif %}"
+           href="{{ url_for('admin_notices', college_slug=current_college.slug) }}">
+          <i class="fas fa-bullhorn"></i>
+          <span>Notice Board</span>
+        </a>
+
+        <a class="mobile-drawer-link {% if request.endpoint == 'admin_ledger' %}active{% endif %}"
+           href="{{ url_for('admin_ledger') }}">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Finance Ledger</span>
+        </a>
+
+        <div class="mobile-drawer-section-label">System</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'admin_settings' %}active{% endif %}"
+           href="{{ url_for('admin_settings') }}">
+          <i class="fas fa-sliders-h"></i>
+          <span>System Settings</span>
+        </a>
+
+      {% elif current_user.is_faculty() %}
+        <div class="mobile-drawer-section-label">Faculty Navigation</div>
+        <a class="mobile-drawer-link"
+           href="{{ url_for('faculty_dashboard') }}" data-tab-target="#attendanceP">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Class Attendance</span>
+        </a>
+        <a class="mobile-drawer-link"
+           href="{{ url_for('faculty_dashboard') }}#studentsP" data-tab-target="#studentsP">
+          <i class="fas fa-user-graduate"></i>
+          <span>Student Management</span>
+        </a>
+        <a class="mobile-drawer-link"
+           href="{{ url_for('faculty_dashboard') }}#performanceP" data-tab-target="#performanceP">
+          <i class="fas fa-chart-line"></i>
+          <span>Marks &amp; Evaluation</span>
+        </a>
+        <a class="mobile-drawer-link"
+           href="{{ url_for('faculty_dashboard') }}#assignmentsP" data-tab-target="#assignmentsP">
+          <i class="fas fa-tasks"></i>
+          <span>Assignments</span>
+        </a>
+        {% if features.get('timetable') %}
+        <a class="mobile-drawer-link {% if request.endpoint == 'faculty_view_timetable' %}active{% endif %}"
+           href="{{ url_for('faculty_view_timetable') }}">
+          <i class="fas fa-calendar-alt"></i>
+          <span>View Timetable</span>
+        </a>
+        {% endif %}
+        <a class="mobile-drawer-link {% if request.endpoint == 'faculty_notices' %}active{% endif %}"
+           href="{{ url_for('faculty_notices', college_slug=current_college.slug) }}">
+          <i class="fas fa-bullhorn"></i>
+          <span>Notice Board</span>
+        </a>
+        {% if current_user.is_hod() %}
+        <div class="mobile-drawer-section-label" style="margin-top:6px;">HOD Operations</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'manage_faculty' %}active{% endif %}"
+           href="{{ url_for('manage_faculty') }}">
+          <i class="fas fa-chalkboard-teacher"></i>
+          <span>Manage Faculty</span>
+        </a>
+        <a class="mobile-drawer-link" href="{{ url_for('faculty_dashboard') }}#pendingP" data-tab-target="#pendingP">
+          <i class="fas fa-inbox"></i>
+          <span>Pending Permissions</span>
+        </a>
+        {% endif %}
+        <a class="mobile-drawer-link" href="{{ url_for('faculty_dashboard') }}#approvedP" data-tab-target="#approvedP">
+          <i class="fas fa-check-circle"></i>
+          <span>Approved Roster</span>
+        </a>
+
+      {% elif current_user.is_student() %}
+        <div class="mobile-drawer-section-label">Student Navigation</div>
+        <a class="mobile-drawer-link {% if request.endpoint == 'student_dashboard' %}active{% endif %}"
+           href="{{ url_for('student_dashboard') }}">
+          <i class="fas fa-home"></i>
+          <span>Home Dashboard</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'apply_permission' %}active{% endif %}"
+           href="{{ url_for('apply_permission') }}">
+          <i class="fas fa-plus-circle"></i>
+          <span>Apply Permission</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'student_permissions' %}active{% endif %}"
+           href="{{ url_for('student_permissions') }}">
+          <i class="fas fa-history"></i>
+          <span>My Permissions</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'club_portal.student_events' %}active{% endif %}"
+           href="{{ url_for('club_portal.student_events') }}">
+          <i class="fas fa-calendar-star"></i>
+          <span>Event Portal</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'student_notices' %}active{% endif %}"
+           href="{{ url_for('student_notices', college_slug=current_college.slug) }}">
+          <i class="fas fa-bullhorn"></i>
+          <span>Notice Board</span>
+        </a>
+      {% endif %}
+
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="mobile-drawer-footer">
+      <a class="mobile-drawer-link {% if request.endpoint == 'edit_profile' %}active{% endif %}"
+         href="{{ url_for('edit_profile') }}">
+        <i class="fas fa-user-edit"></i>
+        <span>Edit Profile</span>
+      </a>
+      <a class="mobile-drawer-link" href="{{ url_for('logout') }}" style="color: var(--clr-danger) !important;">
+        <i class="fas fa-sign-out-alt" style="color: var(--clr-danger);"></i>
+        <span>Logout</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ====================================================
        MOBILE BOTTOM TAB NAV
        ==================================================== -->
   <nav class="pms-bottom-nav d-md-none" id="bottomNav">
@@ -350,8 +637,8 @@
       {% if current_user.is_admin() %}
         <a class="bottom-nav-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
            href="{{ url_for('admin_dashboard') }}">
-          <i class="fas fa-tachometer-alt"></i>
-          <span>Dashboard</span>
+          <i class="fas fa-home"></i>
+          <span>Home</span>
         </a>
         <a class="bottom-nav-item {% if request.endpoint in ['manage_students', 'manage_faculty'] %}active{% endif %}"
            href="{{ url_for('manage_students') }}">
@@ -368,50 +655,37 @@
           <i class="fas fa-layer-group"></i>
           <span>Clubs</span>
         </a>
-        <a class="bottom-nav-item {% if request.endpoint == 'edit_profile' %}active{% endif %}"
-           href="{{ url_for('edit_profile') }}">
-          <i class="fas fa-user-circle"></i>
-          <span>Profile</span>
-        </a>
+        <button class="bottom-nav-item" id="bottomNavMenuBtn" type="button" aria-label="Open Navigation Menu">
+          <i class="fas fa-bars-staggered"></i>
+          <span>Menu</span>
+        </button>
 
       {% elif current_user.is_faculty() %}
-        <a class="bottom-nav-item {% if request.endpoint == 'faculty_dashboard' %}active{% endif %}"
-           href="{{ url_for('faculty_dashboard') }}">
-          <i class="fas fa-tachometer-alt"></i>
-          <span>Dashboard</span>
-        </a>
-        <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#attendanceP">
+        <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#attendanceP" data-tab-target="#attendanceP">
           <i class="fas fa-clipboard-list"></i>
           <span>Attendance</span>
         </a>
-        {% if features.get('timetable') %}
-        <a class="bottom-nav-item {% if request.endpoint == 'faculty_view_timetable' %}active{% endif %}"
-           href="{{ url_for('faculty_view_timetable') }}">
-          <i class="fas fa-calendar-alt"></i>
-          <span>Timetable</span>
+        <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#studentsP" data-tab-target="#studentsP">
+          <i class="fas fa-user-graduate"></i>
+          <span>Students</span>
         </a>
-        {% endif %}
-        {% if current_user.is_hod() %}
-        <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#pendingP">
-          <i class="fas fa-inbox"></i>
-          <span>Pending</span>
+        <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#performanceP" data-tab-target="#performanceP">
+          <i class="fas fa-chart-line"></i>
+          <span>Marks</span>
         </a>
-        {% endif %}
-        <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#approvedP">
-          <i class="fas fa-check-double"></i>
-          <span>Approved</span>
+        <a class="bottom-nav-item" href="{{ url_for('faculty_dashboard') }}#assignmentsP" data-tab-target="#assignmentsP">
+          <i class="fas fa-tasks"></i>
+          <span>Tasks</span>
         </a>
-        <a class="bottom-nav-item {% if request.endpoint == 'edit_profile' %}active{% endif %}"
-           href="{{ url_for('edit_profile') }}">
-          <i class="fas fa-user-circle"></i>
-          <span>Profile</span>
-        </a>
-
+        <button class="bottom-nav-item" id="bottomNavFacultyMenuBtn" type="button" aria-label="Open Navigation Menu">
+          <i class="fas fa-bars-staggered"></i>
+          <span>Menu</span>
+        </button>
       {% elif current_user.is_student() %}
         <a class="bottom-nav-item {% if request.endpoint == 'student_dashboard' %}active{% endif %}"
            href="{{ url_for('student_dashboard') }}">
-          <i class="fas fa-tachometer-alt"></i>
-          <span>Dashboard</span>
+          <i class="fas fa-home"></i>
+          <span>Home</span>
         </a>
         <a class="bottom-nav-item {% if request.endpoint == 'apply_permission' %}active{% endif %}"
            href="{{ url_for('apply_permission') }}">
@@ -428,11 +702,10 @@
           <i class="fas fa-calendar-star"></i>
           <span>Events</span>
         </a>
-        <a class="bottom-nav-item {% if request.endpoint == 'edit_profile' %}active{% endif %}"
-           href="{{ url_for('edit_profile') }}">
-          <i class="fas fa-user-circle"></i>
-          <span>Profile</span>
-        </a>
+        <button class="bottom-nav-item" id="bottomNavStudentMenuBtn" type="button" aria-label="Open Navigation Menu">
+          <i class="fas fa-bars-staggered"></i>
+          <span>Menu</span>
+        </button>
       {% endif %}
 
     </div>
@@ -518,17 +791,92 @@
   });
 
   /* ============================================================
-     BOTTOM NAV — hash navigation helper
+     GLOBAL TAB & HASH NAVIGATION HELPER (Sidebar, Bottom Nav & Tabs)
      ============================================================ */
-  document.addEventListener('DOMContentLoaded', function () {
-    // If URL has hash, activate corresponding tab after page load
+  window.activateDashboardTab = function(hashOrId) {
+    if (!hashOrId) return;
+    const cleanId = hashOrId.replace(/^#/, '');
+    const tabBtn = document.querySelector(
+      `button[data-bs-target="#${cleanId}"], button#${cleanId}-tab, [role="tab"][data-bs-target="#${cleanId}"]`
+    );
+    if (tabBtn) {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+        const bsTab = bootstrap.Tab.getOrCreateInstance ? bootstrap.Tab.getOrCreateInstance(tabBtn) : (bootstrap.Tab.getInstance(tabBtn) || new bootstrap.Tab(tabBtn));
+        bsTab.show();
+      } else if (tabBtn.click) {
+        tabBtn.click();
+      }
+      
+      // Update active state on sidebar & drawer navigation links
+      document.querySelectorAll('.sidebar-link, .mobile-drawer-link, .bottom-nav-item').forEach(link => {
+        const target = link.getAttribute('data-tab-target') || link.getAttribute('data-tab');
+        if (target === `#${cleanId}` || target === cleanId) {
+          link.classList.add('active');
+        } else if (target) {
+          link.classList.remove('active');
+        }
+      });
+
+      // Update URL hash smoothly without jump
+      if (history.replaceState) {
+        history.replaceState(null, null, '#' + cleanId);
+      }
+    }
+  };
+
+  // Sync nav links on any tab switch
+  document.addEventListener('shown.bs.tab', function(e) {
+    const target = e.target.getAttribute('data-bs-target');
+    if (target) {
+      const cleanId = target.replace(/^#/, '');
+      document.querySelectorAll('.sidebar-link, .mobile-drawer-link, .bottom-nav-item').forEach(link => {
+        const linkTarget = link.getAttribute('data-tab-target') || link.getAttribute('data-tab');
+        if (linkTarget === target || linkTarget === `#${cleanId}` || linkTarget === cleanId) {
+          link.classList.add('active');
+        } else if (linkTarget) {
+          link.classList.remove('active');
+        }
+      });
+      if (history.replaceState) {
+        history.replaceState(null, null, target);
+      }
+    }
+  });
+
+  // Handle on page load and hash changes
+  window.addEventListener('DOMContentLoaded', function () {
     if (window.location.hash) {
-      const target = document.querySelector(
-        '[data-bs-target="' + window.location.hash + '"], [href="' + window.location.hash + '"]'
-      );
-      if (target) {
-        target.click && target.click();
-        setTimeout(() => window.scrollTo(0, 0), 50);
+      setTimeout(() => window.activateDashboardTab(window.location.hash), 30);
+    }
+  });
+  window.addEventListener('hashchange', function () {
+    if (window.location.hash) {
+      window.activateDashboardTab(window.location.hash);
+    }
+  });
+
+  // Global click delegator for sidebar and drawer navigation links with tab targets
+  document.addEventListener('click', function (e) {
+    const link = e.target.closest('.sidebar-link[data-tab-target], .mobile-drawer-link[data-tab-target], .bottom-nav-item[data-tab-target], [data-tab]');
+    if (!link) return;
+    const targetHash = link.getAttribute('data-tab-target') || ('#' + link.getAttribute('data-tab'));
+    if (!targetHash) return;
+
+    const cleanId = targetHash.replace(/^#/, '');
+    const tabBtn = document.querySelector(`button[data-bs-target="#${cleanId}"], [role="tab"][data-bs-target="#${cleanId}"]`);
+    
+    // If the tab button exists on the current page, switch tab immediately without reloading
+    if (tabBtn) {
+      e.preventDefault();
+      window.activateDashboardTab(cleanId);
+
+      // Close mobile drawer if open
+      const drawer = document.getElementById('mobileNavDrawer');
+      const backdrop = document.getElementById('mobileDrawerBackdrop');
+      if (drawer && drawer.classList.contains('show')) {
+        drawer.classList.remove('show');
+        if (backdrop) backdrop.classList.remove('show');
+        document.body.style.overflow = '';
       }
     }
   });
@@ -567,6 +915,64 @@
         document.body.classList.remove('is-resizing');
       }
     });
+  });
+
+  /* ============================================================
+     MOBILE NAVIGATION DRAWER SYSTEM
+     ============================================================ */
+  document.addEventListener('DOMContentLoaded', function () {
+    const drawer = document.getElementById('mobileNavDrawer');
+    const backdrop = document.getElementById('mobileDrawerBackdrop');
+    const openBtn = document.getElementById('mobileMenuOpenBtn');
+    const closeBtn = document.getElementById('mobileDrawerCloseBtn');
+    const bottomNavBtns = [
+      document.getElementById('bottomNavMenuBtn'),
+      document.getElementById('bottomNavFacultyMenuBtn'),
+      document.getElementById('bottomNavStudentMenuBtn')
+    ];
+
+    function openDrawer() {
+      if (!drawer || !backdrop) return;
+      drawer.classList.add('show');
+      backdrop.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+      if (!drawer || !backdrop) return;
+      drawer.classList.remove('show');
+      backdrop.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (backdrop) backdrop.addEventListener('click', closeDrawer);
+
+    bottomNavBtns.forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          openDrawer();
+        });
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && drawer && drawer.classList.contains('show')) {
+        closeDrawer();
+      }
+    });
+
+    // Close when clicking a link inside the drawer
+    if (drawer) {
+      drawer.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function () {
+          closeDrawer();
+        });
+      });
+    }
   });
 </script>
 

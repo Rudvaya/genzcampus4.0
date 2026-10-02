@@ -5,10 +5,10 @@
 {% block content %}
 <style>
     .timetable-card {
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        border: none;
+        background: var(--card-bg, #ffffff);
+        border-radius: var(--r-xl, 16px);
+        box-shadow: var(--shadow-sm, 0 4px 16px rgba(0,0,0,0.04));
+        border: 1px solid var(--border, #e2e8f0);
         overflow: hidden;
     }
     .period-input {
@@ -16,39 +16,45 @@
         font-size: 0.85rem;
         padding: 8px;
         border: 1px solid transparent;
-        transition: all 0.2s;
-        color: #1e293b;
+        transition: all var(--t-fast, 0.2s);
+        color: var(--text-main, #1e293b);
         background: transparent;
     }
     .day-header {
-        background: #f8fafc;
+        background: var(--bg-surface, #f8fafc);
         font-weight: 700;
-        color: #475569;
+        color: var(--text-main, #334155);
         text-align: center;
-        padding: 12px;
-        font-size: 0.9rem;
+        padding: 12px 10px;
+        font-size: 0.85rem;
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        box-shadow: 3px 0 8px rgba(0,0,0,0.06);
     }
     .period-header {
-        background: #4e73df;
+        background: var(--clr-primary, #7c3aed);
         color: white;
         font-weight: 700;
         text-align: center;
-        padding: 10px;
-        font-size: 0.8rem;
+        padding: 10px 8px;
+        font-size: 0.85rem;
     }
     .timetable-grid-wrapper {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
     }
     .timetable-grid {
         display: grid;
-        grid-template-columns: 120px repeat(var(--cols, 7), minmax(110px, 1fr));
+        grid-template-columns: 130px repeat(var(--cols, 7), minmax(120px, 1fr));
         gap: 1px;
-        background: #e2e8f0;
-        border: 1px solid #e2e8f0;
-        min-width: 900px;
+        background: var(--border, #e2e8f0);
+        border: 1px solid var(--border, #e2e8f0);
+        min-width: 960px;
     }
     .grid-cell {
-        background: white;
+        background: var(--card-bg, #ffffff);
         padding: 8px;
         display: flex;
         align-items: center;
@@ -56,41 +62,41 @@
     }
 </style>
 
-<div class="container-fluid">
+<div class="container-fluid px-0 px-md-3">
     <!-- Filter Section -->
     <div class="card timetable-card mb-4 shadow-sm">
-        <div class="card-body p-4">
-            <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold text-muted">DEPARTMENT</label>
-                    <select name="department" class="form-select border-0 bg-light rounded-pill px-3" required>
+        <div class="card-body p-3 p-md-4">
+            <form method="GET" class="row g-2 g-md-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold text-muted mb-1">DEPARTMENT</label>
+                    <select name="department" class="form-select border bg-light rounded-pill px-3 shadow-none" required>
                         <option value="" disabled selected>Select Dept...</option>
                         {% for dept in departments %}
                         <option value="{{ dept.name }}" {% if selected_dept == dept.name %}selected{% endif %}>{{ dept.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">YEAR</label>
-                    <select name="year" class="form-select border-0 bg-light rounded-pill px-3" required>
+                <div class="col-6 col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">YEAR</label>
+                    <select name="year" class="form-select border bg-light rounded-pill px-3 shadow-none" required>
                         <option value="" disabled selected>Select Year...</option>
                         {% for y in [1,2,3,4] %}
                         <option value="{{ y }}" {% if selected_year|int == y %}selected{% endif %}>{{ y }} Year</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">SECTION</label>
-                    <select name="section" class="form-select border-0 bg-light rounded-pill px-3" required>
+                <div class="col-6 col-md-3">
+                    <label class="form-label small fw-bold text-muted mb-1">SECTION</label>
+                    <select name="section" class="form-select border bg-light rounded-pill px-3 shadow-none" required>
                         <option value="" disabled selected>Select Section...</option>
                         {% for s in ['A','B','C','D'] %}
                         <option value="{{ s }}" {% if selected_section == s %}selected{% endif %}>Section {{ s }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-12 col-md-2">
                     <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm">
-                        <i class="fas fa-search me-2"></i> VIEW
+                        <i class="fas fa-search me-1"></i> VIEW
                     </button>
                 </div>
             </form>
@@ -99,23 +105,30 @@
 
     {% if selected_dept and selected_year and selected_section %}
     <div class="card timetable-card shadow-sm mb-5">
-        <div class="card-header bg-white py-4 border-0 px-4">
+        <div class="card-header bg-white p-3 p-md-4 border-bottom">
             <h5 class="m-0 fw-bold text-dark">
                 <i class="fas fa-calendar-alt text-primary me-2"></i> 
                 {{ selected_dept }} - {{ selected_year }} Year (Section {{ selected_section }}) Schedule
             </h5>
         </div>
+
+        <!-- Mobile Scroll Helper -->
+        <div class="d-flex align-items-center justify-content-between p-2 px-3 bg-light border-bottom text-muted small d-md-none">
+            <span><i class="fas fa-arrows-left-right me-1 text-primary"></i> Swipe horizontally for all periods</span>
+            <span class="badge bg-primary bg-opacity-10 text-primary">{{ max_periods }} Periods</span>
+        </div>
+
         <div class="card-body p-0">
             <div class="timetable-grid-wrapper">
                 <div class="timetable-grid" style="--cols: {{ max_periods }};">
                     <!-- Header Row -->
-                    <div class="day-header" style="background:#4e73df; color:white;">DAY / PERIOD</div>
+                    <div class="day-header" style="background: var(--clr-primary, #7c3aed); color: white;">DAY / PERIOD</div>
                 {% for i in range(1, max_periods + 1) %}
                 <div class="period-header">P{{ i }}</div>
                 {% endfor %}
 
                 <!-- Timings Row -->
-                <div class="day-header" style="background:#f1f5f9;">TIMINGS</div>
+                <div class="day-header" style="background: #f1f5f9; color: var(--text-main, #334155);">TIMINGS</div>
                 {% for i in range(1, max_periods + 1) %}
                 <div class="grid-cell" style="background:#f1f5f9;">
                     {% set timing_val = getattr(timetable_data.get('Monday'), 'period_' ~ i ~ '_time') if timetable_data else '' %}

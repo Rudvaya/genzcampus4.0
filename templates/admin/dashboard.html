@@ -101,8 +101,36 @@
 </style>
 
 {% block admin_content %}
+<!-- Welcome Admin Banner -->
+<div class="card mb-4 animate-in border-0 overflow-hidden" style="background: linear-gradient(135deg, var(--card-bg) 0%, var(--clr-primary-light) 100%); border-left: 4px solid var(--clr-primary) !important;">
+  <div class="card-body p-3 p-md-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <h4 class="fw-bold mb-0 text-dark">Welcome, {{ current_user.first_name }} 👋</h4>
+          <span class="badge bg-primary rounded-pill px-2 py-1 small">Admin</span>
+        </div>
+        <p class="text-muted small mb-0">
+          <i class="fas fa-university me-1 text-primary"></i>{{ current_college.name if current_college else 'Campus Management' }} • Overview &amp; Control
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('admin_notices', college_slug=current_college.slug) }}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+          <i class="fas fa-bullhorn me-1"></i> Post Notice
+        </a>
+        <a href="{{ url_for('manage_students') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+          <i class="fas fa-user-plus me-1"></i> Students
+        </a>
+        <a href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+          <i class="fas fa-chart-line me-1"></i> Analytics
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Stat Cards -->
-<div class="row g-3 mb-4">
+<div class="row g-2 g-md-3 mb-4">
   <div class="col-6 col-lg-3 animate-in" style="animation-delay:0s;">
     <div class="stat-card-gradient" style="background:linear-gradient(135deg,#7C3AED,#6366F1);">
       <div>
@@ -125,7 +153,7 @@
     <div class="stat-card-gradient" style="background:linear-gradient(135deg,#F59E0B,#D97706);">
       <div>
         <div class="stat-val">{{ stats.pending_permissions }}</div>
-        <div class="stat-lbl">Pending</div>
+        <div class="stat-lbl">Pending Requests</div>
       </div>
       <div class="stat-icon-wrap"><i class="fas fa-clock"></i></div>
     </div>
@@ -135,7 +163,7 @@
     <div class="stat-card-gradient" style="background:linear-gradient(135deg,#3B82F6,#2563EB);">
       <div>
         <div class="stat-val">{{ stats.total_clubs }}</div>
-        <div class="stat-lbl">Total Clubs</div>
+        <div class="stat-lbl">Active Clubs</div>
       </div>
       <div class="stat-icon-wrap"><i class="fas fa-layer-group"></i></div>
     </div>
@@ -145,36 +173,48 @@
 
 <!-- Quick Actions -->
 <div class="card mb-4 animate-in" style="animation-delay:0.22s;">
-  <div class="card-body p-4">
+  <div class="card-body p-3 p-md-4">
     <div class="section-header mb-3">
       <div class="section-title">
-        <i class="fas fa-bolt"></i> Quick Actions
+        <i class="fas fa-bolt text-warning"></i> Quick Management Navigation
       </div>
     </div>
     <div class="action-grid">
+      <a href="{{ url_for('admin_dashboard') }}" class="action-tile">
+        <div class="tile-icon" style="background:rgba(124,58,237,0.12);color:var(--clr-primary);">
+          <i class="fas fa-home"></i>
+        </div>
+        <div class="tile-label">Dashboard</div>
+      </a>
       <a href="{{ url_for('manage_students') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(124,58,237,0.1);color:var(--clr-primary);">
+        <div class="tile-icon" style="background:rgba(124,58,237,0.12);color:var(--clr-primary);">
           <i class="fas fa-users"></i>
         </div>
         <div class="tile-label">Students</div>
       </a>
+      <a href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}" class="action-tile">
+        <div class="tile-icon" style="background:rgba(139,92,246,0.12);color:#8B5CF6;">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="tile-label">Analytics</div>
+      </a>
       <a href="{{ url_for('manage_faculty') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(16,185,129,0.1);color:var(--clr-success);">
+        <div class="tile-icon" style="background:rgba(16,185,129,0.12);color:var(--clr-success);">
           <i class="fas fa-chalkboard-teacher"></i>
         </div>
         <div class="tile-label">Faculty</div>
       </a>
       {% if features.get('clubs') %}
       <a href="{{ url_for('manage_clubs') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(59,130,246,0.1);color:var(--clr-info);">
+        <div class="tile-icon" style="background:rgba(59,130,246,0.12);color:var(--clr-info);">
           <i class="fas fa-layer-group"></i>
         </div>
-        <div class="tile-label">Clubs & Events</div>
+        <div class="tile-label">Clubs &amp; Events</div>
       </a>
       {% endif %}
       {% if features.get('permissions') %}
       <a href="{{ url_for('admin_permissions') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(245,158,11,0.1);color:var(--clr-warning);">
+        <div class="tile-icon" style="background:rgba(245,158,11,0.12);color:var(--clr-warning);">
           <i class="fas fa-clipboard-check"></i>
         </div>
         <div class="tile-label">Permissions</div>
@@ -182,32 +222,32 @@
       {% endif %}
       {% if features.get('timetable') %}
       <a href="{{ url_for('manage_timetable') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(239,68,68,0.1);color:var(--clr-danger);">
+        <div class="tile-icon" style="background:rgba(239,68,68,0.12);color:var(--clr-danger);">
           <i class="fas fa-calendar-alt"></i>
         </div>
         <div class="tile-label">Timetable</div>
       </a>
       {% endif %}
+      <a href="{{ url_for('admin_notices', college_slug=current_college.slug) }}" class="action-tile">
+        <div class="tile-icon" style="background:rgba(239,68,68,0.12);color:#EF4444;">
+          <i class="fas fa-bullhorn"></i>
+        </div>
+        <div class="tile-label">Notices</div>
+      </a>
       <a href="{{ url_for('manage_departments') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(100,116,139,0.1);color:#64748B;">
+        <div class="tile-icon" style="background:rgba(100,116,139,0.12);color:#64748B;">
           <i class="fas fa-sitemap"></i>
         </div>
         <div class="tile-label">Departments</div>
       </a>
-      <a href="{{ url_for('performance_analytics', college_slug=current_college.slug) }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(139,92,246,0.1);color:#8B5CF6;">
-          <i class="fas fa-chart-line"></i>
-        </div>
-        <div class="tile-label">Performance</div>
-      </a>
       <a href="{{ url_for('admin_ledger') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(16,185,129,0.1);color:var(--clr-success);">
+        <div class="tile-icon" style="background:rgba(16,185,129,0.12);color:var(--clr-success);">
           <i class="fas fa-file-invoice-dollar"></i>
         </div>
-        <div class="tile-label">Finance Ledger</div>
+        <div class="tile-label">Ledger</div>
       </a>
       <a href="{{ url_for('admin_settings') }}" class="action-tile">
-        <div class="tile-icon" style="background:rgba(124,58,237,0.1);color:var(--clr-primary);">
+        <div class="tile-icon" style="background:rgba(124,58,237,0.12);color:var(--clr-primary);">
           <i class="fas fa-sliders-h"></i>
         </div>
         <div class="tile-label">Settings</div>
@@ -216,21 +256,86 @@
   </div>
 </div>
 
-<!-- System Overview -->
-<div class="card animate-in" style="animation-delay:0.28s;border-left:3px solid var(--clr-primary) !important;">
-  <div class="card-body p-4">
-    <div class="section-header mb-3">
-      <div class="section-title">
-        <i class="fas fa-info-circle"></i> System Overview
+<!-- Recent Notices Section -->
+<div class="card mb-4 animate-in" style="animation-delay:0.25s;">
+  <div class="card-body p-3 p-md-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <div class="section-title m-0">
+        <i class="fas fa-bullhorn text-danger me-2"></i> Notice Board &amp; Circulars
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('admin_notices', college_slug=current_college.slug) }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">
+          <i class="fas fa-plus-circle me-1"></i> Post Notice
+        </a>
+        <a href="{{ url_for('admin_notices', college_slug=current_college.slug) }}" class="btn btn-sm btn-light rounded-pill px-3 border fw-bold">
+          View All <i class="fas fa-arrow-right ms-1"></i>
+        </a>
       </div>
     </div>
-    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">
-      Welcome to the Permission Management System admin dashboard. You have full control over the platform.
+
+    {% if notices and notices|length > 0 %}
+    <div class="row g-2 g-md-3">
+      {% for notice in notices[:4] %}
+      <div class="col-md-6">
+        <div class="p-3 rounded-3 h-100 position-relative shadow-sm" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border, #e2e8f0);">
+          <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+            <span class="badge {% if notice.priority|lower == 'urgent' %}bg-danger text-white{% elif notice.priority|lower == 'important' %}bg-warning text-dark{% else %}bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25{% endif %} rounded-pill px-2.5 py-1 small fw-bold">
+              {{ notice.priority|upper }}
+            </span>
+            <span class="text-muted small text-nowrap fw-medium"><i class="far fa-clock me-1"></i>{{ notice.created_at | to_ist('%d %b, %H:%M') }}</span>
+          </div>
+          <h6 class="fw-bold mb-1 text-dark">{{ notice.title }}</h6>
+          {% if notice.message %}
+          <p class="text-secondary small mb-2 text-truncate fw-medium" style="max-width: 100%;">{{ notice.message }}</p>
+          {% endif %}
+          <div class="d-flex flex-wrap justify-content-between align-items-center pt-2 border-top mt-2 gap-2">
+            <div class="d-flex flex-wrap gap-1">
+              {% if notice.target_faculty %}
+              <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill extra-small fw-semibold" style="font-size:0.7rem;">Faculty</span>
+              {% endif %}
+              {% if notice.target_students %}
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill extra-small fw-semibold" style="font-size:0.7rem;">Students</span>
+              {% endif %}
+              {% if notice.target_department %}
+              <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill extra-small fw-semibold" style="font-size:0.7rem;">{{ notice.target_department }}</span>
+              {% endif %}
+            </div>
+            {% if notice.file_path %}
+            <a href="{{ url_for('get_notice_file', college_slug=current_college.slug, filename=notice.file_path) }}" target="_blank" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1 fw-semibold" style="font-size:0.75rem;">
+              <i class="fas fa-paperclip me-1"></i> Attachment
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted">
+      <i class="fas fa-bullhorn fa-2x mb-2 opacity-50"></i>
+      <p class="small mb-2 fw-medium">No notices circulated yet.</p>
+      <a href="{{ url_for('admin_notices', college_slug=current_college.slug) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">Publish Your First Notice</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- System Overview -->
+<div class="card animate-in" style="animation-delay:0.28s;border-left:3px solid var(--clr-primary) !important;">
+  <div class="card-body p-3 p-md-4">
+    <div class="section-header mb-3">
+      <div class="section-title">
+        <i class="fas fa-info-circle text-primary"></i> System Overview
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">
+      Welcome to the GenZCampus admin dashboard. You have full control over students, faculty, notices, timetable, and permissions.
     </p>
-    <div class="row g-0">
+    <div class="row g-2 g-md-3">
       <div class="col-md-6">
         <ul class="info-list list-unstyled m-0">
           <li><i class="fas fa-check-circle"></i> Manage student and faculty accounts</li>
+          <li><i class="fas fa-check-circle"></i> Publish &amp; circulate notices with files and role targeting</li>
           {% if features.get('clubs') %}
           <li><i class="fas fa-check-circle"></i> Oversee club activities and events</li>
           {% endif %}
@@ -242,7 +347,7 @@
       <div class="col-md-6">
         <ul class="info-list list-unstyled m-0">
           <li><i class="fas fa-check-circle"></i> Bulk upload data via Excel/CSV</li>
-          <li><i class="fas fa-check-circle"></i> Track system-wide metrics</li>
+          <li><i class="fas fa-check-circle"></i> Track performance metrics and student analytics</li>
           {% if features.get('timetable') %}
           <li><i class="fas fa-check-circle"></i> Configure timetables per department</li>
           {% endif %}

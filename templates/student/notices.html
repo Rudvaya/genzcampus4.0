@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Notice Board - GenZCampus{% endblock %}
+{% block page_title %}Notice Board{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background-color: #F8F9FE;
+    padding-bottom: 80px;
+  }
+  @media (min-width: 768px) {
+    .bottom-nav { display: none !important; }
+    body { padding-bottom: 0 !important; }
+  }
+  @media (max-width: 767px) {
+    .sidebar, .topbar { display: none !important; }
+    #page-content-wrapper { width: 100%; padding: 0 !important; }
+  }
+  .notice-header {
+    background: linear-gradient(135deg, #021B79 0%, #0575E6 100%);
+    border-radius: 0 0 30px 30px;
+    padding: 3rem 1.5rem 2rem 1.5rem;
+    color: white;
+    margin-top: -1.5rem;
+  }
+  .notice-card {
+    border-radius: 20px;
+    border: none;
+    background: #ffffff;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    transition: all 0.25s ease;
+    margin-bottom: 20px;
+  }
+  .priority-badge-urgent {
+    background-color: #fee2e2;
+    color: #ef4444;
+    border: 1px solid #fca5a5;
+    font-weight: 700;
+  }
+  .priority-badge-important {
+    background-color: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fde68a;
+    font-weight: 700;
+  }
+  .priority-badge-normal {
+    background-color: #e0e7ff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+    font-weight: 700;
+  }
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 15px rgba(0,0,0,0.05);
+    border-radius: 20px 20px 0 0;
+    z-index: 1000;
+  }
+  .nav-item {
+    text-align: center;
+    text-decoration: none;
+    color: #888;
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+  .nav-item.active {
+    color: #0d6efd;
+  }
+  .nav-icon {
+    font-size: 1.3rem;
+    margin-bottom: 3px;
+    display: block;
+  }
+</style>
+
+<div class="notice-header">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h5 class="mb-1 fw-bold"><i class="fas fa-bullhorn me-2"></i> Campus Notice Board</h5>
+      <div style="font-size: 0.85rem; opacity: 0.9;">Official circulars, announcements, and notices</div>
+    </div>
+    <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+      {{ notices|length }} Notices
+    </span>
+  </div>
+</div>
+
+<div class="container px-3 pb-4 mt-4">
+  {% if notices %}
+    <div class="row g-3">
+      {% for notice in notices %}
+      <div class="col-12">
+        <div class="notice-card p-4">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2 flex-wrap">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              {% if notice.priority == 'urgent' %}
+                <span class="badge priority-badge-urgent rounded-pill px-3 py-1"><i class="fas fa-exclamation-triangle me-1"></i> URGENT</span>
+              {% elif notice.priority == 'important' %}
+                <span class="badge priority-badge-important rounded-pill px-3 py-1"><i class="fas fa-star me-1"></i> IMPORTANT</span>
+              {% else %}
+                <span class="badge priority-badge-normal rounded-pill px-3 py-1"><i class="fas fa-info-circle me-1"></i> NOTICE</span>
+              {% endif %}
+
+              <span class="badge bg-secondary-subtle text-secondary rounded-pill border border-secondary-subtle">
+                <i class="fas fa-sitemap me-1"></i> {{ 'College Wide' if notice.target_department == 'ALL' else notice.target_department ~ ' Dept' }}
+              </span>
+            </div>
+            <small class="text-muted"><i class="far fa-clock me-1"></i> {{ notice.created_at | to_ist }}</small>
+          </div>
+
+          <h6 class="fw-bold mb-2 text-dark" style="font-size: 1.05rem;">{{ notice.title }}</h6>
+
+          <div class="p-3 bg-light rounded-3 mb-3 text-secondary" style="white-space: pre-line; font-size: 0.9rem; line-height: 1.6;">
+            {{ notice.message }}
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
+            <div class="small text-muted">
+              <i class="fas fa-user-shield me-1 text-primary"></i> Posted by <strong>{{ notice.posted_by.get_full_name() }}</strong> 
+              <span class="badge bg-light text-primary border ms-1">{{ notice.posted_by.role | upper }}</span>
+            </div>
+
+            {% if notice.file_path %}
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('get_notice_file', college_slug=current_college.slug, filename=notice.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                <i class="fas fa-eye me-1"></i> View Attachment
+              </a>
+              <a href="{{ url_for('get_notice_file', college_slug=current_college.slug, filename=notice.file_path, download='true') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                <i class="fas fa-download me-1"></i> Download
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card border-0 rounded-4 shadow-sm p-5 text-center mt-3">
+      <div class="text-muted mb-3">
+        <i class="fas fa-bullhorn fa-3x opacity-50"></i>
+      </div>
+      <h6 class="fw-bold text-muted">No Notices Available</h6>
+      <p class="text-muted small mb-0">All clear! There are currently no new circulars or notices for you.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <a href="{{ url_for('student_dashboard', college_slug=current_college.slug) }}" class="nav-item">
+    <i class="fas fa-home nav-icon"></i>
+    Home
+  </a>
+  <a href="{{ url_for('student_performance', college_slug=current_college.slug) }}" class="nav-item">
+    <i class="fas fa-laptop-code nav-icon"></i>
+    Performance
+  </a>
+  <a href="{{ url_for('student_notices', college_slug=current_college.slug) }}" class="nav-item active">
+    <i class="fas fa-bullhorn nav-icon"></i>
+    Notices
+  </a>
+  <a href="{{ url_for('club_portal.student_events', college_slug=current_college.slug) }}" class="nav-item">
+    <i class="fas fa-calendar-star nav-icon"></i>
+    Events
+  </a>
+  <a href="#" class="nav-item">
+    <i class="far fa-user nav-icon"></i>
+    Profile
+  </a>
+</div>
+{% endblock %}

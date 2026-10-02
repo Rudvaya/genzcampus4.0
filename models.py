@@ -12,7 +12,7 @@ class College(db.Model):
     slug = db.Column(db.String(50), unique=True, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     features = db.Column(db.Text, default='{"attendance": true, "timetable": true, "clubs": true, "permissions": true, "exams": true}') # JSON string
-    branding_logo = db.Column(db.String(255))
+    branding_logo = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -263,7 +263,7 @@ class StudentPerformance(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     certificate_id = db.Column(db.String(100))
-    proof_filename = db.Column(db.String(255))
+    proof_filename = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     student = db.relationship('User', backref=db.backref('performances', lazy='dynamic', cascade='all, delete-orphan'))
@@ -304,7 +304,7 @@ class Permission(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=True)
     custom_event = db.Column(db.String(200))
     description = db.Column(db.Text, nullable=False)
-    proof_filename = db.Column(db.String(255))
+    proof_filename = db.Column(db.String(500))
     status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     applied_at = db.Column(db.DateTime, default=datetime.utcnow)
     approved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -423,3 +423,90 @@ class ExamResult(db.Model):
     grade = db.Column(db.String(10))
     status = db.Column(db.String(20), default='pass') # pass, fail
     published_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- Notice Board Model ---
+class Notice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    file_path = db.Column(db.String(500), nullable=True) # Cloudinary URL or local filename
+    file_original_name = db.Column(db.String(255), nullable=True) # Original file name
+    
+    # Target roles
+    target_faculty = db.Column(db.Boolean, default=True)
+    target_students = db.Column(db.Boolean, default=True)
+    
+    # Target department ('ALL' or department code/name)
+    target_department = db.Column(db.String(100), default='ALL')
+    
+    # Priority: 'normal', 'important', 'urgent'
+    priority = db.Column(db.String(20), default='normal')
+    
+    # Created info
+    posted_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    posted_by = db.relationship('User', backref=db.backref('notices', lazy=True))
+    college = db.relationship('College', backref=db.backref('college_notices', lazy=True))
+
+# --- Academic Evaluation & Marks Model ---
+class StudentMark(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    faculty_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    department = db.Column(db.String(100), nullable=False)
+    year = db.Column(db.Integer, nullable=False, default=1)
+    section = db.Column(db.String(10), nullable=False)
+    subject = db.Column(db.String(150), nullable=False)
+    assessment_type = db.Column(db.String(50), nullable=False) # Internal, Assignment, Quiz, Lab, Mid-1, Mid-2, Semester
+    max_marks = db.Column(db.Float, default=100.0)
+    marks_obtained = db.Column(db.Float, nullable=False)
+    remarks = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('student_marks', lazy=True, cascade='all, delete-orphan'))
+    faculty = db.relationship('User', foreign_keys=[faculty_id], backref=db.backref('entered_marks', lazy=True))
+
+# --- Assignment Workflow Models ---
+class Assignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    faculty_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    department = db.Column(db.String(100), nullable=False)
+    year = db.Column(db.Integer, nullable=False, default=1)
+    section = db.Column(db.String(10), nullable=False, default='ALL') # 'A', 'B', or 'ALL'
+    subject = db.Column(db.String(150), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    file_path = db.Column(db.String(500), nullable=True) # Cloudinary URL or local filename
+    file_original_name = db.Column(db.String(255), nullable=True)
+    max_marks = db.Column(db.Float, default=10.0)
+    due_date = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    faculty = db.relationship('User', backref=db.backref('created_assignments', lazy=True))
+    submissions = db.relationship('AssignmentSubmission', backref='assignment', lazy=True, cascade='all, delete-orphan')
+
+class AssignmentSubmission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    assignment_id = db.Column(db.Integer, db.ForeignKey('assignment.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    file_path = db.Column(db.String(500), nullable=True) # Cloudinary URL or local filename
+    file_original_name = db.Column(db.String(255), nullable=True)
+    submission_text = db.Column(db.Text, nullable=True)
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_late = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default='submitted') # 'submitted', 'graded', 'late'
+    marks_obtained = db.Column(db.Float, nullable=True)
+    feedback = db.Column(db.Text, nullable=True)
+    graded_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    graded_at = db.Column(db.DateTime, nullable=True)
+    
+    student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('assignment_submissions', lazy=True, cascade='all, delete-orphan'))
+    graded_by = db.relationship('User', foreign_keys=[graded_by_id], backref=db.backref('graded_submissions', lazy=True))
+
+

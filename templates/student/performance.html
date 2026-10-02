@@ -95,12 +95,27 @@
     {% endwith %}
 
     <div class="content-card">
-        <h6 class="section-title mb-3"><i class="fas fa-laptop-code text-primary me-2"></i> Skills</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0"><i class="fas fa-laptop-code text-primary me-2"></i> Skills</h6>
+            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1">{{ skills|length }}</span>
+        </div>
         {% if skills %}
             {% for s in skills %}
-            <div class="perf-item border-primary">
-                <div class="fw-bold">{{ s.title }}</div>
-                <div class="text-muted small">{{ s.description }}</div>
+            <div class="perf-item border-primary d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
+                <div>
+                    <div class="fw-bold text-dark">{{ s.title }}</div>
+                    {% if s.description %}<div class="text-secondary small">{{ s.description }}</div>{% endif %}
+                </div>
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1" data-bs-toggle="modal" data-bs-target="#editRecordModal{{ s.id }}">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    <form action="{{ url_for('delete_student_performance', college_slug=current_college.slug, perf_id=s.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this skill?');" class="d-inline mb-0">
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1">
+                            <i class="fas fa-trash-alt me-1"></i> Delete
+                        </button>
+                    </form>
+                </div>
             </div>
             {% endfor %}
         {% else %}
@@ -109,25 +124,36 @@
     </div>
 
     <div class="content-card">
-        <h6 class="section-title mb-3"><i class="fas fa-certificate text-warning me-2"></i> Certifications</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0"><i class="fas fa-certificate text-warning me-2"></i> Certifications</h6>
+            <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill px-2.5 py-1">{{ certificates|length }}</span>
+        </div>
         {% if certificates %}
             {% for c in certificates %}
-            <div class="perf-item border-warning d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="perf-item border-warning d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
                 <div>
-                    <div class="fw-bold">{{ c.title }}</div>
-                    <div class="text-muted small">ID: {{ c.certificate_id or 'N/A' }}</div>
-                    {% if c.description %}<div class="text-muted small">{{ c.description }}</div>{% endif %}
+                    <div class="fw-bold text-dark">{{ c.title }}</div>
+                    {% if c.certificate_id %}<div class="text-muted small fw-medium">Credential ID: {{ c.certificate_id }}</div>{% endif %}
+                    {% if c.description %}<div class="text-secondary small">{{ c.description }}</div>{% endif %}
                 </div>
-                {% if c.proof_filename %}
-                <div class="d-flex gap-2 mt-2 mt-sm-0">
-                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=c.proof_filename) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    {% if c.proof_filename %}
+                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=c.proof_filename) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1">
                         <i class="fas fa-eye me-1"></i> View
                     </a>
-                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=c.proof_filename, download='true') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=c.proof_filename, download='true') }}" class="btn btn-sm btn-outline-success rounded-pill px-2.5 py-1">
                         <i class="fas fa-download me-1"></i> Download
                     </a>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1" data-bs-toggle="modal" data-bs-target="#editRecordModal{{ c.id }}">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    <form action="{{ url_for('delete_student_performance', college_slug=current_college.slug, perf_id=c.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this certification?');" class="d-inline mb-0">
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1">
+                            <i class="fas fa-trash-alt me-1"></i> Delete
+                        </button>
+                    </form>
                 </div>
-                {% endif %}
             </div>
             {% endfor %}
         {% else %}
@@ -136,24 +162,35 @@
     </div>
 
     <div class="content-card">
-        <h6 class="section-title mb-3"><i class="fas fa-briefcase text-success me-2"></i> Internships</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0"><i class="fas fa-briefcase text-success me-2"></i> Internships</h6>
+            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1">{{ internships|length }}</span>
+        </div>
         {% if internships %}
             {% for i in internships %}
-            <div class="perf-item border-success d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="perf-item border-success d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
                 <div>
-                    <div class="fw-bold">{{ i.title }}</div>
-                    <div class="text-muted small">{{ i.description }}</div>
+                    <div class="fw-bold text-dark">{{ i.title }}</div>
+                    {% if i.description %}<div class="text-secondary small">{{ i.description }}</div>{% endif %}
                 </div>
-                {% if i.proof_filename %}
-                <div class="d-flex gap-2 mt-2 mt-sm-0">
-                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=i.proof_filename) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    {% if i.proof_filename %}
+                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=i.proof_filename) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1">
                         <i class="fas fa-eye me-1"></i> View
                     </a>
-                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=i.proof_filename, download='true') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=i.proof_filename, download='true') }}" class="btn btn-sm btn-outline-success rounded-pill px-2.5 py-1">
                         <i class="fas fa-download me-1"></i> Download
                     </a>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1" data-bs-toggle="modal" data-bs-target="#editRecordModal{{ i.id }}">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    <form action="{{ url_for('delete_student_performance', college_slug=current_college.slug, perf_id=i.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this internship?');" class="d-inline mb-0">
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1">
+                            <i class="fas fa-trash-alt me-1"></i> Delete
+                        </button>
+                    </form>
                 </div>
-                {% endif %}
             </div>
             {% endfor %}
         {% else %}
@@ -162,24 +199,35 @@
     </div>
     
     <div class="content-card">
-        <h6 class="section-title mb-3"><i class="fas fa-trophy text-purple me-2" style="color: #8b5cf6;"></i> Achievements</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="section-title mb-0"><i class="fas fa-trophy text-purple me-2" style="color: #8b5cf6;"></i> Achievements</h6>
+            <span class="badge rounded-pill px-2.5 py-1" style="color: #7c3aed; background: rgba(124, 58, 237, 0.1);">{{ achievements|length }}</span>
+        </div>
         {% if achievements %}
             {% for a in achievements %}
-            <div class="perf-item border-purple d-flex justify-content-between align-items-center flex-wrap gap-2" style="border-left-color: #8b5cf6;">
+            <div class="perf-item border-purple d-flex justify-content-between align-items-center flex-wrap gap-2 py-2" style="border-left-color: #8b5cf6;">
                 <div>
-                    <div class="fw-bold">{{ a.title }}</div>
-                    <div class="text-muted small">{{ a.description }}</div>
+                    <div class="fw-bold text-dark">{{ a.title }}</div>
+                    {% if a.description %}<div class="text-secondary small">{{ a.description }}</div>{% endif %}
                 </div>
-                {% if a.proof_filename %}
-                <div class="d-flex gap-2 mt-2 mt-sm-0">
-                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=a.proof_filename) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    {% if a.proof_filename %}
+                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=a.proof_filename) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1">
                         <i class="fas fa-eye me-1"></i> View
                     </a>
-                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=a.proof_filename, download='true') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                    <a href="{{ url_for('get_performance_file', college_slug=current_college.slug, filename=a.proof_filename, download='true') }}" class="btn btn-sm btn-outline-success rounded-pill px-2.5 py-1">
                         <i class="fas fa-download me-1"></i> Download
                     </a>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1" data-bs-toggle="modal" data-bs-target="#editRecordModal{{ a.id }}">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </button>
+                    <form action="{{ url_for('delete_student_performance', college_slug=current_college.slug, perf_id=a.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this achievement?');" class="d-inline mb-0">
+                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1">
+                            <i class="fas fa-trash-alt me-1"></i> Delete
+                        </button>
+                    </form>
                 </div>
-                {% endif %}
             </div>
             {% endfor %}
         {% else %}
@@ -231,6 +279,59 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Record Modals -->
+{% if records %}
+    {% for r in records %}
+    <div class="modal fade" id="editRecordModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2 text-primary"></i> Edit Performance Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('edit_student_performance', college_slug=current_college.slug, perf_id=r.id) }}" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Category</label>
+                            <select name="type" class="form-select form-select-sm border-0 bg-light" required>
+                                <option value="skill" {% if r.type == 'skill' %}selected{% endif %}>Skill</option>
+                                <option value="certificate" {% if r.type == 'certificate' %}selected{% endif %}>Certification</option>
+                                <option value="internship" {% if r.type == 'internship' %}selected{% endif %}>Internship</option>
+                                <option value="achievement" {% if r.type == 'achievement' %}selected{% endif %}>Achievement</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Title / Name</label>
+                            <input type="text" name="title" value="{{ r.title }}" class="form-control form-control-sm border-0 bg-light" required placeholder="e.g. Python Programming, AWS Certified...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Description (Optional)</label>
+                            <textarea name="description" class="form-control form-control-sm border-0 bg-light" rows="2" placeholder="Brief details about this record...">{{ r.description or '' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Certificate/Credential ID (Optional)</label>
+                            <input type="text" name="certificate_id" value="{{ r.certificate_id or '' }}" class="form-control form-control-sm border-0 bg-light" placeholder="Only for certifications">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Replace Proof File (Optional)</label>
+                            <input type="file" name="proof" class="form-control form-control-sm border-0 bg-light" accept=".pdf,.jpg,.jpeg,.png">
+                            {% if r.proof_filename %}
+                            <div class="form-text small text-muted mt-1">
+                                <i class="fas fa-paperclip me-1 text-primary"></i> Current attachment attached
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary rounded-pill fw-bold">Update Record</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">

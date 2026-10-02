@@ -11,16 +11,19 @@
     
     <div class="p-3 p-md-4">
         <!-- Search Box -->
-        <div class="filters-section mb-4 p-3 p-md-4 bg-light border rounded-4">
+        <div class="filters-section mb-4 p-3 p-md-4 bg-light border rounded-4 shadow-xs">
             <form method="GET">
-                <div class="row g-3">
+                <div class="row g-2 align-items-end">
                     <div class="col-12">
                         <label class="form-label small fw-bold text-muted mb-2">Search Student by Roll Number</label>
-                        <div class="input-group shadow-sm rounded-pill overflow-hidden border">
-                            <span class="input-group-text bg-white border-0"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" name="roll_no" class="form-control border-0"
+                        <div class="input-group shadow-sm rounded-pill overflow-hidden border bg-white">
+                            <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" name="roll_no" class="form-control border-0 shadow-none px-2"
                                 placeholder="Enter Roll Number..." value="{{ search_roll }}">
-                            <button class="btn btn-primary px-4" type="submit">Track Performance</button>
+                            <button class="btn btn-primary px-3 px-md-4 fw-bold" type="submit">
+                                <span class="d-none d-sm-inline">Track Performance</span>
+                                <span class="d-inline d-sm-none">Track</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -28,11 +31,15 @@
         </div>
 
         {% if student %}
-        <h5 class="fw-bold mb-4 border-bottom pb-2">
-            Performance Record: {{ student.first_name }} {{ student.last_name }} 
-            <span class="badge bg-primary rounded-pill ms-2">{{ student.roll_no }}</span>
-            <span class="badge bg-secondary rounded-pill ms-1">{{ student.department }} - {{ student.year }} Yr - Sec {{ student.section }}</span>
-        </h5>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4 border-bottom pb-3">
+            <h5 class="fw-bold mb-0">
+                Performance Record: {{ student.first_name }} {{ student.last_name }} 
+            </h5>
+            <div class="d-flex flex-wrap gap-1">
+                <span class="badge bg-primary rounded-pill px-2 py-1">{{ student.roll_no }}</span>
+                <span class="badge bg-secondary rounded-pill px-2 py-1">{{ student.department }} - {{ student.year }} Yr - Sec {{ student.section }}</span>
+            </div>
+        </div>
         
         <div class="row g-4 mb-4">
             <!-- Skills -->
@@ -171,35 +178,35 @@
 
         {% elif not search_roll %}
         <!-- Recent Updates Feed -->
-        <h5 class="fw-bold mb-4 border-bottom pb-2">Recent Performance Updates</h5>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
+        <h5 class="fw-bold mb-3 border-bottom pb-2">Recent Performance Updates</h5>
+        <div class="table-responsive rounded-3 border">
+            <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Student</th>
-                        <th>Total Records Updated</th>
-                        <th>Last Updated</th>
-                        <th>Action</th>
+                        <th class="text-nowrap ps-3">Student</th>
+                        <th class="text-nowrap">Total Records</th>
+                        <th class="text-nowrap">Last Updated</th>
+                        <th class="text-nowrap text-end pe-3">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for stu, last_updated, total_updates in recent_updates %}
                     <tr>
-                        <td>
-                            <div class="fw-bold">{{ stu.first_name }} {{ stu.last_name }}</div>
-                            <small class="text-muted">{{ stu.roll_no }} | {{ stu.department }} - {{ stu.year }} Yr - Sec {{ stu.section }}</small>
+                        <td class="ps-3">
+                            <div class="fw-bold text-dark">{{ stu.first_name }} {{ stu.last_name }}</div>
+                            <small class="text-muted d-block">{{ stu.roll_no }} | {{ stu.department }} - {{ stu.year }} Yr - Sec {{ stu.section }}</small>
                         </td>
                         <td>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3">{{ total_updates }} Updates</span>
                         </td>
-                        <td><small class="text-muted">{{ last_updated.strftime('%Y-%m-%d %I:%M %p') }}</small></td>
-                        <td>
-                            <a href="{{ url_for('performance_analytics', college_slug=current_college.slug, roll_no=stu.roll_no) }}" class="btn btn-sm btn-outline-primary rounded-pill">View Profile</a>
+                        <td class="text-nowrap"><small class="text-muted">{{ last_updated.strftime('%Y-%m-%d %I:%M %p') }}</small></td>
+                        <td class="text-end pe-3">
+                            <a href="{{ url_for('performance_analytics', college_slug=current_college.slug, roll_no=stu.roll_no) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 text-nowrap">View Profile</a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">No recent performance updates found in your purview.</td>
+                        <td colspan="4" class="text-center py-4 text-muted">No recent performance updates found in your purview.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

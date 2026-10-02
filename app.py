@@ -1,5 +1,6 @@
 import os
 import json
+import mimetypes
 import pandas as pd
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, send_from_directory, session, g
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -7,9 +8,10 @@ from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction, StudentPerformance
+from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction, StudentPerformance, Notice, StudentMark, Assignment, AssignmentSubmission
 from config import Config
 from utils import allowed_file, validate_roll_no
+from cloudinary_storage import upload_document, serve_document, is_cloudinary_enabled
 from supabase import create_client, Client
 
 # Blueprint registration moved down
@@ -134,10 +136,27 @@ def format_time_range(time_range_str):
     except Exception:
         return time_range_str
 
-app.jinja_env.filters['format_time_range'] = format_time_range
+def to_ist(dt, fmt='%d %b %Y, %I:%M %p'):
+    if not dt:
+        return ""
+    if isinstance(dt, str):
+        try:
+            dt = datetime.strptime(dt.split('.')[0], '%Y-%m-%d %H:%M:%S')
+        except:
+            return dt
+    try:
+        ist_dt = dt + timedelta(hours=5, minutes=30)
+        return ist_dt.strftime(fmt)
+    except Exception:
+        return str(dt)
 
-# Create uploads directory
+app.jinja_env.filters['format_time_range'] = format_time_range
+app.jinja_env.filters['to_ist'] = to_ist
+
+# Create uploads directories
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'notices'), exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'performance'), exist_ok=True)
 os.makedirs('instance', exist_ok=True)
 
 # Create tables and admin user
@@ -772,18 +791,156 @@ def edit_profile(college_slug=None):
     return render_template('edit_profile.html')
 
 
- # Serve uploaded files
+def safe_send_file(folder, filename, as_attachment=False):
+    file_path = os.path.join(folder, filename)
+    if not os.path.exists(file_path):
+        flash('File not found or has been removed.', 'danger')
+        return redirect(request.referrer or url_for('index'))
+        
+    ext = os.path.splitext(filename)[1].lower()
+    mime_map = {
+        '.pdf': 'application/pdf',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+        '.bmp': 'image/bmp',
+        '.txt': 'text/plain',
+        '.html': 'text/html',
+        '.htm': 'text/html',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.ppt': 'application/vnd.ms-powerpoint',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    }
+    mimetype = mime_map.get(ext) or mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+    
+    response = send_from_directory(folder, filename, as_attachment=as_attachment, mimetype=mimetype)
+    if not as_attachment:
+        response.headers['Content-Disposition'] = f'inline; filename="{os.path.basename(filename)}"'
+        response.headers['Content-Type'] = mimetype
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+    else:
+        response.headers['Content-Disposition'] = f'attachment; filename="{os.path.basename(filename)}"'
+    return response
+
+# Serve uploaded files
 @app.route('/<college_slug>/uploads/<path:filename>')
 def uploaded_file(filename):
     download = request.args.get('download', 'false').lower() == 'true'
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=download)
+    if filename.startswith('http://') or filename.startswith('https://'):
+        return serve_document(filename, download=download)
+    return serve_document(filename, local_dir=app.config['UPLOAD_FOLDER'], download=download)
 
 @app.route('/<college_slug>/performance/file/<path:filename>')
 @login_required
 def get_performance_file(filename):
     download = request.args.get('download', 'false').lower() == 'true'
+    if filename.startswith('http://') or filename.startswith('https://'):
+        return serve_document(filename, download=download)
     perf_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'performance')
-    return send_from_directory(perf_folder, filename, as_attachment=download)
+    return serve_document(filename, local_dir=perf_folder, download=download)
+
+# --- Notice Board Routes ---
+@app.route('/<college_slug>/notices/file/<path:filename>')
+@login_required
+def get_notice_file(filename):
+    download = request.args.get('download', 'false').lower() == 'true'
+    if filename.startswith('http://') or filename.startswith('https://'):
+        return serve_document(filename, download=download)
+    notices_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'notices')
+    return serve_document(filename, local_dir=notices_folder, download=download)
+
+@app.route('/<college_slug>/admin/notices', methods=['GET', 'POST'])
+@login_required
+def admin_notices():
+    if not (current_user.is_admin() or current_user.is_superadmin):
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+        
+    college_id = g.current_college.id if getattr(g, 'current_college', None) else current_user.college_id
+    departments = Department.query.filter_by(college_id=college_id).order_by(Department.name).all()
+    
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        message = request.form.get('message', '').strip()
+        target_faculty = 'target_faculty' in request.form
+        target_students = 'target_students' in request.form
+        target_department = request.form.get('target_department', 'ALL').strip()
+        priority = request.form.get('priority', 'normal').strip()
+        
+        if not title or not message:
+            flash('Notice title and message are required.', 'danger')
+            return redirect(url_for('admin_notices'))
+            
+        if not target_faculty and not target_students:
+            flash('Please select at least one recipient audience (Faculty or Students).', 'warning')
+            return redirect(url_for('admin_notices'))
+            
+        file_path = None
+        file_original_name = None
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and file.filename != '':
+                file_original_name = file.filename
+                upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'notices')
+                file_path = upload_document(
+                    file,
+                    subfolder='notices',
+                    prefix=f"notice_{college_id}",
+                    local_folder_path=upload_folder
+                )
+                
+        notice = Notice(
+            college_id=college_id,
+            title=title,
+            message=message,
+            file_path=file_path,
+            file_original_name=file_original_name,
+            target_faculty=target_faculty,
+            target_students=target_students,
+            target_department=target_department,
+            priority=priority,
+            posted_by_id=current_user.id
+        )
+        db.session.add(notice)
+        db.session.commit()
+        flash('Notice published and circulated successfully!', 'success')
+        return redirect(url_for('admin_notices'))
+        
+    notices = Notice.query.filter_by(college_id=college_id).order_by(Notice.created_at.desc()).all()
+    return render_template('admin/notices.html', notices=notices, departments=departments)
+
+@app.route('/<college_slug>/admin/notices/<int:notice_id>/delete', methods=['POST'])
+@login_required
+def delete_admin_notice(notice_id):
+    if not (current_user.is_admin() or current_user.is_superadmin):
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+        
+    college_id = g.current_college.id if getattr(g, 'current_college', None) else current_user.college_id
+    notice = Notice.query.filter_by(id=notice_id, college_id=college_id).first_or_404()
+    
+    if notice.file_path:
+        try:
+            file_loc = os.path.join(app.config['UPLOAD_FOLDER'], 'notices', notice.file_path)
+            if os.path.exists(file_loc):
+                os.remove(file_loc)
+        except Exception as e:
+            print(f"Error removing notice file: {e}")
+            
+    db.session.delete(notice)
+    db.session.commit()
+    flash('Notice deleted successfully.', 'success')
+    return redirect(url_for('admin_notices'))
 
 # Admin Routes
 @app.route('/<college_slug>/admin/dashboard')
@@ -799,10 +956,13 @@ def admin_dashboard():
         'total_students': User.query.filter_by(role='student', college_id=college_id).count(),
         'total_faculty': User.query.filter(User.role.in_(['faculty', 'hod']), User.college_id==college_id).count(),
         'pending_permissions': Permission.query.filter_by(status='pending', college_id=college_id).count(),
-        'total_clubs': Club.query.filter_by(college_id=college_id).count()
+        'total_clubs': Club.query.filter_by(college_id=college_id).count(),
+        'total_notices': Notice.query.filter_by(college_id=college_id).count()
     }
     
-    return render_template('admin/dashboard.html', stats=stats)
+    recent_notices = Notice.query.filter_by(college_id=college_id).order_by(Notice.created_at.desc()).limit(4).all()
+    
+    return render_template('admin/dashboard.html', stats=stats, notices=recent_notices)
 
 @app.route('/<college_slug>/admin/students')
 @login_required
@@ -2057,12 +2217,544 @@ def faculty_dashboard():
         approved_grouped = group_permissions(approved_permissions_query)
         approved_list = approved_permissions_query
     
+    dept = current_user.department
+    faculty_notices_list = Notice.query.filter_by(college_id=current_user.college_id).filter(
+        ((Notice.target_faculty == True) & ((Notice.target_department == 'ALL') | (Notice.target_department == dept))) |
+        (Notice.posted_by_id == current_user.id)
+    ).order_by(Notice.created_at.desc()).limit(4).all()
+
+    faculty_assignments = Assignment.query.filter_by(
+        college_id=current_user.college_id
+    ).filter(
+        (Assignment.faculty_id == current_user.id) | (Assignment.department == current_user.department)
+    ).order_by(Assignment.created_at.desc()).all()
+
     return render_template('faculty/dashboard.html', 
                          pending_grouped=pending_grouped,
                          approved_grouped=approved_grouped,
                          approved_list=approved_list,
                          is_hod=current_user.is_hod(),
-                         is_incharge=is_incharge)
+                         is_incharge=is_incharge,
+                         notices=faculty_notices_list,
+                         assignments=faculty_assignments)
+
+# --- Faculty Student Management & Academic Performance APIs ---
+@app.route('/<college_slug>/api/faculty/students-detailed')
+@login_required
+def get_faculty_students_detailed():
+    if not current_user.is_faculty():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    department = request.args.get('department') or current_user.department
+    year = request.args.get('year')
+    section = request.args.get('section', 'ALL')
+    
+    query = User.query.filter_by(role='student', college_id=current_user.college_id)
+    if department and department != 'ALL':
+        query = query.filter_by(department=department)
+    if year and str(year).strip():
+        try:
+            query = query.filter_by(year=int(year))
+        except ValueError:
+            query = query.filter_by(year=year)
+    if section and section != 'ALL':
+        query = query.filter_by(section=section)
+        
+    students = query.order_by(User.roll_no).all()
+    
+    result = []
+    college = g.current_college or current_user.college
+    
+    # Get all scheduled subjects from timetable for this class
+    tt_query = TimeTable.query.filter_by(college_id=college.id if college else current_user.college_id)
+    if department and department != 'ALL':
+        tt_query = tt_query.filter_by(department=department)
+    if year and str(year).strip():
+        tt_query = tt_query.filter_by(year=str(year))
+    if section and section != 'ALL':
+        tt_query = tt_query.filter_by(section=section)
+        
+    timetable_records = tt_query.all()
+    class_subjects = set()
+    for rec in timetable_records:
+        for p in rec.get_periods():
+            if p and p.strip() and p.strip().upper() not in ['BREAK', 'LUNCH', 'LUNCH BREAK']:
+                class_subjects.add(p.strip())
+                
+    # If no subjects in timetable, add faculty's own subjects
+    if current_user.subjects:
+        for sub in current_user.subjects.split(','):
+            if sub.strip():
+                class_subjects.add(sub.strip())
+    
+    for s in students:
+        total_att = ClassAttendance.query.filter_by(student_id=s.id).count()
+        present_att = ClassAttendance.query.filter_by(student_id=s.id, status='present').count()
+        att_pct = round((present_att / total_att) * 100, 1) if total_att > 0 else None
+        
+        # Recent marks records
+        marks_records = StudentMark.query.filter_by(student_id=s.id).order_by(StudentMark.created_at.desc()).all()
+        marks_list = [{
+            'id': m.id,
+            'subject': m.subject,
+            'type': m.assessment_type,
+            'marks_obtained': m.marks_obtained,
+            'max_marks': m.max_marks,
+            'pct': round((m.marks_obtained / m.max_marks) * 100, 1) if m.max_marks > 0 else 0,
+            'remarks': m.remarks
+        } for m in marks_records]
+        
+        avg_mark_pct = None
+        if marks_records:
+            pcts = [(m.marks_obtained / m.max_marks) * 100 for m in marks_records if m.max_marks > 0]
+            if pcts:
+                avg_mark_pct = round(sum(pcts) / len(pcts), 1)
+                
+        result.append({
+            'id': s.id,
+            'roll_no': s.roll_no or 'N/A',
+            'name': s.get_full_name(),
+            'department': s.department or department,
+            'year': s.year or year,
+            'section': s.section or 'A',
+            'email': s.email,
+            'phone': s.phone or 'Not provided',
+            'attendance_pct': att_pct,
+            'total_attendance_sessions': total_att,
+            'present_attendance_sessions': present_att,
+            'subjects': list(class_subjects),
+            'avg_academic_pct': avg_mark_pct,
+            'recent_marks': marks_list
+        })
+        
+    return jsonify(result)
+
+
+@app.route('/<college_slug>/api/faculty/marks/get')
+@login_required
+def get_faculty_marks():
+    if not current_user.is_faculty():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    department = request.args.get('department')
+    year = request.args.get('year')
+    section = request.args.get('section', 'ALL')
+    subject = request.args.get('subject')
+    assessment_type = request.args.get('assessment_type')
+    
+    if not all([department, year, subject, assessment_type]):
+        return jsonify({'error': 'Missing parameters'}), 400
+        
+    query = StudentMark.query.filter_by(
+        college_id=current_user.college_id,
+        department=department,
+        subject=subject,
+        assessment_type=assessment_type
+    )
+    if year and str(year).strip():
+        try:
+            query = query.filter_by(year=int(year))
+        except ValueError:
+            query = query.filter_by(year=year)
+    if section and section != 'ALL':
+        query = query.filter_by(section=section)
+        
+    marks = query.all()
+    
+    marks_map = {m.student_id: {
+        'id': m.id,
+        'marks_obtained': m.marks_obtained,
+        'max_marks': m.max_marks,
+        'remarks': m.remarks or ''
+    } for m in marks}
+    
+    return jsonify(marks_map)
+
+
+@app.route('/<college_slug>/api/faculty/marks/save', methods=['POST'])
+@login_required
+def save_faculty_marks():
+    if not current_user.is_faculty():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+        
+    department = data.get('department')
+    year = data.get('year')
+    section = data.get('section', 'ALL')
+    subject = data.get('subject')
+    assessment_type = data.get('assessment_type')
+    max_marks = float(data.get('max_marks', 100.0))
+    marks_data = data.get('marks_data', {}) # {student_id: {marks: 18.5, remarks: ''}}
+    
+    if not all([department, year, subject, assessment_type]):
+        return jsonify({'error': 'Missing required fields'}), 400
+        
+    for student_id_str, val in marks_data.items():
+        try:
+            student_id = int(student_id_str)
+            raw_marks = val.get('marks', '')
+            if raw_marks == '' or raw_marks is None:
+                continue
+            marks_val = float(raw_marks)
+            remarks_val = val.get('remarks', '').strip()
+            
+            st_user = User.query.get(student_id)
+            st_sec = st_user.section if st_user and st_user.section else (section if section != 'ALL' else 'A')
+            st_dept = st_user.department if st_user and st_user.department else department
+            st_yr = st_user.year if st_user and st_user.year else year
+            
+            existing = StudentMark.query.filter_by(
+                college_id=current_user.college_id,
+                student_id=student_id,
+                subject=subject,
+                assessment_type=assessment_type
+            ).first()
+            
+            if existing:
+                existing.marks_obtained = marks_val
+                existing.max_marks = max_marks
+                existing.remarks = remarks_val
+                existing.faculty_id = current_user.id
+                existing.department = st_dept
+                existing.year = st_yr
+                existing.section = st_sec
+                existing.updated_at = datetime.utcnow()
+            else:
+                new_mark = StudentMark(
+                    college_id=current_user.college_id,
+                    student_id=student_id,
+                    faculty_id=current_user.id,
+                    department=st_dept,
+                    year=st_yr,
+                    section=st_sec,
+                    subject=subject,
+                    assessment_type=assessment_type,
+                    max_marks=max_marks,
+                    marks_obtained=marks_val,
+                    remarks=remarks_val
+                )
+                db.session.add(new_mark)
+        except (ValueError, TypeError):
+            continue
+            
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Marks evaluated and recorded successfully!'})
+
+
+# --- Faculty Assignment Workflow Routes ---
+@app.route('/<college_slug>/faculty/assignments/create', methods=['POST'])
+@login_required
+def create_faculty_assignment():
+    col_slug = current_user.college.slug if current_user.college else getattr(g, 'college_slug', '')
+    if not current_user.is_faculty():
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    department = request.form.get('department')
+    year = int(request.form.get('year', 1))
+    section = request.form.get('section', 'ALL')
+    subject = request.form.get('subject', '').strip()
+    max_marks = float(request.form.get('max_marks', 10.0))
+    due_date_str = request.form.get('due_date')
+    
+    if not title or not subject or not due_date_str:
+        flash('Assignment title, subject, and due date are required.', 'danger')
+        return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+        
+    try:
+        due_date = datetime.strptime(due_date_str, '%Y-%m-%dT%H:%M')
+    except ValueError:
+        try:
+            due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
+        except ValueError:
+            due_date = datetime.utcnow() + timedelta(days=7)
+            
+    file_path = None
+    file_original_name = None
+    file = request.files.get('file') or request.files.get('assignment_file')
+    if file and file.filename != '':
+        file_original_name = file.filename
+        upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'assignments')
+        file_path = upload_document(
+            file,
+            subfolder='assignments',
+            prefix=f"asgn_{current_user.id}",
+            local_folder_path=upload_folder
+        )
+        
+    assignment = Assignment(
+        college_id=current_user.college_id,
+        faculty_id=current_user.id,
+        department=department,
+        year=year,
+        section=section,
+        subject=subject,
+        title=title,
+        description=description,
+        file_path=file_path,
+        file_original_name=file_original_name,
+        max_marks=max_marks,
+        due_date=due_date
+    )
+    db.session.add(assignment)
+    db.session.commit()
+    flash('Assignment created and published to students successfully!', 'success')
+    return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+
+
+@app.route('/<college_slug>/faculty/assignments/<int:assignment_id>/delete', methods=['POST'])
+@login_required
+def delete_faculty_assignment(assignment_id):
+    col_slug = current_user.college.slug if current_user.college else getattr(g, 'college_slug', '')
+    if not current_user.is_faculty():
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    assignment = Assignment.query.filter_by(id=assignment_id, college_id=current_user.college_id).first_or_404()
+    if assignment.faculty_id != current_user.id and not current_user.is_admin() and not current_user.is_hod():
+        flash('Unauthorized to delete this assignment', 'danger')
+        return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+        
+    db.session.delete(assignment)
+    db.session.commit()
+    flash('Assignment deleted successfully.', 'success')
+    return redirect(url_for('faculty_dashboard', college_slug=col_slug) + '#assignmentsP')
+
+
+@app.route('/<college_slug>/api/faculty/assignments/<int:assignment_id>/submissions')
+@login_required
+def get_faculty_assignment_submissions(assignment_id):
+    if not current_user.is_faculty():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    assignment = Assignment.query.filter_by(id=assignment_id, college_id=current_user.college_id).first_or_404()
+    submissions = AssignmentSubmission.query.filter_by(assignment_id=assignment.id).all()
+    
+    students_query = User.query.filter_by(
+        role='student',
+        college_id=current_user.college_id,
+        department=assignment.department,
+        year=assignment.year
+    )
+    if assignment.section != 'ALL':
+        students_query = students_query.filter_by(section=assignment.section)
+    eligible_students = students_query.order_by(User.roll_no).all()
+    
+    sub_map = {s.student_id: s for s in submissions}
+    
+    result = []
+    for st in eligible_students:
+        sub = sub_map.get(st.id)
+        result.append({
+            'student_id': st.id,
+            'roll_no': st.roll_no,
+            'name': st.get_full_name(),
+            'has_submitted': sub is not None,
+            'submission_id': sub.id if sub else None,
+            'file_path': sub.file_path if sub else None,
+            'file_original_name': sub.file_original_name if sub else None,
+            'submission_text': sub.submission_text if sub else None,
+            'submitted_at': sub.submitted_at.strftime('%d %b %Y, %I:%M %p') if sub else None,
+            'is_late': sub.is_late if sub else False,
+            'marks_obtained': sub.marks_obtained if sub else None,
+            'feedback': sub.feedback if sub else '',
+            'max_marks': assignment.max_marks
+        })
+        
+    return jsonify({
+        'assignment': {
+            'id': assignment.id,
+            'title': assignment.title,
+            'subject': assignment.subject,
+            'due_date': assignment.due_date.strftime('%d %b %Y, %I:%M %p'),
+            'max_marks': assignment.max_marks,
+            'total_eligible': len(eligible_students),
+            'total_submitted': len(submissions),
+            'total_graded': len([s for s in submissions if s.marks_obtained is not None])
+        },
+        'students': result
+    })
+
+
+@app.route('/<college_slug>/api/faculty/submissions/<int:submission_id>/grade', methods=['POST'])
+@login_required
+def grade_assignment_submission(submission_id):
+    if not current_user.is_faculty():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    submission = AssignmentSubmission.query.get_or_404(submission_id)
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+        
+    try:
+        marks = float(data.get('marks_obtained', 0))
+        feedback = data.get('feedback', '').strip()
+        
+        submission.marks_obtained = marks
+        submission.feedback = feedback
+        submission.graded_by_id = current_user.id
+        submission.graded_at = datetime.utcnow()
+        submission.status = 'graded'
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Submission graded successfully!'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/<college_slug>/student/assignments/submit/<int:assignment_id>', methods=['POST'])
+@login_required
+def submit_student_assignment(assignment_id):
+    col_slug = current_user.college.slug if current_user.college else getattr(g, 'college_slug', '')
+    if not current_user.is_student():
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    assignment = Assignment.query.filter_by(id=assignment_id, college_id=current_user.college_id).first_or_404()
+    submission_text = request.form.get('submission_text', '').strip()
+    
+    file_path = None
+    file_original_name = None
+    file = request.files.get('submission_file') or request.files.get('file')
+    if file and file.filename != '':
+        file_original_name = file.filename
+        upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'assignments')
+        file_path = upload_document(
+            file,
+            subfolder='assignments',
+            prefix=f"sub_{current_user.id}",
+            local_folder_path=upload_folder
+        )
+        
+    now = datetime.utcnow()
+    is_late = now > assignment.due_date
+    
+    existing = AssignmentSubmission.query.filter_by(assignment_id=assignment.id, student_id=current_user.id).first()
+    if existing:
+        if file_path:
+            existing.file_path = file_path
+            existing.file_original_name = file_original_name
+        existing.submission_text = submission_text
+        existing.submitted_at = now
+        existing.is_late = is_late
+        existing.status = 'submitted'
+    else:
+        submission = AssignmentSubmission(
+            assignment_id=assignment.id,
+            student_id=current_user.id,
+            file_path=file_path,
+            file_original_name=file_original_name,
+            submission_text=submission_text,
+            submitted_at=now,
+            is_late=is_late,
+            status='submitted'
+        )
+        db.session.add(submission)
+        
+    db.session.commit()
+    flash('Assignment submitted successfully!' if not is_late else 'Assignment submitted (Late Submission recorded).', 'success' if not is_late else 'warning')
+    return redirect(url_for('student_dashboard', college_slug=col_slug))
+
+@app.route('/<college_slug>/faculty/notices', methods=['GET', 'POST'])
+@login_required
+def faculty_notices():
+    if not current_user.is_faculty():
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+        
+    college_id = current_user.college_id
+    departments = Department.query.filter_by(college_id=college_id).order_by(Department.name).all()
+    
+    if request.method == 'POST':
+        if not current_user.is_hod():
+            flash('Only HODs and Administrators can publish notices.', 'danger')
+            return redirect(url_for('faculty_notices'))
+            
+        title = request.form.get('title', '').strip()
+        message = request.form.get('message', '').strip()
+        target_faculty = 'target_faculty' in request.form
+        target_students = 'target_students' in request.form
+        target_department = current_user.department or request.form.get('target_department', 'ALL').strip()
+        priority = request.form.get('priority', 'normal').strip()
+        
+        if not title or not message:
+            flash('Notice title and message are required.', 'danger')
+            return redirect(url_for('faculty_notices'))
+            
+        if not target_faculty and not target_students:
+            flash('Please select at least one recipient audience (Faculty or Students).', 'warning')
+            return redirect(url_for('faculty_notices'))
+            
+        file_path = None
+        file_original_name = None
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and file.filename != '':
+                file_original_name = file.filename
+                upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'notices')
+                file_path = upload_document(
+                    file,
+                    subfolder='notices',
+                    prefix=f"notice_{college_id}",
+                    local_folder_path=upload_folder
+                )
+                
+        notice = Notice(
+            college_id=college_id,
+            title=title,
+            message=message,
+            file_path=file_path,
+            file_original_name=file_original_name,
+            target_faculty=target_faculty,
+            target_students=target_students,
+            target_department=target_department,
+            priority=priority,
+            posted_by_id=current_user.id
+        )
+        db.session.add(notice)
+        db.session.commit()
+        flash('Department notice published successfully!', 'success')
+        return redirect(url_for('faculty_notices'))
+        
+    dept = current_user.department
+    notices = Notice.query.filter_by(college_id=college_id).filter(
+        ((Notice.target_faculty == True) & ((Notice.target_department == 'ALL') | (Notice.target_department == dept))) |
+        (Notice.posted_by_id == current_user.id)
+    ).order_by(Notice.created_at.desc()).all()
+    
+    return render_template('faculty/notices.html', notices=notices, departments=departments)
+
+@app.route('/<college_slug>/faculty/notices/<int:notice_id>/delete', methods=['POST'])
+@login_required
+def delete_faculty_notice(notice_id):
+    if not current_user.is_faculty():
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+        
+    notice = Notice.query.filter_by(id=notice_id, college_id=current_user.college_id).first_or_404()
+    
+    if notice.posted_by_id != current_user.id and not current_user.is_admin():
+        flash('You do not have permission to delete this notice.', 'danger')
+        return redirect(url_for('faculty_notices'))
+        
+    if notice.file_path:
+        try:
+            file_loc = os.path.join(app.config['UPLOAD_FOLDER'], 'notices', notice.file_path)
+            if os.path.exists(file_loc):
+                os.remove(file_loc)
+        except Exception as e:
+            print(f"Error removing notice file: {e}")
+            
+    db.session.delete(notice)
+    db.session.commit()
+    flash('Notice deleted successfully.', 'success')
+    return redirect(url_for('faculty_notices'))
 
 @app.route('/<college_slug>/faculty/permission/<int:permission_id>')
 @login_required
@@ -2133,10 +2825,20 @@ def get_faculty_students():
         except ValueError:
             query_date = (datetime.utcnow() + timedelta(hours=5, minutes=30)).date()
     
-    if not department or not section or not year:
-        return jsonify({'error': 'Missing department, section or year'}), 400
+    if not department or not year:
+        return jsonify({'error': 'Missing department or year'}), 400
         
-    students = User.query.filter_by(role='student', department=department, section=section, year=year).order_by(User.roll_no).all()
+    query = User.query.filter_by(role='student', college_id=current_user.college_id)
+    if department and department != 'ALL':
+        query = query.filter_by(department=department)
+    if year and str(year).strip():
+        try:
+            query = query.filter_by(year=int(year))
+        except ValueError:
+            query = query.filter_by(year=year)
+    if section and section != 'ALL':
+        query = query.filter_by(section=section)
+    students = query.order_by(User.roll_no).all()
     
     # Fetch approved permissions for these students on this date
     student_ids = [s.id for s in students]
@@ -2649,8 +3351,31 @@ def student_dashboard():
     # Mock data for UI removed to avoid confusion
     attendance_rank = "Top 18%"
         
+    # --- Notices for Student ---
+    dept = current_user.department
+    student_notices = Notice.query.filter_by(
+        college_id=g.current_college.id if getattr(g, 'current_college', None) else current_user.college_id,
+        target_students=True
+    ).filter(
+        (Notice.target_department == 'ALL') | (Notice.target_department == dept)
+    ).order_by(Notice.created_at.desc()).limit(4).all()
+
+    # --- Assignments for Student ---
+    col_id = g.current_college.id if getattr(g, 'current_college', None) else current_user.college_id
+    student_assignments = Assignment.query.filter_by(
+        college_id=col_id,
+        department=dept,
+        year=current_user.year
+    ).filter(
+        (Assignment.section == 'ALL') | (Assignment.section == current_user.section)
+    ).order_by(Assignment.due_date.asc()).all()
+    
+    student_submissions_map = {
+        s.assignment_id: s for s in AssignmentSubmission.query.filter_by(student_id=current_user.id).all()
+    }
+
     return render_template('student/dashboard.html', 
-                          events=student_events[:4],
+        events=student_events[:4],
         permissions=permissions[:5],
         registrations=registrations[:5],
         registered_ids=registered_ids, # Keep this from original
@@ -2663,8 +3388,30 @@ def student_dashboard():
         attendance_rank=attendance_rank,
         ist_now=ist_now,
         avg_marks=avg_marks,
-        exam_results=exam_results
+        exam_results=exam_results,
+        notices=student_notices,
+        assignments=student_assignments,
+        submissions_map=student_submissions_map
     )
+
+@app.route('/<college_slug>/student/notices')
+@login_required
+def student_notices():
+    if not current_user.is_student():
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+        
+    college_id = g.current_college.id if getattr(g, 'current_college', None) else current_user.college_id
+    dept = current_user.department
+    
+    notices = Notice.query.filter_by(
+        college_id=college_id,
+        target_students=True
+    ).filter(
+        (Notice.target_department == 'ALL') | (Notice.target_department == dept)
+    ).order_by(Notice.created_at.desc()).all()
+    
+    return render_template('student/notices.html', notices=notices)
 
 @app.route('/<college_slug>/api/student/attendance/history')
 @login_required
@@ -2774,11 +3521,13 @@ def student_performance():
         if 'proof' in request.files:
             file = request.files['proof']
             if file and file.filename != '':
-                filename = secure_filename(f"{current_user.id}_{int(datetime.now().timestamp())}_{file.filename}")
                 upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'performance')
-                os.makedirs(upload_folder, exist_ok=True)
-                file.save(os.path.join(upload_folder, filename))
-                proof_filename = filename
+                proof_filename = upload_document(
+                    file,
+                    subfolder='performance',
+                    prefix=f"perf_{current_user.id}",
+                    local_folder_path=upload_folder
+                )
                 
         perf = StudentPerformance(
             student_id=current_user.id,
@@ -2804,7 +3553,68 @@ def student_performance():
                           skills=skills, 
                           certificates=certificates, 
                           internships=internships, 
-                          achievements=achievements)
+                          achievements=achievements,
+                          records=records)
+
+@app.route('/<college_slug>/student/performance/<int:perf_id>/edit', methods=['POST'])
+@login_required
+def edit_student_performance(perf_id):
+    if not current_user.is_student():
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    perf = StudentPerformance.query.filter_by(id=perf_id, student_id=current_user.id).first_or_404()
+    
+    perf_type = request.form.get('type')
+    title = request.form.get('title')
+    description = request.form.get('description')
+    certificate_id = request.form.get('certificate_id')
+    
+    if perf_type:
+        perf.type = perf_type
+    if title:
+        perf.title = title
+    perf.description = description
+    perf.certificate_id = certificate_id
+    
+    if 'proof' in request.files:
+        file = request.files['proof']
+        if file and file.filename != '':
+            upload_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'performance')
+            proof_filename = upload_document(
+                file,
+                subfolder='performance',
+                prefix=f"perf_{current_user.id}",
+                local_folder_path=upload_folder
+            )
+            if proof_filename:
+                perf.proof_filename = proof_filename
+                
+    db.session.commit()
+    flash('Performance record updated successfully!', 'success')
+    return redirect(url_for('student_performance'))
+
+@app.route('/<college_slug>/student/performance/<int:perf_id>/delete', methods=['POST'])
+@login_required
+def delete_student_performance(perf_id):
+    if not current_user.is_student() and not current_user.is_admin():
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('index'))
+        
+    perf = StudentPerformance.query.filter_by(id=perf_id, student_id=current_user.id).first_or_404()
+    
+    if perf.proof_filename and not perf.proof_filename.startswith('http'):
+        try:
+            file_loc = os.path.join(app.config['UPLOAD_FOLDER'], 'performance', perf.proof_filename)
+            if os.path.exists(file_loc):
+                os.remove(file_loc)
+        except Exception as e:
+            print(f"Error removing performance file: {e}")
+            
+    db.session.delete(perf)
+    db.session.commit()
+    flash('Performance record deleted successfully.', 'success')
+    return redirect(url_for('student_performance'))
 
 @app.route('/<college_slug>/analytics/performance')
 @login_required
@@ -3115,9 +3925,12 @@ def apply_permission():
         proof_filename = None
         
         if proof_file and allowed_file(proof_file.filename):
-            filename = secure_filename(proof_file.filename)
-            proof_filename = f"proof_{current_user.roll_no}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-            proof_file.save(os.path.join(app.config['UPLOAD_FOLDER'], proof_filename))
+            proof_filename = upload_document(
+                proof_file,
+                subfolder='permissions',
+                prefix=f"proof_{current_user.roll_no}",
+                local_folder_path=app.config['UPLOAD_FOLDER']
+            )
         
         permission = Permission(
             student_id=current_user.id,

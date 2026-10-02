@@ -6,150 +6,186 @@
 <style>
     :root {
         --primary-gradient: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
-        --card-border-radius: 20px;
-        --faculty-header-shadow: rgba(124, 58, 237, 0.2);
+        --card-border-radius: 16px;
     }
 
-    [data-theme="dark"] {
-        --faculty-header-shadow: rgba(0, 0, 0, 0.5);
-    }
-
-    .dashboard-card {
-        transition: all 0.3s ease;
-        border-radius: 12px;
-        border: none;
-    }
-    
-    /* Premium Header Theme */
-    .faculty-header {
+    /* Sleek Compact Faculty Portal Banner */
+    .faculty-banner {
         background: var(--primary-gradient);
-        border-radius: 30px;
+        border-radius: 16px;
         color: white;
-        padding: 3rem 2rem 5rem 2rem;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 10px 30px var(--faculty-header-shadow);
+        padding: 1.15rem 1.5rem;
+        box-shadow: 0 4px 18px rgba(124, 58, 237, 0.16);
     }
-
-    @media (max-width: 767.98px) {
-        .faculty-header {
-            padding: 2rem 1rem 4rem 1rem;
-            border-radius: 0 0 20px 20px;
-        }
-    }
-
-    .faculty-header::before {
-        content: '';
-        position: absolute;
-        top: -50px;
-        right: -50px;
-        width: 150px;
-        height: 150px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 50%;
-    }
-
-    .faculty-body {
-        background: var(--bg-color);
-        border-radius: 30px 30px 0 0;
-        margin-top: -3.5rem;
-        padding: 2.5rem 1.5rem;
-        min-height: calc(100vh - 200px);
-        position: relative;
-        z-index: 5;
-    }
-
-    @media (max-width: 767.98px) {
-        .faculty-body {
-            margin-top: -2.5rem;
-            padding: 1.5rem 1rem;
-            border-radius: 20px 20px 0 0;
-        }
-    }
-
-    /* Stats Cards */
-    .stat-card {
-        background: var(--card-bg);
-        border-radius: var(--card-border-radius);
-        padding: 1.5rem;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        transition: transform 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .stat-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 15px;
+    .banner-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.18);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.2rem;
+        color: #fff;
     }
 
-    /* Modern Tabs */
-    .custom-tabs .nav-link {
+    /* Compact Stats Cards */
+    .stat-card-compact {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 0.9rem 1.15rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        height: 100%;
+    }
+    .stat-card-compact:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        border-color: rgba(124, 58, 237, 0.3);
+    }
+    .stat-icon-compact {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    /* Compact Sticky Nav Tabs Bar */
+    .faculty-tabs-container {
+        top: 60px;
+        z-index: 10;
+    }
+    .faculty-tabs-nav {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 50px;
+        padding: 4px;
+        gap: 4px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .faculty-tabs-nav::-webkit-scrollbar {
+        height: 0px;
+        display: none;
+    }
+    .faculty-tabs-nav .nav-link {
         border: none;
         color: var(--text-muted);
         font-weight: 600;
-        padding: 1rem 2rem;
+        font-size: 0.82rem;
+        padding: 0.5rem 1rem;
         border-radius: 50px;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         background: transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        white-space: nowrap;
     }
-    
-    .custom-tabs .nav-link:hover {
-        color: var(--text-dark);
-        background: rgba(0,0,0,0.02);
+    .faculty-tabs-nav .nav-link:hover {
+        color: var(--text-main);
+        background: rgba(124, 58, 237, 0.08);
     }
-    
-    .custom-tabs .nav-link.active {
-        background: var(--card-bg);
-        color: var(--clr-primary);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    .faculty-tabs-nav .nav-link.active {
+        background: var(--clr-primary);
+        color: #ffffff !important;
+        font-weight: 700;
+        box-shadow: 0 3px 10px rgba(124, 58, 237, 0.3);
     }
-
-    @media (max-width: 767.98px) {
-        .custom-tabs {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            -webkit-overflow-scrolling: touch;
-        }
-        .custom-tabs .nav-link {
-            padding: 0.75rem 1.25rem;
-            white-space: nowrap;
-            font-size: 0.9rem;
-        }
+    .faculty-tabs-nav .nav-link.active .badge {
+        background: rgba(255,255,255,0.25) !important;
+        color: #ffffff !important;
     }
 
     .card-modern {
         background: var(--card-bg);
         border-radius: var(--card-border-radius);
         border: 1px solid var(--border-color);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        margin-bottom: 2rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        margin-bottom: 1.25rem;
+    }
+
+    /* Enhanced Themed Form Controls & Components */
+    .form-themed {
+        background-color: var(--bg-color) !important;
+        color: var(--text-main) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 50px !important;
+        transition: all 0.2s ease;
+    }
+    .form-themed:focus {
+        background-color: var(--card-bg) !important;
+        border-color: var(--clr-primary) !important;
+        box-shadow: 0 0 0 0.25rem rgba(124, 58, 237, 0.15) !important;
+    }
+    .filter-card-modern {
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1rem;
+    }
+    .stat-pill-modern {
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    .stat-pill-modern:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border-color: rgba(124, 58, 237, 0.3);
+    }
+    .asgn-card-modern {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        transition: all 0.2s ease;
+    }
+    .asgn-card-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.07);
+        border-color: var(--clr-primary);
+    }
+    .table-themed th {
+        background-color: var(--bg-color) !important;
+        color: var(--text-muted) !important;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--border-color) !important;
+        padding: 0.75rem 0.9rem !important;
+    }
+    .table-themed td {
+        color: var(--text-main) !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        padding: 0.75rem 0.9rem !important;
     }
 
     /* Attendance Grid Styles */
     #attendanceGrid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-        gap: 12px;
-        padding: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+        gap: 10px;
+        padding: 8px 0;
     }
 
     @media (max-width: 767.98px) {
         #attendanceGrid {
-            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+            gap: 6px;
         }
     }
 
@@ -159,7 +195,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border-radius: 15px;
+        border-radius: 12px;
         border: 2px solid var(--border-color);
         cursor: pointer;
         transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -169,28 +205,28 @@
 
     .student-node .roll-num {
         font-weight: 800;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: var(--text-main);
     }
     
     .student-node.present {
         background: #27ae60;
         border-color: #27ae60;
-        transform: scale(1.05);
+        transform: scale(1.04);
         box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
     }
     .student-node.present .roll-num { color: white; }
     .student-node.present .status-icon { color: white; }
 
     .student-node.absent {
-        background: #fff;
+        background: var(--card-bg);
         border-color: #e74c3c;
     }
     .student-node.absent .roll-num { color: #e74c3c; }
 
     .status-icon {
-        font-size: 0.7rem;
-        margin-top: 4px;
+        font-size: 0.65rem;
+        margin-top: 3px;
         color: #b2bec3;
     }
 
@@ -198,13 +234,13 @@
     .accordion-modern .accordion-item {
         border: none;
         background: transparent;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
     }
     .accordion-modern .accordion-button {
         background: var(--card-bg) !important;
-        border-radius: 15px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
-        padding: 1.25rem;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+        padding: 1rem;
         font-weight: 700;
         color: var(--text-main);
     }
@@ -217,15 +253,15 @@
 
     .permission-item {
         background: var(--card-bg);
-        border-radius: 15px;
-        padding: 1rem;
-        margin-bottom: 0.75rem;
+        border-radius: 12px;
+        padding: 0.85rem;
+        margin-bottom: 0.6rem;
         border: 1px solid var(--border-color);
         transition: transform 0.2s, box-shadow 0.2s;
     }
     .permission-item:hover { 
         transform: translateY(-2px); 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     }
     
     /* Flat Roster Table Styles */
@@ -233,14 +269,14 @@
         font-weight: 700;
         color: var(--text-muted);
         text-transform: uppercase;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         letter-spacing: 0.5px;
         border-bottom: 2px solid var(--border-color);
-        padding-bottom: 1rem;
+        padding-bottom: 0.75rem;
     }
     .roster-table td {
         vertical-align: middle;
-        padding: 1rem 0;
+        padding: 0.75rem 0;
         border-bottom: 1px solid var(--border-color);
     }
     .roster-table tbody tr:last-child td {
@@ -251,21 +287,21 @@
     }
     .roster-table tbody tr:hover {
         background-color: var(--bg-color);
-        border-radius: 10px;
+        border-radius: 8px;
     }
 
     /* PA Badge Styles (Permission Approved) */
     .pa-badge {
         position: absolute;
-        top: -8px;
-        right: -8px;
+        top: -6px;
+        right: -6px;
         background: #9333ea;
         color: white;
-        font-size: 0.6rem;
+        font-size: 0.55rem;
         font-weight: 800;
-        padding: 2px 6px;
+        padding: 2px 5px;
         border-radius: 50px;
-        box-shadow: 0 2px 5px rgba(147, 51, 234, 0.4);
+        box-shadow: 0 2px 4px rgba(147, 51, 234, 0.4);
         z-index: 2;
         border: 2px solid var(--card-bg);
     }
@@ -277,11 +313,11 @@
     .roster-list-mobile {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
     }
     .roster-item-mobile {
-        padding: 1rem;
-        border-radius: 15px;
+        padding: 0.85rem;
+        border-radius: 12px;
         background: var(--bg-color);
         border: 1px solid var(--border-color);
         transition: transform 0.2s;
@@ -295,206 +331,284 @@
     }
 </style>
 
-<div class="faculty-header shadow">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h3 class="m-0 fw-bold">Faculty Portal</h3>
-            <p class="mb-0 opacity-75 small">{{ current_user.department }} Department | {{ current_user.get_full_name() }}</p>
-        </div>
-        <div class="text-end">
-            <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
-                <i class="fas fa-calendar-check me-2"></i> {{ today_date if today_date else 'Today' }}
-            </span>
+<div class="container-fluid px-0">
+    <!-- Top Faculty Banner -->
+    <div class="faculty-banner mb-3 shadow-sm">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="banner-avatar">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div>
+                    <h5 class="m-0 fw-bold text-white">Faculty Portal</h5>
+                    <div class="small text-white opacity-85">
+                        <span class="badge bg-white bg-opacity-25 text-white rounded-pill px-2.5 py-0.5 me-1">{{ current_user.department }}</span>
+                        <span>{{ current_user.get_full_name() }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 fw-semibold">
+                    <i class="far fa-calendar-alt me-1.5"></i> {{ today_date if today_date else 'Today' }}
+                </span>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="faculty-body container-fluid px-lg-5">
     <!-- Top Stats Row -->
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-3">
         {% if is_hod or is_incharge %}
             {% set pending_count = 0 %}
             {% for date, sections in pending_grouped.items() %}
                 {% set pending_count = pending_count + sections.values()|map('length')|sum %}
             {% endfor %}
-            <div class="col-md-4">
-                <div class="stat-card">
-                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                        <i class="fas fa-clock"></i>
+            <div class="col-6 col-md-3">
+                <div class="stat-card-compact" onclick="activateDashboardTab('pendingP');" style="cursor: pointer;">
+                    <div class="stat-icon-compact bg-warning bg-opacity-10 text-warning">
+                        <i class="fas fa-inbox"></i>
                     </div>
                     <div>
-                        <h3 class="mb-0 fw-bold">{{ pending_count }}</h3>
-                        <p class="text-muted small mb-0 fw-bold">Pending Approvals</p>
+                        <h4 class="mb-0 fw-bold text-main">{{ pending_count }}</h4>
+                        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Pending Approvals</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card-compact" onclick="activateDashboardTab('approvedP');" style="cursor: pointer;">
+                    <div class="stat-icon-compact bg-success bg-opacity-10 text-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold text-main">{{ approved_list|length if approved_list else 0 }}</h4>
+                        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Approved Roster</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card-compact" onclick="activateDashboardTab('attendanceP');" style="cursor: pointer;">
+                    <div class="stat-icon-compact bg-primary bg-opacity-10 text-primary">
+                        <i class="fas fa-fingerprint"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold text-main">Mark</h4>
+                        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Class Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card-compact" onclick="activateDashboardTab('assignmentsP');" style="cursor: pointer;">
+                    <div class="stat-icon-compact bg-info bg-opacity-10 text-info">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold text-main">{{ assignments|length if assignments else 0 }}</h4>
+                        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Assignments</div>
                     </div>
                 </div>
             </div>
         {% else %}
-            <!-- Spacer for regular faculty -->
-            <div class="col-md-4"></div>
+            <div class="col-6 col-md-4">
+                <div class="stat-card-compact" onclick="activateDashboardTab('attendanceP');" style="cursor: pointer;">
+                    <div class="stat-icon-compact bg-primary bg-opacity-10 text-primary">
+                        <i class="fas fa-fingerprint"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold text-main">Attendance</h4>
+                        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Mark Class Roster</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="stat-card-compact" onclick="activateDashboardTab('assignmentsP');" style="cursor: pointer;">
+                    <div class="stat-icon-compact bg-info bg-opacity-10 text-info">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold text-main">{{ assignments|length if assignments else 0 }}</h4>
+                        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Active Assignments</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="stat-card-compact" onclick="activateDashboardTab('approvedP');" style="cursor: pointer;">
+                    <div class="stat-icon-compact bg-success bg-opacity-10 text-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold text-main">{{ approved_list|length if approved_list else 0 }}</h4>
+                        <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Approved Permissions</div>
+                    </div>
+                </div>
+            </div>
         {% endif %}
-        
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon bg-success bg-opacity-10 text-success">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div>
-                    <h3 class="mb-0 fw-bold">{{ approved_list|length if approved_list else 0 }}</h3>
-                    <p class="text-muted small mb-0 fw-bold">Approved Permissions</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
-                    <i class="fas fa-fingerprint"></i>
-                </div>
-                <div>
-                    <h3 class="mb-0 fw-bold">Mark</h3>
-                    <p class="text-muted small mb-0 fw-bold">Quick Attendance</p>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Main Navigation Tabs -->
-    <ul class="nav custom-tabs mb-4 justify-content-center" id="facultyTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendanceP" type="button" role="tab">
-                <i class="fas fa-clipboard-list me-2"></i> Class Attendance
-            </button>
-        </li>
-        {% if is_hod or is_incharge %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pendingP" type="button" role="tab">
-                <i class="fas fa-inbox me-2"></i> Pending Requests
-                {% if pending_count and pending_count > 0 %}
-                <span class="badge bg-danger rounded-pill ms-2">{{ pending_count }}</span>
-                {% endif %}
-            </button>
-        </li>
-        {% endif %}
-        {% if is_incharge %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="incharge-tab" data-bs-toggle="tab" data-bs-target="#inchargeP" type="button" role="tab">
-                <i class="fas fa-chalkboard-teacher me-2"></i> My Class
-            </button>
-        </li>
-        {% endif %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approvedP" type="button" role="tab">
-                <i class="fas fa-check-double me-2"></i> Approved Roster
-            </button>
-        </li>
-    </ul>
+    <!-- Navigation Tabs -->
+    <div class="faculty-tabs-container sticky-top mb-3">
+        <ul class="nav faculty-tabs-nav" id="facultyTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendanceP" type="button" role="tab">
+                    <i class="fas fa-clipboard-list"></i> Attendance
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#studentsP" type="button" role="tab">
+                    <i class="fas fa-user-graduate"></i> Student Management
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performanceP" type="button" role="tab">
+                    <i class="fas fa-chart-line"></i> Marks &amp; Evaluation
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignmentsP" type="button" role="tab">
+                    <i class="fas fa-tasks"></i> Assignments
+                    {% if assignments and assignments|length > 0 %}
+                    <span class="badge rounded-pill ms-1">{{ assignments|length }}</span>
+                    {% endif %}
+                </button>
+            </li>
+            {% if is_hod or is_incharge %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pendingP" type="button" role="tab">
+                    <i class="fas fa-inbox"></i> Pending
+                    {% if pending_count and pending_count > 0 %}
+                    <span class="badge bg-danger rounded-pill ms-1">{{ pending_count }}</span>
+                    {% endif %}
+                </button>
+            </li>
+            {% endif %}
+            {% if is_incharge %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="incharge-tab" data-bs-toggle="tab" data-bs-target="#inchargeP" type="button" role="tab">
+                    <i class="fas fa-chalkboard-teacher"></i> My Class
+                </button>
+            </li>
+            {% endif %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approvedP" type="button" role="tab">
+                    <i class="fas fa-check-double"></i> Approved Roster
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="notices-tab" data-bs-toggle="tab" data-bs-target="#noticesP" type="button" role="tab">
+                    <i class="fas fa-bullhorn"></i> Notices
+                    {% if notices and notices|length > 0 %}
+                    <span class="badge bg-primary rounded-pill ms-1">{{ notices|length }}</span>
+                    {% endif %}
+                </button>
+            </li>
+        </ul>
+    </div>
 
     <!-- Tab Content -->
     <div class="tab-content" id="facultyTabsContent">
         
         <!-- Tab 1: Attendance Marking -->
         <div class="tab-pane fade show active" id="attendanceP" role="tabpanel">
-    <div class="card card-modern shadow-sm border-0 mb-5">
-        <div class="card-header bg-transparent py-4 px-4 border-0 d-flex justify-content-between align-items-center">
-            <h5 class="m-0 fw-bold text-main"><i class="fas fa-fingerprint me-2 text-primary"></i> Mark Attendance</h5>
-            <div class="d-flex align-items-center">
-                <div id="selectionSummary" class="small text-muted d-none me-3">
-                    <span id="selectedCount" class="fw-bold text-primary">0</span> students present
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="m-0 fw-bold text-main"><i class="fas fa-fingerprint me-2 text-primary"></i> Mark Attendance</h5>
+                    <div class="d-flex align-items-center">
+                        <div id="selectionSummary" class="small text-muted d-none me-3">
+                            <span id="selectedCount" class="fw-bold text-primary">0</span> students present
+                        </div>
+                        <a href="{{ url_for('faculty_attendance_history') }}" class="btn btn-light btn-sm rounded-pill px-3 border border-main text-main fw-bold">
+                            <i class="fas fa-history me-1"></i> VIEW HISTORY
+                        </a>
+                    </div>
                 </div>
-                <a href="{{ url_for('faculty_attendance_history') }}" class="btn btn-light btn-sm rounded-pill px-3 border border-main text-main fw-bold">
-                    <i class="fas fa-history me-1"></i> VIEW HISTORY
-                </a>
+                <div class="card-body p-3 p-md-4 pt-0">
+                    {% set handled_depts = current_user.handling_departments.split(',') if current_user.handling_departments else [] %}
+                    {% set all_depts = [current_user.department] %}
+                    {% for d in handled_depts %}
+                        {% if d.strip() and d.strip() not in all_depts %}
+                            {% set _ = all_depts.append(d.strip()) %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">DEPARTMENT</label>
+                            <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceDept">
+                                {% for d in all_depts %}
+                                    <option value="{{ d }}">{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">YEAR</label>
+                            <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceYear">
+                                <option value="" disabled selected>Select...</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">SECTION</label>
+                            <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceSection">
+                                <option value="" disabled selected>Select...</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                                <option value="D">Section D</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">SUBJECT</label>
+                            <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceSubject">
+                                <option value="" disabled selected>Select Section first...</option>
+                                <option value="General">General/Other</option>
+                            </select>
+                            <small class="text-primary fw-bold mt-1 d-block" style="font-size: 0.7rem;" id="timetableHint"></small>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm d-none" id="loadStudentsBtn">
+                                LOAD
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr class="opacity-5 my-3">
+
+                    <div id="attendanceLoading" class="text-center py-4 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted small">Generating attendance nodes...</p>
+                    </div>
+
+                    <div id="attendanceArea" class="d-none">
+                        <div class="alert alert-info py-2 small rounded-pill border-0 bg-primary bg-opacity-10 text-primary mb-3">
+                            <i class="fas fa-info-circle me-2"></i> Tap roll numbers to toggle <strong>Present/Absent</strong>.
+                        </div>
+                        
+                        <div id="attendanceGrid">
+                            <!-- Nodes populated via JS -->
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <button class="btn btn-light rounded-pill px-4 fw-bold text-muted small" onclick="location.reload()">
+                                CANCEL
+                            </button>
+                            <button class="btn btn-success rounded-pill px-5 py-2 fw-bold shadow" id="saveAttendanceBtn">
+                                <i class="fas fa-cloud-upload-alt me-2"></i> SAVE ATTENDANCE
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="card-body p-4 pt-0">
-            {% set handled_depts = current_user.handling_departments.split(',') if current_user.handling_departments else [] %}
-            {% set all_depts = [current_user.department] %}
-            {% for d in handled_depts %}
-                {% if d.strip() and d.strip() not in all_depts %}
-                    {% set _ = all_depts.append(d.strip()) %}
-                {% endif %}
-            {% endfor %}
-
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">DEPARTMENT</label>
-                    <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceDept">
-                        {% for d in all_depts %}
-                            <option value="{{ d }}">{{ d }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted">YEAR</label>
-                    <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceYear">
-                        <option value="" disabled selected>Select...</option>
-                        <option value="1">1st Year</option>
-                        <option value="2">2nd Year</option>
-                        <option value="3">3rd Year</option>
-                        <option value="4">4th Year</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted">SECTION</label>
-                    <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceSection">
-                        <option value="" disabled selected>Select...</option>
-                        <option value="A">Section A</option>
-                        <option value="B">Section B</option>
-                        <option value="C">Section C</option>
-                        <option value="D">Section D</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted">SUBJECT</label>
-                    <select class="form-select border-0 bg-light rounded-pill px-3" id="attendanceSubject">
-                        <option value="" disabled selected>Select Section first...</option>
-                        <option value="General">General/Other</option>
-                    </select>
-                    <small class="text-primary fw-bold mt-1 d-block" style="font-size: 0.7rem;" id="timetableHint"></small>
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm d-none" id="loadStudentsBtn">
-                        LOAD
-                    </button>
-                </div>
-            </div>
-
-            <hr class="opacity-5 mb-4">
-
-            <div id="attendanceLoading" class="text-center py-5 d-none">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 text-muted small">Generating attendance nodes...</p>
-            </div>
-
-            <div id="attendanceArea" class="d-none">
-                <div class="alert alert-info py-2 small rounded-pill border-0 bg-primary bg-opacity-10 text-primary mb-4">
-                    <i class="fas fa-info-circle me-2"></i> Tap roll numbers to toggle <strong>Present/Absent</strong>.
-                </div>
-                
-                <div id="attendanceGrid">
-                    <!-- Nodes populated via JS -->
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mt-5">
-                    <button class="btn btn-light rounded-pill px-4 fw-bold text-muted small" onclick="location.reload()">
-                        CANCEL
-                    </button>
-                    <button class="btn btn-success rounded-pill px-5 py-2 fw-bold shadow" id="saveAttendanceBtn">
-                        <i class="fas fa-cloud-upload-alt me-2"></i> SAVE ATTENDANCE
-                    </button>
-                </div>
-            </div>
-        </div>
         </div> <!-- End of Attendance Marking Tab Pane -->
 
         <!-- Tab 2: Pending Requests (HOD/Incharge) -->
         {% if is_hod or is_incharge %}
         <div class="tab-pane fade" id="pendingP" role="tabpanel">
-            <div class="card card-modern border-0">
-                <div class="card-header bg-transparent py-4 px-4 border-0">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0">
                     <h5 class="m-0 fw-bold text-main"><i class="fas fa-envelope-open-text me-2 text-warning"></i> Pending Requests</h5>
                 </div>
-                <div class="card-body p-4 pt-0">
+                <div class="card-body p-3 p-md-4 pt-0">
                     {% if pending_grouped %}
                     <div class="accordion accordion-modern" id="accordionRequests">
                         {% for date, sections in pending_grouped.items() %}
@@ -535,7 +649,7 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="text-center py-5">
+                    <div class="text-center py-4">
                         <i class="fas fa-check-circle fa-3x text-success bg-light p-4 rounded-circle mb-3"></i>
                         <h6 class="text-muted">No pending academic requests.</h6>
                     </div>
@@ -548,15 +662,15 @@
         <!-- Tab 2.5: My Class (Incharge) -->
         {% if is_incharge %}
         <div class="tab-pane fade" id="inchargeP" role="tabpanel">
-            <div class="card card-modern border-0">
-                <div class="card-header bg-transparent py-4 px-4 border-0 d-flex justify-content-between align-items-center">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold text-main"><i class="fas fa-chalkboard-teacher me-2 text-primary"></i> Classroom Management</h5>
                     <a href="{{ url_for('incharge_timetable') }}" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">
                         <i class="fas fa-cog me-2"></i> OPEN CONSOLE
                     </a>
                 </div>
-                <div class="card-body p-4 pt-0">
-                    <div class="alert alert-light border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-3 p-md-4 pt-0">
+                    <div class="alert alert-light border-0 shadow-sm rounded-3 mb-3">
                         <div class="d-flex align-items-center">
                             <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3">
                                 <i class="fas fa-info-circle"></i>
@@ -606,11 +720,12 @@
 
         <!-- Tab 3: Approved Requests (All Faculty) -->
         <div class="tab-pane fade" id="approvedP" role="tabpanel">
-            <div class="card card-modern border-0">
-                <div class="card-header bg-transparent py-4 px-4 border-0 d-flex justify-content-between align-items-center">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold text-main"><i class="fas fa-check-double me-2 text-success"></i> Approved Student Roster</h5>
                     <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-bold shadow-none">{{ approved_list|length if approved_list else 0 }} Students</span>
-                </div>                <div class="card-body p-4 pt-0">
+                </div>
+                <div class="card-body p-3 p-md-4 pt-0">
                     {% if approved_list and approved_list|length > 0 %}
                     
                     <!-- Desktop View (Table) -->
@@ -632,7 +747,8 @@
                                         <span class="badge bg-main text-main border px-3 py-2 rounded-pill fw-bold" style="font-family: monospace;">{{ perm.student.roll_no }}</span>
                                     </td>
                                     <td>
-                                        <div class="d-flex align-items-center">                                             <div class="bg-success bg-opacity-10 rounded-circle text-success d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-success bg-opacity-10 rounded-circle text-success d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
                                                 <i class="fas fa-user-check small"></i>
                                             </div>
                                             <div class="fw-bold text-main">{{ perm.student.get_full_name() }}</div>
@@ -683,8 +799,8 @@
                         {% endfor %}
                     </div>
                     
-                    {% else %}%}
-                    <div class="text-center py-5">
+                    {% else %}
+                    <div class="text-center py-4">
                         <i class="fas fa-folder-open fa-3x text-muted bg-light p-4 rounded-circle mb-3"></i>
                         <h6 class="text-muted">No Approved Permissions</h6>
                     </div>
@@ -693,22 +809,529 @@
             </div>
         </div>
 
+        <!-- Tab 4: Notice Board -->
+        <div class="tab-pane fade" id="noticesP" role="tabpanel">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="m-0 fw-bold text-main"><i class="fas fa-bullhorn me-2 text-primary"></i> Notice Board & Circulars</h5>
+                        <p class="text-muted small mb-0">Official updates circulated by Administration & Heads of Department</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        {% if is_hod %}
+                        <a href="{{ url_for('faculty_notices', college_slug=current_college.slug) }}" class="btn btn-primary rounded-pill px-3 btn-sm shadow-sm fw-bold">
+                            <i class="fas fa-plus-circle me-1"></i> Post Notice
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('faculty_notices', college_slug=current_college.slug) }}" class="btn btn-light rounded-pill px-3 btn-sm border fw-bold">
+                            Full Notice Board <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-3 p-md-4 pt-0">
+                    {% if notices and notices|length > 0 %}
+                    <div class="row g-3">
+                        {% for notice in notices %}
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded-3 bg-light h-100 position-relative">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge {% if notice.priority == 'URGENT' %}bg-danger{% elif notice.priority == 'HIGH' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} rounded-pill px-2 py-1 small">
+                                        {{ notice.priority }}
+                                    </span>
+                                    <span class="text-muted small"><i class="far fa-clock me-1"></i>{{ notice.created_at | to_ist('%d %b, %H:%M') }}</span>
+                                </div>
+                                <h6 class="fw-bold mb-1 text-dark">{{ notice.title }}</h6>
+                                {% if notice.message %}
+                                <p class="text-muted small mb-2" style="font-size:0.85rem; line-height: 1.4;">{{ notice.message }}</p>
+                                {% endif %}
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-2">
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill extra-small" style="font-size:0.7rem;">
+                                        <i class="fas fa-user-shield me-1"></i>{{ notice.posted_by.get_full_name() if notice.posted_by else 'Admin' }}
+                                    </span>
+                                    {% if notice.file_path %}
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ url_for('get_notice_file', college_slug=current_college.slug, filename=notice.file_path) }}" target="_blank" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" style="font-size:0.75rem;">
+                                            <i class="fas fa-eye me-1"></i> View
+                                        </a>
+                                        <a href="{{ url_for('get_notice_file', college_slug=current_college.slug, filename=notice.file_path, download='true') }}" class="btn btn-xs btn-outline-success rounded-pill px-2 py-1" style="font-size:0.75rem;">
+                                            <i class="fas fa-download me-1"></i> Download
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-bullhorn fa-3x text-muted bg-light p-4 rounded-circle mb-3"></i>
+                        <h6 class="text-muted">No notices currently circulated for your department.</h6>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Student Management -->
+        <div class="tab-pane fade" id="studentsP" role="tabpanel">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="m-0 fw-bold text-main"><i class="fas fa-user-graduate me-2 text-primary"></i> Student Management</h5>
+                        <p class="text-muted small mb-0">View assigned class rosters, attendance records, academic performance, and protected contact details.</p>
+                    </div>
+                </div>
+                <div class="card-body p-3 p-md-4 pt-0">
+                    <!-- Filters -->
+                    <div class="row g-3 mb-3 filter-card-modern">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">DEPARTMENT</label>
+                            <select class="form-select form-themed px-3 shadow-xs" id="smDept">
+                                {% for d in all_depts %}
+                                    <option value="{{ d }}">{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">YEAR</label>
+                            <select class="form-select form-themed px-3 shadow-xs" id="smYear">
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3" selected>3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">SECTION</label>
+                            <select class="form-select form-themed px-3 shadow-xs" id="smSection">
+                                <option value="ALL" selected>All Sections</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                                <option value="D">Section D</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm" id="smLoadBtn">
+                                <i class="fas fa-search me-1"></i> View Students
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Metrics Summary -->
+                    <div class="row g-3 mb-3 d-none" id="smStatsRow">
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Total Enrolled</div>
+                                <div class="h4 mb-0 fw-bold text-primary" id="smTotalCount">0</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Class Avg Attendance</div>
+                                <div class="h4 mb-0 fw-bold text-success" id="smAvgAtt">--</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Academic Score</div>
+                                <div class="h4 mb-0 fw-bold text-warning" id="smAvgAcad">--</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Subjects Taught</div>
+                                <div class="h4 mb-0 fw-bold text-info" id="smSubCount">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="mb-3 d-none" id="smSearchWrap">
+                        <div class="input-group shadow-xs rounded-pill overflow-hidden border bg-card">
+                            <span class="input-group-text bg-transparent border-0 ps-3 text-muted"><i class="fas fa-search"></i></span>
+                            <input type="text" id="smSearchInput" class="form-control border-0 shadow-none px-2 text-main bg-transparent" placeholder="Search by name, roll number, or email...">
+                        </div>
+                    </div>
+
+                    <!-- Loading / Empty / Table -->
+                    <div id="smLoading" class="text-center py-4 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted small mt-2">Loading student rosters and analytics...</p>
+                    </div>
+
+                    <div id="smEmptyState" class="text-center py-4">
+                        <div class="stat-pill-modern d-inline-flex p-4 mb-3 text-muted">
+                            <i class="fas fa-user-graduate fa-3x text-primary opacity-75"></i>
+                        </div>
+                        <h6 class="fw-bold text-main">No Students Found for Selected Filters</h6>
+                        <p class="text-muted small">Choose your department, year, or all sections above to view assigned student rosters.</p>
+                        <button class="btn btn-primary rounded-pill px-4 btn-sm" onclick="$('#smSection').val('ALL'); $('#smLoadBtn').click();">
+                            <i class="fas fa-sync-alt me-1"></i> View All Sections
+                        </button>
+                    </div>
+
+                    <div id="smTableWrap" class="table-responsive d-none">
+                        <table class="table table-hover align-middle table-themed border rounded-3 overflow-hidden">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Roll Number</th>
+                                    <th>Attendance %</th>
+                                    <th>Academic Performance</th>
+                                    <th>Contact Info</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="smTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Student Marks & Performance Management -->
+        <div class="tab-pane fade" id="performanceP" role="tabpanel">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="m-0 fw-bold text-main"><i class="fas fa-chart-line me-2 text-primary"></i> Student Marks &amp; Evaluation</h5>
+                        <p class="text-muted small mb-0">Record, update, and manage Internal, Assignment, Quiz, Lab, and Mid-Exam marks for your classes.</p>
+                    </div>
+                </div>
+                <div class="card-body p-3 p-md-4 pt-0">
+                    <!-- Selector Form -->
+                    <div class="row g-3 mb-3 filter-card-modern">
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">DEPARTMENT</label>
+                            <select class="form-select form-themed px-3 shadow-xs" id="pmDept">
+                                {% for d in all_depts %}
+                                    <option value="{{ d }}">{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">YEAR</label>
+                            <select class="form-select form-themed px-3 shadow-xs" id="pmYear">
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3" selected>3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">SECTION</label>
+                            <select class="form-select form-themed px-3 shadow-xs" id="pmSection">
+                                <option value="ALL" selected>All Sections</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                                <option value="D">Section D</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">SUBJECT</label>
+                            <input type="text" class="form-control form-themed px-3 shadow-xs" id="pmSubject" placeholder="e.g. Data Structures" value="{{ current_user.subjects.split(',')[0].strip() if current_user.subjects else 'General' }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">ASSESSMENT TYPE</label>
+                            <select class="form-select form-themed px-3 shadow-xs" id="pmType">
+                                <option value="Internal">Internal Marks</option>
+                                <option value="Assignment">Assignment Marks</option>
+                                <option value="Quiz">Quiz Marks</option>
+                                <option value="Lab">Lab Marks</option>
+                                <option value="Mid-1">Mid-1 Exam</option>
+                                <option value="Mid-2">Mid-2 Exam</option>
+                                <option value="Semester">Semester Performance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-muted">MAX MARKS</label>
+                            <input type="number" class="form-control form-themed px-3 shadow-xs" id="pmMaxMarks" value="25" min="1" max="100">
+                        </div>
+                        <div class="col-12 text-end">
+                            <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="pmLoadBtn">
+                                <i class="fas fa-layer-group me-1"></i> Load Students &amp; Marks
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Evaluation Banner -->
+                    <div class="row g-3 mb-3 d-none" id="pmStatsRow">
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Class Average</div>
+                                <div class="h4 mb-0 fw-bold text-primary" id="pmAvgScore">--</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Highest Score</div>
+                                <div class="h4 mb-0 fw-bold text-success" id="pmHighScore">--</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Pass Percentage</div>
+                                <div class="h4 mb-0 fw-bold text-info" id="pmPassPct">--</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-pill-modern text-center">
+                                <div class="text-muted small fw-bold text-uppercase">Evaluated Count</div>
+                                <div class="h4 mb-0 fw-bold text-main" id="pmGradedCount">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Marks Table -->
+                    <div id="pmLoading" class="text-center py-4 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted small mt-2">Loading marks sheet...</p>
+                    </div>
+
+                    <div id="pmEmptyState" class="text-center py-4">
+                        <div class="stat-pill-modern d-inline-flex p-4 mb-3 text-muted">
+                            <i class="fas fa-edit fa-3x text-primary opacity-75"></i>
+                        </div>
+                        <h6 class="fw-bold text-main">Configure Assessment &amp; Load Students</h6>
+                        <p class="text-muted small">Select your subject and assessment type above to grade and evaluate student performance.</p>
+                    </div>
+
+                    <div id="pmTableWrap" class="d-none">
+                        <div class="table-responsive mb-3">
+                            <table class="table table-hover align-middle table-themed border rounded-3 overflow-hidden">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 15%;">Roll Number</th>
+                                        <th style="width: 25%;">Student Name</th>
+                                        <th style="width: 20%;">Marks Obtained (<span class="pm-max-label">25</span>)</th>
+                                        <th style="width: 15%;">Status / %</th>
+                                        <th style="width: 25%;">Remarks / Feedback</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pmTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="small text-muted">
+                                <i class="fas fa-info-circle me-1 text-primary"></i> Changes are recorded in database upon clicking save.
+                            </div>
+                            <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" id="pmSaveBtn">
+                                <i class="fas fa-save me-1"></i> Save &amp; Record Marks
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Assignments Workflow -->
+        <div class="tab-pane fade" id="assignmentsP" role="tabpanel">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h5 class="m-0 fw-bold text-main"><i class="fas fa-tasks me-2 text-primary"></i> Assignment Workflow &amp; Submissions</h5>
+                        <p class="text-muted small mb-0">Create assignments, set deadlines, track submissions, evaluate student files, and provide grading feedback.</p>
+                    </div>
+                    <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#createAssignmentModal">
+                        <i class="fas fa-plus-circle me-1"></i> Create Assignment
+                    </button>
+                </div>
+                <div class="card-body p-3 p-md-4 pt-0">
+                    {% if assignments and assignments|length > 0 %}
+                    <div class="row g-3">
+                        {% for a in assignments %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="p-3 rounded-4 border asgn-card-modern shadow-sm h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 fw-bold">{{ a.subject }}</span>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2.5 py-1 fw-semibold">{{ a.department }} - Yr {{ a.year }} ({{ a.section }})</span>
+                                    </div>
+                                    <h6 class="fw-bold mb-1 text-main">{{ a.title }}</h6>
+                                    {% if a.description %}
+                                    <p class="text-muted small mb-2 text-truncate" style="max-height: 40px;">{{ a.description }}</p>
+                                    {% endif %}
+                                    <div class="small text-muted mb-2">
+                                        <i class="far fa-calendar-alt me-1 text-primary"></i> Due: <strong>{{ a.due_date.strftime('%d %b %Y, %I:%M %p') }}</strong>
+                                    </div>
+                                    <div class="small text-muted mb-3">
+                                        <i class="fas fa-star text-warning me-1"></i> Max Marks: <strong>{{ a.max_marks }}</strong>
+                                    </div>
+                                    {% if a.file_path %}
+                                    <div class="mb-3 p-2 bg-card border rounded-3 d-flex align-items-center justify-content-between">
+                                        <div class="small text-truncate me-2 fw-semibold text-main"><i class="fas fa-paperclip me-1 text-primary"></i> {{ a.file_original_name or 'Assignment Brief' }}</div>
+                                        <a href="{{ a.file_path }}" target="_blank" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-0.5" style="font-size:0.75rem;">View</a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="pt-2 border-top d-flex justify-content-between align-items-center mt-2">
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold review-asgn-btn" data-id="{{ a.id }}" data-title="{{ a.title }}">
+                                        <i class="fas fa-clipboard-check me-1"></i> Submissions ({{ a.submissions|length }})
+                                    </button>
+                                    <form action="{{ url_for('delete_faculty_assignment', college_slug=current_college.slug, assignment_id=a.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this assignment?');" class="d-inline mb-0">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="stat-pill-modern d-inline-flex p-4 mb-3 text-muted">
+                            <i class="fas fa-tasks fa-3x text-primary opacity-75"></i>
+                        </div>
+                        <h6 class="fw-bold text-main">No Assignments Created Yet</h6>
+                        <p class="text-muted small">Create an assignment to distribute tasks, set deadlines, and collect student submissions online.</p>
+                        <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#createAssignmentModal">
+                            <i class="fas fa-plus-circle me-1"></i> Create First Assignment
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
     </div> <!-- End of Tab Content -->
+</div>
+
+<!-- Modal: Create Assignment -->
+<div class="modal fade" id="createAssignmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card-modern border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-tasks text-primary me-2"></i> Create New Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form action="{{ url_for('create_faculty_assignment', college_slug=current_college.slug) }}" method="POST" enctype="multipart/form-data">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Assignment Title *</label>
+                            <input type="text" name="title" class="form-control form-themed px-3" required placeholder="e.g. Design Pattern Implementation & Analysis">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Subject / Course *</label>
+                            <input type="text" name="subject" class="form-control form-themed px-3" required placeholder="e.g. Software Engineering" value="{{ current_user.subjects.split(',')[0].strip() if current_user.subjects else 'General' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Target Department *</label>
+                            <select name="department" class="form-select form-themed px-3" required>
+                                {% for d in all_depts %}
+                                    <option value="{{ d }}">{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Target Year *</label>
+                            <select name="year" class="form-select form-themed px-3" required>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3" selected>3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Section *</label>
+                            <select name="section" class="form-select form-themed px-3" required>
+                                <option value="ALL">All Sections</option>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                                <option value="D">Section D</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Total Marks *</label>
+                            <input type="number" name="max_marks" class="form-control form-themed px-3" value="10" min="1" max="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Due Date &amp; Time *</label>
+                            <input type="datetime-local" name="due_date" class="form-control form-themed px-3" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Attachment File (Optional)</label>
+                            <input type="file" name="file" class="form-control form-themed px-3" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Description &amp; Guidelines</label>
+                            <textarea name="description" class="form-control form-themed px-3" rows="3" style="border-radius: 16px !important;" placeholder="Provide instructions, problem statement, or submission guidelines for students..."></textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Publish Assignment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Review Submissions & Grade -->
+<div class="modal fade" id="reviewSubmissionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content card-modern border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0 px-4 pt-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="modal-title fw-bold text-main" id="revModalTitle"><i class="fas fa-clipboard-check text-primary me-2"></i> Submissions Review</h5>
+                    <div class="small text-muted" id="revModalSub"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="revLoading" class="text-center py-4 d-none">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted small mt-2">Loading submissions...</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-themed border rounded-3 overflow-hidden">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Submission &amp; Attachment</th>
+                                <th>Submitted At</th>
+                                <th style="width: 150px;">Score (<span id="revMaxLabel">10</span>)</th>
+                                <th>Feedback</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="revTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Student Profile & Academic Details -->
+<div class="modal fade" id="studentDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card-modern border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-id-card text-primary me-2"></i> Student Profile &amp; Academic Overview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="studentDetailBody"></div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     $(document).ready(function() {
-        // Auto-activate tab from URL hash
-        if (window.location.hash) {
-            const targetTab = $('.custom-tabs button[data-bs-target="' + window.location.hash + '"]');
-            if (targetTab.length) {
-                targetTab.tab('show');
-                // Ensure scroll position is maintained
-                setTimeout(() => window.scrollTo(0, 0), 10);
-            }
-        }
+        const collegeSlug = "{{ current_college.slug }}";
+        
+        // -------------------------------------------------------------
+        // 1. ATTENDANCE LOGIC
+        // -------------------------------------------------------------
         const deptSelect = $('#attendanceDept');
         const yearSelect = $('#attendanceYear');
         const secSelect = $('#attendanceSection');
@@ -721,19 +1344,17 @@
         const selectedCount = $('#selectedCount');
         const timetableHint = $('#timetableHint');
         
-        let attendanceStore = {}; // { studentId: status }
+        let attendanceStore = {};
 
-        // Fetch Timetable Subjects
         function fetchTimetable() {
             const dept = deptSelect.val();
             const year = yearSelect.val();
             const sec = secSelect.val();
-
             if (!dept || !year || !sec) return;
 
             timetableHint.text("Fetching schedule...");
             $.ajax({
-                url: "{{ url_for('get_today_timetable', college_slug=current_college.slug) }}",
+                url: `/${collegeSlug}/api/timetable/today`,
                 data: { department: dept, year: year, section: sec },
                 success: function(resp) {
                     subSelect.empty();
@@ -759,7 +1380,6 @@
         yearSelect.on('change', fetchTimetable);
         secSelect.on('change', fetchTimetable);
 
-        // Logic to show load button
         function checkLoad() {
             if(secSelect.val() && yearSelect.val()) loadBtn.removeClass('d-none');
             else loadBtn.addClass('d-none');
@@ -777,21 +1397,19 @@
             attendanceStore = {};
 
             $.ajax({
-                url: "{{ url_for('get_faculty_students', college_slug=current_college.slug) }}",
+                url: `/${collegeSlug}/api/faculty/students`,
                 data: { department: dept, section: sec, year: year },
                 success: function(students) {
                     loadingDiv.addClass('d-none');
                     if(students.length === 0) {
-                        alert("No students found.");
+                        alert("No students found in this class.");
                         loadBtn.removeClass('d-none');
                         return;
                     }
 
                     let nodesHtml = '';
                     students.forEach(s => {
-                        // Default to present
                         attendanceStore[s.id] = 'present';
-                        
                         const paIndicator = s.has_pa ? `<span class="pa-badge" title="${s.pa_reason}">PA</span>` : '';
                         const paClass = s.has_pa ? 'has-pa' : '';
                         
@@ -804,7 +1422,6 @@
                         `;
                     });
                     grid.html(nodesHtml);
-
                     updateSummary();
                     areaDiv.removeClass('d-none');
                     loadBtn.removeClass('d-none');
@@ -812,7 +1429,6 @@
             });
         });
 
-        // Toggle Logic
         $(document).on('click', '.student-node', function() {
             const id = $(this).data('id');
             const icon = $(this).find('.status-icon');
@@ -835,13 +1451,12 @@
             summary.removeClass('d-none');
         }
 
-        // Save Logic
         $('#saveAttendanceBtn').on('click', function() {
             const btn = $(this);
             btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> SAVING...');
 
             $.ajax({
-                url: "{{ url_for('save_class_attendance', college_slug=current_college.slug) }}",
+                url: `/${collegeSlug}/api/faculty/attendance/save`,
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -853,13 +1468,523 @@
                 }),
                 success: function() {
                     btn.html('<i class="fas fa-check me-2"></i> SAVED SUCCESSFULLY').removeClass('btn-success').addClass('btn-primary');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    setTimeout(() => location.reload(), 1500);
                 },
                 error: function(err) {
-                    alert(err.responseJSON?.error || "Failed to save.");
+                    alert(err.responseJSON?.error || "Failed to save attendance.");
                     btn.prop('disabled', false).html('<i class="fas fa-cloud-upload-alt me-2"></i> SAVE ATTENDANCE');
+                }
+            });
+        });
+
+        // -------------------------------------------------------------
+        // 2. STUDENT MANAGEMENT LOGIC
+        // -------------------------------------------------------------
+        let currentLoadedStudents = [];
+
+        function loadStudentManagement() {
+            const dept = $('#smDept').val();
+            const year = $('#smYear').val();
+            const sec = $('#smSection').val();
+
+            $('#smEmptyState').addClass('d-none');
+            $('#smTableWrap').addClass('d-none');
+            $('#smStatsRow').addClass('d-none');
+            $('#smSearchWrap').addClass('d-none');
+            $('#smLoading').removeClass('d-none');
+
+            $.ajax({
+                url: `/${collegeSlug}/api/faculty/students-detailed`,
+                data: { department: dept, year: year, section: sec },
+                success: function(students) {
+                    $('#smLoading').addClass('d-none');
+                    currentLoadedStudents = students;
+
+                    if (students.length === 0) {
+                        $('#smEmptyState').removeClass('d-none');
+                        return;
+                    }
+
+                    // Render Stats
+                    $('#smTotalCount').text(students.length);
+                    const atts = students.filter(s => s.attendance_pct !== null).map(s => s.attendance_pct);
+                    const avgAtt = atts.length > 0 ? (atts.reduce((a,b)=>a+b, 0) / atts.length).toFixed(1) + '%' : 'N/A';
+                    $('#smAvgAtt').text(avgAtt);
+
+                    const acads = students.filter(s => s.avg_academic_pct !== null).map(s => s.avg_academic_pct);
+                    const avgAcad = acads.length > 0 ? (acads.reduce((a,b)=>a+b, 0) / acads.length).toFixed(1) + '%' : 'N/A';
+                    $('#smAvgAcad').text(avgAcad);
+
+                    const subSet = new Set();
+                    students.forEach(s => s.subjects.forEach(sub => subSet.add(sub)));
+                    $('#smSubCount').text(subSet.size || '--');
+
+                    $('#smStatsRow').removeClass('d-none');
+                    $('#smSearchWrap').removeClass('d-none');
+                    renderStudentsTable(students);
+                    $('#smTableWrap').removeClass('d-none');
+                },
+                error: function() {
+                    $('#smLoading').addClass('d-none');
+                    alert("Failed to load students.");
+                }
+            });
+        }
+
+        $('#smLoadBtn').on('click', loadStudentManagement);
+        $('#smDept, #smYear, #smSection').on('change', loadStudentManagement);
+
+        // Auto-load student management when tab clicked
+        $('button[data-bs-target="#studentsP"]').on('shown.bs.tab', function () {
+            if (currentLoadedStudents.length === 0) {
+                loadStudentManagement();
+            }
+        });
+
+        function renderStudentsTable(students) {
+            const tbody = $('#smTableBody');
+            tbody.empty();
+
+            students.forEach((s, idx) => {
+                let attBadge = '<span class="badge bg-light text-muted">No Logs</span>';
+                if (s.attendance_pct !== null) {
+                    const color = s.attendance_pct >= 75 ? 'success' : (s.attendance_pct >= 65 ? 'warning' : 'danger');
+                    attBadge = `
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-${color} bg-opacity-10 text-${color} border border-${color} border-opacity-25 rounded-pill fw-bold">${s.attendance_pct}%</span>
+                            <small class="text-muted">(${s.present_attendance_sessions}/${s.total_attendance_sessions})</small>
+                        </div>
+                    `;
+                }
+
+                let acadBadge = '<span class="badge bg-light text-muted">No Marks</span>';
+                if (s.avg_academic_pct !== null) {
+                    const color = s.avg_academic_pct >= 75 ? 'success' : (s.avg_academic_pct >= 50 ? 'primary' : 'danger');
+                    acadBadge = `<span class="badge bg-${color} bg-opacity-10 text-${color} border border-${color} border-opacity-25 rounded-pill fw-bold">${s.avg_academic_pct}% Avg</span>`;
+                }
+
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle me-2 fw-bold d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 0.85rem;">
+                                    ${(s.name || 'ST').slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">${s.name}</div>
+                                    <small class="text-muted">${s.department} • Year ${s.year} (${s.section})</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border fw-bold" style="font-family: monospace;">${s.roll_no}</span></td>
+                        <td>${attBadge}</td>
+                        <td>${acadBadge}</td>
+                        <td>
+                            <div class="small text-dark"><i class="fas fa-envelope text-muted me-1"></i> ${s.email}</div>
+                            <div class="small text-muted"><i class="fas fa-phone text-muted me-1"></i> ${s.phone} <span class="badge bg-light text-secondary border extra-small" title="Sensitive profile info is protected and managed by college admin">Protected</span></div>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold view-student-btn" data-idx="${idx}">
+                                <i class="fas fa-eye me-1"></i> Details
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        $('#smSearchInput').on('input', function() {
+            const q = $(this).val().toLowerCase().trim();
+            if (!q) {
+                renderStudentsTable(currentLoadedStudents);
+                return;
+            }
+            const filtered = currentLoadedStudents.filter(s => 
+                (s.name && s.name.toLowerCase().includes(q)) || 
+                (s.roll_no && s.roll_no.toLowerCase().includes(q)) || 
+                (s.email && s.email.toLowerCase().includes(q))
+            );
+            renderStudentsTable(filtered);
+        });
+
+        $(document).on('click', '.view-student-btn', function() {
+            const idx = $(this).data('idx');
+            const s = currentLoadedStudents[idx];
+            if (!s) return;
+
+            let marksHtml = '<p class="text-muted small">No evaluation marks recorded yet.</p>';
+            if (s.recent_marks && s.recent_marks.length > 0) {
+                marksHtml = '<div class="list-group list-group-flush">';
+                s.recent_marks.forEach(m => {
+                    marksHtml += `
+                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold text-dark">${m.subject} <span class="badge bg-light text-primary border ms-1">${m.type}</span></div>
+                                ${m.remarks ? `<small class="text-muted">${m.remarks}</small>` : ''}
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold text-dark">${m.marks_obtained} / ${m.max_marks}</span>
+                                <div class="small text-${m.pct >= 50 ? 'success' : 'danger'} fw-semibold">${m.pct}%</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                marksHtml += '</div>';
+            }
+
+            const subjectsTags = s.subjects && s.subjects.length > 0 
+                ? s.subjects.map(sub => `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill me-1 mb-1">${sub}</span>`).join('')
+                : '<span class="text-muted small">No subjects assigned</span>';
+
+            const modalContent = `
+                <div class="p-3 bg-light rounded-4 mb-4 border d-flex align-items-center gap-3">
+                    <div class="bg-primary text-white rounded-circle fw-bold d-flex align-items-center justify-content-center" style="width: 54px; height: 54px; font-size: 1.2rem;">
+                        ${(s.name || 'ST').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-1 text-dark">${s.name}</h5>
+                        <div class="text-muted small">Roll No: <strong>${s.roll_no}</strong> • ${s.department} Year ${s.year} - Sec ${s.section}</div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 h-100">
+                            <h6 class="fw-bold text-dark mb-2"><i class="fas fa-envelope text-primary me-1"></i> Contact Information</h6>
+                            <div class="small text-muted mb-1">Email: <strong class="text-dark">${s.email}</strong></div>
+                            <div class="small text-muted mb-2">Phone: <strong class="text-dark">${s.phone}</strong></div>
+                            <div class="alert alert-secondary py-1 px-2 mb-0 extra-small" style="font-size: 0.75rem;">
+                                <i class="fas fa-lock me-1"></i> Sensitive identity fields are read-only and governed by institution administration.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 h-100">
+                            <h6 class="fw-bold text-dark mb-2"><i class="fas fa-clipboard-check text-success me-1"></i> Attendance Record</h6>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted small">Overall Attendance:</span>
+                                <strong class="text-${s.attendance_pct >= 75 ? 'success' : 'danger'}">${s.attendance_pct !== null ? s.attendance_pct + '%' : 'N/A'}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Sessions Present:</span>
+                                <strong class="text-dark">${s.present_attendance_sessions} / ${s.total_attendance_sessions}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fas fa-book-reader text-info me-1"></i> Enrolled Subjects</h6>
+                    <div>${subjectsTags}</div>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-2"><i class="fas fa-chart-bar text-warning me-1"></i> Academic Marks &amp; Evaluation Log</h6>
+                    ${marksHtml}
+                </div>
+            `;
+
+            $('#studentDetailBody').html(modalContent);
+            new bootstrap.Modal(document.getElementById('studentDetailModal')).show();
+        });
+
+        // -------------------------------------------------------------
+        // 3. STUDENT MARKS / PERFORMANCE EVALUATION LOGIC
+        // -------------------------------------------------------------
+        let currentLoadedMarksData = {}; // studentId: {marks, remarks}
+        let currentMaxMarks = 25;
+
+        function loadStudentMarks() {
+            const dept = $('#pmDept').val();
+            const year = $('#pmYear').val();
+            const sec = $('#pmSection').val();
+            const subject = $('#pmSubject').val().trim();
+            const type = $('#pmType').val();
+            currentMaxMarks = parseFloat($('#pmMaxMarks').val()) || 25;
+
+            if (!subject) {
+                alert("Please enter or select a subject.");
+                return;
+            }
+
+            $('.pm-max-label').text(currentMaxMarks);
+            $('#pmEmptyState').addClass('d-none');
+            $('#pmTableWrap').addClass('d-none');
+            $('#pmStatsRow').addClass('d-none');
+            $('#pmLoading').removeClass('d-none');
+
+            // 1. Fetch Students
+            $.ajax({
+                url: `/${collegeSlug}/api/faculty/students`,
+                data: { department: dept, year: year, section: sec },
+                success: function(students) {
+                    if (students.length === 0) {
+                        $('#pmLoading').addClass('d-none');
+                        $('#pmEmptyState').removeClass('d-none');
+                        return;
+                    }
+
+                    // 2. Fetch existing marks for this combination
+                    $.ajax({
+                        url: `/${collegeSlug}/api/faculty/marks/get`,
+                        data: { department: dept, year: year, section: sec, subject: subject, assessment_type: type },
+                        success: function(existingMarks) {
+                            $('#pmLoading').addClass('d-none');
+                            currentLoadedMarksData = {};
+
+                            const tbody = $('#pmTableBody');
+                            tbody.empty();
+
+                            students.forEach(st => {
+                                const exist = existingMarks[st.id] || {};
+                                const markVal = exist.marks_obtained !== undefined ? exist.marks_obtained : '';
+                                const remarksVal = exist.remarks || '';
+
+                                currentLoadedMarksData[st.id] = { marks: markVal, remarks: remarksVal };
+
+                                const pct = markVal !== '' && currentMaxMarks > 0 ? ((markVal / currentMaxMarks) * 100).toFixed(0) : '--';
+                                const passBadge = markVal !== '' ? (pct >= 40 ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill">PASS (' + pct + '%)</span>' : '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill">FAIL (' + pct + '%)</span>') : '<span class="badge bg-light text-muted">Pending</span>';
+
+                                const row = `
+                                    <tr data-student-id="${st.id}">
+                                        <td><span class="badge bg-light text-dark border fw-bold" style="font-family: monospace;">${st.roll_no}</span></td>
+                                        <td><span class="fw-bold text-dark">${st.name}</span></td>
+                                        <td>
+                                            <input type="number" step="0.5" min="0" max="${currentMaxMarks}" class="form-control form-control-sm rounded-pill border bg-white mark-input" value="${markVal}" placeholder="0 - ${currentMaxMarks}">
+                                        </td>
+                                        <td class="status-cell">${passBadge}</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm rounded-pill border bg-white remarks-input" value="${remarksVal}" placeholder="Optional feedback...">
+                                        </td>
+                                    </tr>
+                                `;
+                                tbody.append(row);
+                            });
+
+                            updateMarksStats();
+                            $('#pmStatsRow').removeClass('d-none');
+                            $('#pmTableWrap').removeClass('d-none');
+                        },
+                        error: function() {
+                            $('#pmLoading').addClass('d-none');
+                            alert("Failed to load existing marks.");
+                        }
+                    });
+                },
+                error: function() {
+                    $('#pmLoading').addClass('d-none');
+                    alert("Failed to load students.");
+                }
+            });
+        }
+
+        $('#pmLoadBtn').on('click', loadStudentMarks);
+        $('#pmDept, #pmYear, #pmSection, #pmType').on('change', loadStudentMarks);
+
+        // Auto-load marks management when tab clicked
+        $('button[data-bs-target="#performanceP"]').on('shown.bs.tab', function () {
+            if ($('#pmTableBody tr').length === 0) {
+                loadStudentMarks();
+            }
+        });
+
+        $(document).on('input', '.mark-input', function() {
+            const tr = $(this).closest('tr');
+            const studentId = tr.data('student-id');
+            const val = parseFloat($(this).val());
+            const statusCell = tr.find('.status-cell');
+
+            if (!isNaN(val)) {
+                if (val > currentMaxMarks) $(this).val(currentMaxMarks);
+                const actual = Math.min(val, currentMaxMarks);
+                const pct = currentMaxMarks > 0 ? ((actual / currentMaxMarks) * 100).toFixed(0) : 0;
+                if (pct >= 40) {
+                    statusCell.html(`<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill">PASS (${pct}%)</span>`);
+                } else {
+                    statusCell.html(`<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill">FAIL (${pct}%)</span>`);
+                }
+                if (!currentLoadedMarksData[studentId]) currentLoadedMarksData[studentId] = {};
+                currentLoadedMarksData[studentId].marks = actual;
+            } else {
+                statusCell.html('<span class="badge bg-light text-muted">Pending</span>');
+                if (currentLoadedMarksData[studentId]) currentLoadedMarksData[studentId].marks = '';
+            }
+            updateMarksStats();
+        });
+
+        $(document).on('input', '.remarks-input', function() {
+            const tr = $(this).closest('tr');
+            const studentId = tr.data('student-id');
+            if (!currentLoadedMarksData[studentId]) currentLoadedMarksData[studentId] = {};
+            currentLoadedMarksData[studentId].remarks = $(this).val();
+        });
+
+        function updateMarksStats() {
+            const scoredList = [];
+            Object.values(currentLoadedMarksData).forEach(v => {
+                if (v && v.marks !== '' && !isNaN(parseFloat(v.marks))) {
+                    scoredList.push(parseFloat(v.marks));
+                }
+            });
+
+            if (scoredList.length > 0) {
+                const avg = (scoredList.reduce((a,b)=>a+b, 0) / scoredList.length).toFixed(1);
+                const high = Math.max(...scoredList).toFixed(1);
+                const passed = scoredList.filter(m => (m / currentMaxMarks) >= 0.4).length;
+                const passPct = ((passed / scoredList.length) * 100).toFixed(0) + '%';
+
+                $('#pmAvgScore').text(`${avg} / ${currentMaxMarks}`);
+                $('#pmHighScore').text(`${high} / ${currentMaxMarks}`);
+                $('#pmPassPct').text(passPct);
+                $('#pmGradedCount').text(`${scoredList.length} / ${Object.keys(currentLoadedMarksData).length}`);
+            } else {
+                $('#pmAvgScore').text('--');
+                $('#pmHighScore').text('--');
+                $('#pmPassPct').text('--');
+                $('#pmGradedCount').text('0');
+            }
+        }
+
+        $('#pmSaveBtn').on('click', function() {
+            const btn = $(this);
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving Marks...');
+
+            $.ajax({
+                url: `/${collegeSlug}/api/faculty/marks/save`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    department: $('#pmDept').val(),
+                    year: $('#pmYear').val(),
+                    section: $('#pmSection').val(),
+                    subject: $('#pmSubject').val().trim(),
+                    assessment_type: $('#pmType').val(),
+                    max_marks: currentMaxMarks,
+                    marks_data: currentLoadedMarksData
+                }),
+                success: function(resp) {
+                    btn.prop('disabled', false).html('<i class="fas fa-check me-1"></i> Marks Saved Successfully!').removeClass('btn-success').addClass('btn-primary');
+                    setTimeout(() => btn.html('<i class="fas fa-save me-1"></i> Save &amp; Record Marks').removeClass('btn-primary').addClass('btn-success'), 2000);
+                },
+                error: function(err) {
+                    btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save &amp; Record Marks');
+                    alert(err.responseJSON?.error || "Failed to save marks.");
+                }
+            });
+        });
+
+        // -------------------------------------------------------------
+        // 4. ASSIGNMENT WORKFLOW & SUBMISSIONS REVIEW
+        // -------------------------------------------------------------
+        $(document).on('click', '.review-asgn-btn', function() {
+            const asgnId = $(this).data('id');
+            const asgnTitle = $(this).data('title');
+
+            $('#revModalTitle').html(`<i class="fas fa-clipboard-check text-primary me-2"></i> ${asgnTitle}`);
+            $('#revTableBody').empty();
+            $('#revLoading').removeClass('d-none');
+            new bootstrap.Modal(document.getElementById('reviewSubmissionsModal')).show();
+
+            $.ajax({
+                url: `/${collegeSlug}/api/faculty/assignments/${asgnId}/submissions`,
+                success: function(resp) {
+                    $('#revLoading').addClass('d-none');
+                    $('#revMaxLabel').text(resp.assignment.max_marks);
+                    $('#revModalSub').text(`${resp.assignment.subject} • Due: ${resp.assignment.due_date} • Submitted: ${resp.assignment.total_submitted}/${resp.assignment.total_eligible} (${resp.assignment.total_graded} Graded)`);
+
+                    const tbody = $('#revTableBody');
+                    tbody.empty();
+
+                    if (resp.students.length === 0) {
+                        tbody.html('<tr><td colspan="7" class="text-center py-4 text-muted">No eligible students found for this assignment class.</td></tr>');
+                        return;
+                    }
+
+                    resp.students.forEach(st => {
+                        let statusBadge = '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill">Pending</span>';
+                        let fileHtml = '<span class="text-muted small">No file submitted</span>';
+                        let scoreVal = st.marks_obtained !== null ? st.marks_obtained : '';
+                        let feedVal = st.feedback || '';
+
+                        if (st.has_submitted) {
+                            if (st.is_late) {
+                                statusBadge = '<span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 rounded-pill"><i class="fas fa-clock me-1"></i> Submitted (LATE)</span>';
+                            } else {
+                                statusBadge = '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill"><i class="fas fa-check-circle me-1"></i> Submitted (On Time)</span>';
+                            }
+
+                            if (st.file_path) {
+                                fileHtml = `
+                                    <div>
+                                        <a href="${st.file_path}" target="_blank" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-1 fw-semibold mb-1" style="font-size:0.75rem;">
+                                            <i class="fas fa-file-download me-1"></i> View Solution
+                                        </a>
+                                        ${st.submission_text ? `<div class="small text-muted text-truncate" style="max-width: 250px;">${st.submission_text}</div>` : ''}
+                                    </div>
+                                `;
+                            } else if (st.submission_text) {
+                                fileHtml = `<div class="small text-dark p-1.5 bg-light rounded">${st.submission_text}</div>`;
+                            }
+                        }
+
+                        const disabledAttr = !st.has_submitted ? 'disabled' : '';
+
+                        const row = `
+                            <tr data-sub-id="${st.submission_id || ''}">
+                                <td>
+                                    <div class="fw-bold text-dark">${st.name}</div>
+                                    <span class="badge bg-light text-dark border extra-small">${st.roll_no}</span>
+                                </td>
+                                <td>${statusBadge}</td>
+                                <td>${fileHtml}</td>
+                                <td class="small text-muted">${st.submitted_at || '--'}</td>
+                                <td>
+                                    <input type="number" step="0.5" min="0" max="${resp.assignment.max_marks}" class="form-control form-control-sm rounded-pill border bg-white grade-score-input" value="${scoreVal}" ${disabledAttr} placeholder="0 - ${resp.assignment.max_marks}">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm rounded-pill border bg-white grade-feed-input" value="${feedVal}" ${disabledAttr} placeholder="Feedback to student...">
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold save-grade-btn" ${disabledAttr}>
+                                        <i class="fas fa-check me-1"></i> Grade
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                },
+                error: function() {
+                    $('#revLoading').addClass('d-none');
+                    alert("Failed to load submissions.");
+                }
+            });
+        });
+
+        $(document).on('click', '.save-grade-btn', function() {
+            const tr = $(this).closest('tr');
+            const subId = tr.data('sub-id');
+            const marks = tr.find('.grade-score-input').val();
+            const feedback = tr.find('.grade-feed-input').val();
+            const btn = $(this);
+
+            if (!subId) {
+                alert("No submission record to grade.");
+                return;
+            }
+
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: `/${collegeSlug}/api/faculty/submissions/${subId}/grade`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ marks_obtained: marks, feedback: feedback }),
+                success: function() {
+                    btn.prop('disabled', false).html('<i class="fas fa-check me-1"></i> Saved').removeClass('btn-primary').addClass('btn-success');
+                    setTimeout(() => btn.html('<i class="fas fa-check me-1"></i> Grade').removeClass('btn-success').addClass('btn-primary'), 1500);
+                },
+                error: function(err) {
+                    btn.prop('disabled', false).html('<i class="fas fa-check me-1"></i> Grade');
+                    alert(err.responseJSON?.error || "Failed to save grade.");
                 }
             });
         });
