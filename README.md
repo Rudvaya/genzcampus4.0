@@ -55,9 +55,11 @@
 - **Permission Approval Flow**: Students apply for event permissions -> Section Incharge / HOD approves -> Real-time sync with Class Attendance roster.
 
 ### 🎨 9. Modern UI/UX Experience
+- **Flexible Navigation Tabs**: Responsive dashboard tabs that intelligently wrap on zoom/resize to ensure all features are accessible.
 - **Resizable Sidebar**: Draggable splitter allowing users to adjust sidebar width smoothly with local storage persistence.
 - **Dark/Light Mode**: Integrated theme toggle across all portals.
 - **Mobile Responsive Drawer & Bottom Nav**: Native-app style mobile drawer and quick bottom navigation bar.
+- **URL Hash Synchronization**: Seamless client-side tab switching without full-page reloads.
 - **URL Hash Synchronization**: Seamless client-side tab switching without full-page reloads.
 
 ---
@@ -70,7 +72,7 @@
 | **Admin** | Full college management, department directory, faculty/student CRUD, timetable, ledger |
 | **Principal / Secretary** | Academic overview, institution-wide performance metrics, financial ledger |
 | **Exam Admin** | Exam scheduling, mark sheets, grade records, academic audits |
-| **Head of Department (HOD)** | Department faculty management, notice circulation, permission approvals |
+| **Head of Department (HOD)** | Department faculty management, notice circulation, leaves module (permissions), dedicated faculty attendance tracking, student management |
 | **Section Incharge** | Class schedule adjustments, period swapping, holiday declarations |
 | **Faculty** | Attendance marking, student evaluation, marks management, assignment grading |
 | **Student** | Daily timeline, attendance analytics, assignment submission, permission applications |

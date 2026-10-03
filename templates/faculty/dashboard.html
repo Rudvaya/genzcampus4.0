@@ -71,13 +71,8 @@
         gap: 4px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.03);
         display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    .faculty-tabs-nav::-webkit-scrollbar {
-        height: 0px;
-        display: none;
+        flex-wrap: wrap;
+        justify-content: flex-start;
     }
     .faculty-tabs-nav .nav-link {
         border: none;
@@ -565,10 +560,17 @@
             {% if is_hod or is_incharge %}
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pendingP" type="button" role="tab">
-                    <i class="fas fa-inbox"></i> Pending
+                    <i class="fas fa-inbox"></i> Leaves Module
                     {% if pending_count and pending_count > 0 %}
                     <span class="badge bg-danger rounded-pill ms-1">{{ pending_count }}</span>
                     {% endif %}
+                </button>
+            </li>
+            {% endif %}
+            {% if is_hod %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="hod-attendance-tab" data-bs-toggle="tab" data-bs-target="#hodAttendanceP" type="button" role="tab">
+                    <i class="fas fa-user-clock"></i> Faculty Attendance
                 </button>
             </li>
             {% endif %}
@@ -590,6 +592,11 @@
                     {% if notices and notices|length > 0 %}
                     <span class="badge bg-primary rounded-pill ms-1">{{ notices|length }}</span>
                     {% endif %}
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="myhr-tab" data-bs-toggle="tab" data-bs-target="#myhrP" type="button" role="tab">
+                    <i class="fas fa-id-badge"></i> My HR
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -754,6 +761,66 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Pending Faculty Leaves -->
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0">
+                    <h5 class="m-0 fw-bold text-main"><i class="fas fa-calendar-minus me-2 text-danger"></i> Pending Faculty Leaves</h5>
+                </div>
+                <div class="card-body p-3 p-md-4 pt-0">
+                    {% if is_hod and pending_faculty_leaves %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-themed m-0">
+                            <thead>
+                                <tr>
+                                    <th>Faculty Name</th>
+                                    <th>Leave Type</th>
+                                    <th>Dates</th>
+                                    <th>Reason</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for l in pending_faculty_leaves %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-2 text-center" style="width: 35px; height: 35px; line-height: 20px;">
+                                                <i class="fas fa-chalkboard-teacher small"></i>
+                                            </div>
+                                            <span class="fw-bold">{{ l.faculty.get_full_name() }}</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ l.leave_type }}</span></td>
+                                    <td>
+                                        <div class="small fw-bold text-muted">{{ l.start_date.strftime('%d %b %Y') }} - {{ l.end_date.strftime('%d %b %Y') }}</div>
+                                    </td>
+                                    <td><div class="text-truncate small text-muted" style="max-width: 150px;" title="{{ l.reason }}">{{ l.reason }}</div></td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <form method="POST" action="{{ url_for('admin_handle_faculty_leave', leave_id=l.id, action='approve') }}" class="d-inline">
+                                                <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 shadow-none">APPROVE</button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('admin_handle_faculty_leave', leave_id=l.id, action='reject') }}" class="d-inline">
+                                                <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3 shadow-none">REJECT</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success bg-light p-4 rounded-circle mb-3"></i>
+                        <h6 class="text-muted">No pending faculty leave requests.</h6>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+
         </div>
         {% endif %}
 
@@ -906,6 +973,58 @@
                 </div>
             </div>
         </div>
+
+        {% if is_hod and processed_faculty_leaves %}
+        <!-- Tab 3.1: Processed Faculty Leaves (HOD) -->
+        <div class="card card-modern shadow-sm border-0 mb-3">
+            <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="m-0 fw-bold text-main"><i class="fas fa-calendar-check me-2 text-info"></i> Processed Faculty Leaves</h5>
+            </div>
+            <div class="card-body p-3 p-md-4 pt-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-themed m-0">
+                        <thead>
+                            <tr>
+                                <th>Faculty Name</th>
+                                <th>Leave Type</th>
+                                <th>Dates</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in processed_faculty_leaves %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-2 text-center" style="width: 35px; height: 35px; line-height: 20px;">
+                                            <i class="fas fa-chalkboard-teacher small"></i>
+                                        </div>
+                                        <span class="fw-bold">{{ l.faculty.get_full_name() }}</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ l.leave_type }}</span></td>
+                                <td>
+                                    <div class="small fw-bold text-muted">{{ l.start_date.strftime('%d %b %Y') }} - {{ l.end_date.strftime('%d %b %Y') }}</div>
+                                </td>
+                                <td><div class="text-truncate small text-muted" style="max-width: 150px;" title="{{ l.reason }}">{{ l.reason }}</div></td>
+                                <td>
+                                    {% if l.status == 'Approved' %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-check-circle me-1"></i>Approved</span>
+                                    {% elif l.status == 'Rejected' %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-times-circle me-1"></i>Rejected</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-1">{{ l.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Tab 4: Notice Board -->
         <div class="tab-pane fade" id="noticesP" role="tabpanel">
@@ -1088,6 +1207,74 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tab: Faculty Attendance (HOD) -->
+        {% if is_hod %}
+        <div class="tab-pane fade" id="hodAttendanceP" role="tabpanel">
+            <div class="card card-modern shadow-sm border-0 mb-3">
+                <div class="card-header bg-transparent py-3 px-3 px-md-4 border-0">
+                    <h5 class="m-0 fw-bold text-main"><i class="fas fa-user-clock me-2 text-info"></i> Today's Faculty Attendance ({{ current_user.department }})</h5>
+                </div>
+                <div class="card-body p-3 p-md-4 pt-0">
+                    {% if dept_today_attendance %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-themed m-0">
+                            <thead>
+                                <tr>
+                                    <th>Faculty Name</th>
+                                    <th>Check-in Time</th>
+                                    <th>Check-out Time</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for att in dept_today_attendance %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-2 text-center" style="width: 35px; height: 35px; line-height: 20px;">
+                                                <i class="fas fa-chalkboard-teacher small"></i>
+                                            </div>
+                                            <span class="fw-bold">{{ att.faculty.get_full_name() }}</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="fw-bold text-success">{{ att.check_in_time.strftime('%I:%M %p') }}</span></td>
+                                    <td>
+                                        {% if att.check_out_time %}
+                                            <span class="fw-bold text-danger">{{ att.check_out_time.strftime('%I:%M %p') }}</span>
+                                        {% else %}
+                                            <span class="text-muted small">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if att.check_out_time %}
+                                            {% set duration = (att.check_out_time - att.check_in_time).total_seconds() / 3600 %}
+                                            <span class="small fw-bold">{{ "%.1f"|format(duration) }} hrs</span>
+                                        {% else %}
+                                            <span class="text-muted small">Active</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill {% if att.status == 'Present' %}bg-success{% elif att.status == 'Late' %}bg-warning text-dark{% else %}bg-secondary{% endif %} bg-opacity-10 text-{% if att.status == 'Present' %}success{% elif att.status == 'Late' %}warning{% else %}secondary{% endif %} border border-{% if att.status == 'Present' %}success{% elif att.status == 'Late' %}warning{% else %}secondary{% endif %} border-opacity-25 px-3 py-1">
+                                            {{ att.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users-slash fa-3x text-muted bg-light p-4 rounded-circle mb-3"></i>
+                        <h6 class="text-muted">No faculty checked in yet today.</h6>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Tab: Student Marks & Performance Management -->
         <div class="tab-pane fade" id="performanceP" role="tabpanel">
@@ -1291,6 +1478,113 @@
                         </button>
                     </div>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: My HR -->
+        <div class="tab-pane fade" id="myhrP" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-12 col-lg-6">
+                    <!-- Attendance Card -->
+                    <div class="card card-modern shadow-sm border-0 mb-3 h-100">
+                        <div class="card-header bg-transparent py-3 px-4 border-0">
+                            <h5 class="m-0 fw-bold text-main"><i class="fas fa-clock text-primary me-2"></i> Today's Attendance</h5>
+                        </div>
+                        <div class="card-body px-4 text-center d-flex flex-column justify-content-center">
+                            {% if today_attendance %}
+                                <div class="mb-4">
+                                    <div class="display-6 fw-bold text-success mb-2">Checked In</div>
+                                    <div class="text-muted"><i class="far fa-clock me-1"></i> In: {{ today_attendance.check_in_time|to_ist if today_attendance.check_in_time else 'N/A' }}</div>
+                                    {% if today_attendance.check_out_time %}
+                                        <div class="text-muted mt-1"><i class="far fa-clock me-1"></i> Out: {{ today_attendance.check_out_time|to_ist }}</div>
+                                    {% endif %}
+                                </div>
+                                {% if not today_attendance.check_out_time %}
+                                    <form method="POST" action="{{ url_for('faculty_check_out') }}">
+                                        <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm">
+                                            <i class="fas fa-sign-out-alt me-1"></i> Check Out
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <div class="alert alert-success mt-2 py-2 mb-0 rounded-3">
+                                        Attendance complete for today.
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="mb-4">
+                                    <div class="display-6 fw-bold text-muted mb-2 opacity-50">Not Checked In</div>
+                                    <p class="text-muted small">Please check in to mark your attendance for today.</p>
+                                </div>
+                                <form method="POST" action="{{ url_for('faculty_check_in') }}">
+                                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm" style="padding-block: 0.75rem;">
+                                        <i class="fas fa-sign-in-alt me-2"></i> Check In Now
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 col-lg-6">
+                    <!-- Leave Application Card -->
+                    <div class="card card-modern shadow-sm border-0 mb-3 h-100">
+                        <div class="card-header bg-transparent py-3 px-4 border-0 d-flex justify-content-between align-items-center">
+                            <h5 class="m-0 fw-bold text-main"><i class="fas fa-calendar-minus text-danger me-2"></i> Leave Management</h5>
+                            <button class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
+                                Apply Leave
+                            </button>
+                        </div>
+                        <div class="card-body px-4 p-0">
+                            {% if leave_records %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle table-themed m-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Dates</th>
+                                            <th>Status</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for l in leave_records %}
+                                        <tr>
+                                            <td><span class="fw-bold">{{ l.leave_type }}</span></td>
+                                            <td>
+                                                <div class="small text-muted">{{ l.start_date.strftime('%b %d') }} - {{ l.end_date.strftime('%b %d, %Y') }}</div>
+                                            </td>
+                                            <td>
+                                                {% if l.status == 'Approved' %}
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1">Approved</span>
+                                                {% elif l.status == 'Rejected' %}
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1">Rejected</span>
+                                                {% elif l.status == 'Cancelled' %}
+                                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2 py-1">Cancelled</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-2 py-1">Pending</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                {% if l.status == 'Pending' %}
+                                                <form method="POST" action="{{ url_for('faculty_cancel_leave', leave_id=l.id) }}" class="d-inline" onsubmit="return confirm('Cancel this leave application?');">
+                                                    <button class="btn btn-sm btn-light text-danger rounded-circle border"><i class="fas fa-times"></i></button>
+                                                </form>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-umbrella-beach fa-3x mb-3 opacity-25"></i>
+                                <h6>No leave history</h6>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1616,6 +1910,51 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Apply Leave -->
+<div class="modal fade" id="applyLeaveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-modern border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold text-main"><i class="fas fa-calendar-plus text-primary me-2"></i> Apply for Leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form action="{{ url_for('faculty_apply_leave') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Leave Type *</label>
+                        <select name="leave_type" class="form-select form-themed px-3" required>
+                            <option value="Casual Leave">Casual Leave (CL)</option>
+                            <option value="Sick Leave">Sick Leave (SL)</option>
+                            <option value="Earned Leave">Earned Leave (EL)</option>
+                            <option value="On Duty">On Duty (OD)</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Start Date *</label>
+                            <input type="date" name="start_date" class="form-control form-themed px-3" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">End Date *</label>
+                            <input type="date" name="end_date" class="form-control form-themed px-3" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted">Reason for Leave *</label>
+                        <textarea name="reason" class="form-control form-themed px-3" rows="3" required placeholder="Briefly describe the reason for your leave..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Submit Application</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}

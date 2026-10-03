@@ -179,11 +179,7 @@
             <i class="fas fa-clipboard-list"></i>
             <span>Class Attendance</span>
           </a>
-          <a class="sidebar-link"
-             href="{{ url_for('faculty_dashboard') }}#studentsP" data-tab-target="#studentsP">
-            <i class="fas fa-user-graduate"></i>
-            <span>Student Management</span>
-          </a>
+
           <a class="sidebar-link"
              href="{{ url_for('faculty_dashboard') }}#performanceP" data-tab-target="#performanceP">
             <i class="fas fa-chart-line"></i>
@@ -221,7 +217,17 @@
             <a class="sidebar-link"
                href="{{ url_for('faculty_dashboard') }}#pendingP" data-tab-target="#pendingP">
               <i class="fas fa-inbox"></i>
-              <span>Pending Permissions</span>
+              <span>Leaves Module</span>
+            </a>
+            <a class="sidebar-link"
+               href="{{ url_for('faculty_dashboard') }}#studentsP" data-tab-target="#studentsP">
+              <i class="fas fa-user-graduate"></i>
+              <span>Student Management</span>
+            </a>
+            <a class="sidebar-link"
+               href="{{ url_for('faculty_dashboard') }}#hodAttendanceP" data-tab-target="#hodAttendanceP">
+              <i class="fas fa-user-clock"></i>
+              <span>Faculty Attendance</span>
             </a>
           {% endif %}
           <a class="sidebar-link"

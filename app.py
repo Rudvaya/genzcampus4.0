@@ -8,7 +8,7 @@ from flask_mail import Mail, Message
 from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction, StudentPerformance, Notice, StudentMark, Assignment, AssignmentSubmission, DirectMessage, ClassAnnouncement, DiscussionGroup, DiscussionTopic, DiscussionReply, InAppNotification
+from models import db, User, Club, Event, Permission, Department, SystemConfig, EventResponse, ClassAttendance, TimeTable, ClassHoliday, FinanceTransaction, StudentPerformance, Notice, StudentMark, Assignment, AssignmentSubmission, DirectMessage, ClassAnnouncement, DiscussionGroup, DiscussionTopic, DiscussionReply, InAppNotification, FacultyAttendance, FacultyLeave
 from config import Config
 from utils import allowed_file, validate_roll_no
 from cloudinary_storage import upload_document, serve_document, is_cloudinary_enabled
@@ -1720,7 +1720,17 @@ def manage_faculty():
         faculty = User.query.filter(User.role.in_(['faculty', 'hod']), User.college_id == current_user.college_id).all()
         departments = Department.query.filter_by(college_id=current_user.college_id).order_by(Department.name).all()
         
-    return render_template('admin/faculty.html', faculty=faculty, departments=departments)
+    if current_user.is_hod():
+        faculty_leaves = FacultyLeave.query.join(User, FacultyLeave.user_id == User.id).filter(
+            User.department == current_user.department,
+            User.college_id == current_user.college_id
+        ).order_by(FacultyLeave.applied_on.desc()).all()
+    else:
+        faculty_leaves = FacultyLeave.query.join(User, FacultyLeave.user_id == User.id).filter(
+            User.college_id == current_user.college_id
+        ).order_by(FacultyLeave.applied_on.desc()).all()
+        
+    return render_template('admin/faculty.html', faculty=faculty, departments=departments, faculty_leaves=faculty_leaves)
 
 @app.route('/<college_slug>/admin/faculty/edit/<int:faculty_id>', methods=['GET', 'POST'])
 @login_required
@@ -2239,6 +2249,38 @@ def faculty_dashboard():
         faculty_id=current_user.id
     ).order_by(Assignment.created_at.desc()).all()
 
+    today = datetime.utcnow().date()
+    today_attendance = FacultyAttendance.query.filter_by(
+        user_id=current_user.id,
+        date=today
+    ).first()
+    
+    leave_records = FacultyLeave.query.filter_by(
+        user_id=current_user.id
+    ).order_by(FacultyLeave.applied_on.desc()).all()
+
+    pending_faculty_leaves = []
+    processed_faculty_leaves = []
+    dept_today_attendance = []
+    if current_user.is_hod():
+        pending_faculty_leaves = FacultyLeave.query.join(User, FacultyLeave.user_id == User.id).filter(
+            User.department == current_user.department,
+            User.college_id == current_user.college_id,
+            FacultyLeave.status == 'Pending'
+        ).order_by(FacultyLeave.applied_on.desc()).all()
+        
+        processed_faculty_leaves = FacultyLeave.query.join(User, FacultyLeave.user_id == User.id).filter(
+            User.department == current_user.department,
+            User.college_id == current_user.college_id,
+            FacultyLeave.status.in_(['Approved', 'Rejected'])
+        ).order_by(FacultyLeave.applied_on.desc()).all()
+        
+        dept_today_attendance = FacultyAttendance.query.join(User, FacultyAttendance.user_id == User.id).filter(
+            User.department == current_user.department,
+            User.college_id == current_user.college_id,
+            FacultyAttendance.date == today
+        ).order_by(FacultyAttendance.check_in_time.asc()).all()
+
     return render_template('faculty/dashboard.html', 
                          pending_grouped=pending_grouped,
                          approved_grouped=approved_grouped,
@@ -2246,7 +2288,140 @@ def faculty_dashboard():
                          is_hod=current_user.is_hod(),
                          is_incharge=is_incharge,
                          notices=faculty_notices_list,
-                         assignments=faculty_assignments)
+                         assignments=faculty_assignments,
+                         today_attendance=today_attendance,
+                         leave_records=leave_records,
+                         pending_faculty_leaves=pending_faculty_leaves,
+                         processed_faculty_leaves=processed_faculty_leaves,
+                         dept_today_attendance=dept_today_attendance)
+
+# --- Faculty Attendance & Leave Routes ---
+
+@app.route('/<college_slug>/faculty/attendance/check-in', methods=['POST'])
+@login_required
+def faculty_check_in():
+    if current_user.role not in ['faculty', 'hod', 'principal']:
+        flash('Access Denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    today = datetime.utcnow().date()
+    attendance = FacultyAttendance.query.filter_by(user_id=current_user.id, date=today).first()
+    if attendance:
+        flash('Already checked in today.', 'info')
+    else:
+        new_attendance = FacultyAttendance(
+            college_id=current_user.college_id,
+            user_id=current_user.id,
+            date=today,
+            check_in_time=datetime.utcnow(),
+            status='Present'
+        )
+        db.session.add(new_attendance)
+        db.session.commit()
+        flash('Successfully checked in!', 'success')
+        
+    return redirect(url_for('faculty_dashboard'))
+
+@app.route('/<college_slug>/faculty/attendance/check-out', methods=['POST'])
+@login_required
+def faculty_check_out():
+    if current_user.role not in ['faculty', 'hod', 'principal']:
+        flash('Access Denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    today = datetime.utcnow().date()
+    attendance = FacultyAttendance.query.filter_by(user_id=current_user.id, date=today).first()
+    if not attendance:
+        flash('You have not checked in today.', 'error')
+    elif attendance.check_out_time:
+        flash('Already checked out today.', 'info')
+    else:
+        attendance.check_out_time = datetime.utcnow()
+        db.session.commit()
+        flash('Successfully checked out!', 'success')
+        
+    return redirect(url_for('faculty_dashboard'))
+
+@app.route('/<college_slug>/faculty/leave/apply', methods=['POST'])
+@login_required
+def faculty_apply_leave():
+    if current_user.role not in ['faculty', 'hod', 'principal']:
+        flash('Access Denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    leave_type = request.form.get('leave_type')
+    start_date_str = request.form.get('start_date')
+    end_date_str = request.form.get('end_date')
+    reason = request.form.get('reason')
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        
+        new_leave = FacultyLeave(
+            college_id=current_user.college_id,
+            user_id=current_user.id,
+            leave_type=leave_type,
+            start_date=start_date,
+            end_date=end_date,
+            reason=reason,
+            status='Pending'
+        )
+        db.session.add(new_leave)
+        db.session.commit()
+        flash('Leave application submitted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error applying for leave: {str(e)}', 'error')
+        
+    return redirect(url_for('faculty_dashboard'))
+
+@app.route('/<college_slug>/faculty/leave/<int:leave_id>/cancel', methods=['POST'])
+@login_required
+def faculty_cancel_leave(leave_id):
+    leave = FacultyLeave.query.get_or_404(leave_id)
+    if leave.user_id != current_user.id:
+        flash('Access Denied', 'error')
+        return redirect(url_for('faculty_dashboard'))
+    
+    if leave.status != 'Pending':
+        flash('Can only cancel pending leave applications.', 'error')
+    else:
+        leave.status = 'Cancelled'
+        db.session.commit()
+        flash('Leave application cancelled.', 'success')
+        
+    return redirect(url_for('faculty_dashboard'))
+
+@app.route('/<college_slug>/admin/faculty-leave/<int:leave_id>/<action>', methods=['POST'])
+@login_required
+def admin_handle_faculty_leave(leave_id, action):
+    if current_user.role not in ['admin', 'hod', 'principal']:
+        flash('Access Denied', 'error')
+        return redirect(url_for('index'))
+        
+    leave = FacultyLeave.query.get_or_404(leave_id)
+    # HOD can only approve leaves for their department
+    if current_user.role == 'hod':
+        faculty = User.query.get(leave.user_id)
+        if faculty.department != current_user.department:
+            flash('Access Denied', 'error')
+            return redirect(url_for('index'))
+            
+    if action not in ['approve', 'reject']:
+        flash('Invalid action', 'error')
+        return redirect(request.referrer or url_for('index'))
+        
+    reason = request.form.get('action_reason', '')
+    
+    leave.status = 'Approved' if action == 'approve' else 'Rejected'
+    leave.action_by_id = current_user.id
+    leave.action_reason = reason
+    db.session.commit()
+    
+    flash(f'Leave application {leave.status.lower()} successfully.', 'success')
+    return redirect(request.referrer or url_for('index'))
+
 
 # --- Faculty Student Management & Academic Performance APIs ---
 @app.route('/<college_slug>/api/faculty/students-detailed')

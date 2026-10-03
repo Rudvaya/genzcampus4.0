@@ -113,6 +113,38 @@ class User(UserMixin, db.Model):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+
+# --- Faculty Attendance & Leave Models ---
+class FacultyAttendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False, default=datetime.utcnow().date)
+    check_in_time = db.Column(db.DateTime, nullable=True)
+    check_out_time = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.String(20), default='Present') # 'Present', 'Absent', 'Half Day'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    faculty = db.relationship('User', backref=db.backref('attendances', lazy='dynamic', cascade='all, delete-orphan'))
+    college = db.relationship('College', backref=db.backref('faculty_attendances', lazy='dynamic'))
+
+class FacultyLeave(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    college_id = db.Column(db.Integer, db.ForeignKey('college.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    leave_type = db.Column(db.String(50), nullable=False) # 'Casual Leave', 'Sick Leave', etc.
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    reason = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='Pending') # 'Pending', 'Approved', 'Rejected', 'Cancelled'
+    applied_on = db.Column(db.DateTime, default=datetime.utcnow)
+    action_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    action_reason = db.Column(db.Text, nullable=True)
+    
+    faculty = db.relationship('User', foreign_keys=[user_id], backref=db.backref('leaves', lazy='dynamic', cascade='all, delete-orphan'))
+    action_by = db.relationship('User', foreign_keys=[action_by_id], backref=db.backref('approved_leaves', lazy='dynamic'))
+    college = db.relationship('College', backref=db.backref('faculty_leaves', lazy='dynamic'))
+
 class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)

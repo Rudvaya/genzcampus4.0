@@ -91,6 +91,60 @@
     </div>
 </div>
 
+<!-- Faculty Leaves Management -->
+<div class="card card-modern shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center border-bottom border-main">
+        <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-calendar-alt me-2"></i>Faculty Leave Applications</h5>
+    </div>
+    <div class="card-body">
+        {% if faculty_leaves %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-themed" width="100%" cellspacing="0">
+                <thead class="bg-main text-muted small text-uppercase">
+                    <tr>
+                        <th>Faculty</th>
+                        <th>Type</th>
+                        <th>Dates</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Applied On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in faculty_leaves %}
+                    <tr>
+                        <td class="fw-bold">{{ leave.faculty.get_full_name() }} <br> <small class="text-muted fw-normal">{{ leave.faculty.department }}</small></td>
+                        <td><span class="badge bg-light text-dark border">{{ leave.leave_type }}</span></td>
+                        <td>
+                            <div class="small fw-bold text-muted">{{ leave.start_date.strftime('%d %b %Y') }} - {{ leave.end_date.strftime('%d %b %Y') }}</div>
+                        </td>
+                        <td><div class="text-truncate small text-muted" style="max-width: 150px;" title="{{ leave.reason }}">{{ leave.reason }}</div></td>
+                        <td>
+                            {% if leave.status == 'Pending' %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-clock me-1"></i>Pending</span>
+                            {% elif leave.status == 'Approved' %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-check-circle me-1"></i>Approved</span>
+                            {% elif leave.status == 'Rejected' %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-times-circle me-1"></i>Rejected</span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-1">{{ leave.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ leave.applied_on.strftime('%d %b %Y, %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted opacity-25 mb-3"></i>
+            <h5 class="text-muted">No faculty leave applications found</h5>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Add Faculty Modal (Keeping original structure) -->
 <div class="modal fade" id="addFacultyModal" tabindex="-1">
     <div class="modal-dialog">
