@@ -280,19 +280,19 @@
 
             <div class="action-footer mt-auto">
                 {% if event.status == 'expired' %}
-                    {% if event.id in registered_ids %}
-                    <div class="res-badge">
-                        <i class="fas fa-check-double"></i> Attended
-                    </div>
+                    {% if event.id in registered_responses %}
+                    <a href="{{ url_for('club_portal.registration_ticket', response_id=registered_responses[event.id]) }}" class="btn btn-sm btn-outline-secondary rounded-pill w-100">
+                        <i class="fas fa-ticket-alt"></i> View Ticket
+                    </a>
                     {% else %}
                     <div class="closed-badge">
                         <i class="fas fa-calendar-times"></i> Closed
                     </div>
                     {% endif %}
-                {% elif event.id in registered_ids %}
-                <div class="res-badge">
-                    <i class="fas fa-check-circle"></i> Already Registered
-                </div>
+                {% elif event.id in registered_responses %}
+                <a href="{{ url_for('club_portal.registration_ticket', response_id=registered_responses[event.id]) }}" class="btn btn-sm btn-primary rounded-pill w-100" style="background: linear-gradient(135deg, #7C3AED, #6366F1); border: none;">
+                    <i class="fas fa-ticket-alt"></i> View Ticket
+                </a>
                 {% elif not event.is_registration_open %}
                 <div class="closed-badge">
                     <i class="fas fa-lock"></i> Locked

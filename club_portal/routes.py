@@ -31,14 +31,18 @@ def inject_club():
 
 def filter_accepted_responses(event, responses, now):
     """
-    Filters out participants who are 'Rejected' (Team-only event, past deadline, size < min).
+    Filters out participants who are 'Rejected' (Team-only event, past deadline, size < min)
+    AND participants who have not completed payment for paid events.
     """
+    # First, filter out unpaid pending tickets
+    paid_filtered = [r for r in responses if not (event.is_paid and r.payment_status == 'pending')]
+    
     if event.participation_type != 'team':
-        return responses # Solo/Both allow fallback to individual
+        return paid_filtered # Solo/Both allow fallback to individual
         
     deadline = event.registration_deadline or event.start_date or datetime.combine(event.date, datetime.min.time())
     if now <= deadline:
-        return responses # Only filter AFTER the deadline
+        return paid_filtered # Only filter AFTER the deadline
         
     # Get all teams for this event
     teams = {t.id: t for t in Team.query.filter_by(event_id=event.id).all()}
@@ -50,7 +54,7 @@ def filter_accepted_responses(event, responses, now):
     for t_id in teams.keys():
         team_member_counts[t_id] = TeamMember.query.filter_by(team_id=t_id).count()
         
-    for r in responses:
+    for r in paid_filtered:
         if not r.team_id:
             # Should not happen in 'team-only' but if it does, it's rejected as solo
             continue
@@ -299,9 +303,9 @@ def student_events():
             available_events.append(event)
             
     # Check if student already registered
-    registered_event_ids = [r.event_id for r in EventResponse.query.filter_by(student_id=current_user.id).all()]
+    registered_responses = {r.event_id: r.id for r in EventResponse.query.filter_by(student_id=current_user.id).all()}
             
-    return render_template('club/student_events.html', events=available_events, registered_ids=registered_event_ids)
+    return render_template('club/student_events.html', events=available_events, registered_responses=registered_responses)
 
 @bp.route('/events/<int:event_id>/apply', methods=['GET', 'POST'])
 @login_required
@@ -337,7 +341,7 @@ def apply_event(event_id):
 
     # Initial check (handled inside POST for teams with extra members)
     if not request.method == 'POST' and event.max_registrations > 0:
-        current_reg_count = EventResponse.query.filter_by(event_id=event_id).count()
+        current_reg_count = EventResponse.query.filter(EventResponse.event_id==event_id, EventResponse.payment_status != 'pending').count()
         if current_reg_count >= event.max_registrations:
             flash(f'Registration limit of {event.max_registrations} has been reached for this event.', 'danger')
             return redirect(url_for('club_portal.student_events'))
@@ -359,7 +363,7 @@ def apply_event(event_id):
         # Calculate slots needed (Always 1 now as everyone registers individually)
         reg_slots_needed = 1
         if event.max_registrations > 0:
-            current_reg_count = EventResponse.query.filter_by(event_id=event_id).count()
+            current_reg_count = EventResponse.query.filter(EventResponse.event_id==event_id, EventResponse.payment_status != 'pending').count()
             if (current_reg_count + reg_slots_needed) > event.max_registrations:
                 return jsonify({'status': 'error', 'message': 'Limit reached. No more slots left for this event.'})
 
