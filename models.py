@@ -641,3 +641,17 @@ class InAppNotification(db.Model):
 
 
 
+
+# --- Global Multi-Tenant Insert Hook ---
+from sqlalchemy import event
+
+@event.listens_for(db.Model, 'before_insert', propagate=True)
+def auto_set_college_id(mapper, connection, target):
+    if hasattr(target, 'college_id') and getattr(target, 'college_id') is None:
+        from flask import g, has_app_context
+        from flask_login import current_user
+        if has_app_context():
+            if getattr(g, 'current_college', None):
+                target.college_id = g.current_college.id
+            elif current_user and current_user.is_authenticated and hasattr(current_user, 'college_id'):
+                target.college_id = current_user.college_id
