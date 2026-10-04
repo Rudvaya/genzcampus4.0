@@ -611,10 +611,6 @@ def student_signup():
             flash(f'Registration successful! (System is in Dev Mode: Your OTP is {otp})', 'info')
         
         return redirect(url_for('verify_otp', user_id=student.id))
-        except Exception as e:
-            print(f"Error preparing email: {e}")
-            flash(f'Error preparing email. Your temporary OTP is: {otp}', 'warning')
-            return redirect(url_for('verify_otp', user_id=student.id))
     # Fetch departments for the dropdown
     departments = Department.query.filter_by(college_id=college.id).all()
     return render_template('student_signup.html', departments=departments)
