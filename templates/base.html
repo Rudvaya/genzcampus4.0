@@ -80,6 +80,11 @@
             <i class="fas fa-plus-circle"></i>
             <span>Add College</span>
           </a>
+          <a class="sidebar-link {% if request.endpoint == 'super_admin_settings' %}active{% endif %}"
+             href="{{ url_for('super_admin_settings') }}">
+            <i class="fas fa-cogs"></i>
+            <span>System Settings</span>
+          </a>
 
         {% elif current_user.is_principal() %}
           <a class="sidebar-link {% if request.endpoint == 'principal_dashboard' %}active{% endif %}"
@@ -517,6 +522,11 @@
            href="{{ url_for('create_college') }}">
           <i class="fas fa-plus-circle"></i>
           <span>Add College</span>
+        </a>
+        <a class="mobile-drawer-link {% if request.endpoint == 'super_admin_settings' %}active{% endif %}"
+           href="{{ url_for('super_admin_settings') }}">
+          <i class="fas fa-cogs"></i>
+          <span>System Settings</span>
         </a>
 
       {% elif current_user.is_principal() %}

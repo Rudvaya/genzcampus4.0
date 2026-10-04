@@ -381,6 +381,36 @@ def index():
             return redirect(url_for('faculty_dashboard'))
     return redirect(url_for('login'))
 
+@app.route('/cc/settings', methods=['GET', 'POST'])
+@login_required
+def super_admin_settings():
+    if not current_user.is_superadmin:
+        flash('Access denied', 'danger')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        # Handle SMTP Settings
+        if 'mail_server' in request.form:
+            configs = {
+                'MAIL_SERVER': request.form.get('mail_server'),
+                'MAIL_PORT': request.form.get('mail_port'),
+                'MAIL_USERNAME': request.form.get('mail_username'),
+                'MAIL_PASSWORD': request.form.get('mail_password'),
+                'MAIL_USE_TLS': 'True' if request.form.get('mail_use_tls') else 'False'
+            }
+            for key, value in configs.items():
+                if value == "" and key == 'MAIL_PASSWORD':
+                    continue # Do not overwrite password with blank
+                config = SystemConfig.query.filter_by(key=key).first()
+                if config: config.value = value
+                else: db.session.add(SystemConfig(key=key, value=value))
+            db.session.commit()
+            flash('Global SMTP settings updated successfully', 'success')
+            return redirect(url_for('super_admin_settings'))
+
+    smtp_configs = SystemConfig.query.filter(SystemConfig.key.like('MAIL_%')).all()
+    return render_template('super_admin/settings.html', smtp_configs=smtp_configs)
+
 @app.route('/cc/login', methods=['GET', 'POST'])
 def super_admin_login():
     if request.method == 'POST':

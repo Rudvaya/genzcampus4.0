@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}System Settings - Super Admin{% endblock %}
+{% block page_title %}Global System Settings{% endblock %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+    <!-- SMTP Configuration Section -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden h-100">
+            <div class="card-header bg-transparent py-3 border-bottom-0">
+                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-envelope me-2"></i>Global SMTP Configuration</h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info small mb-4 rounded-3 border-0">
+                    <i class="fas fa-info-circle me-1"></i> These email settings are used globally across all colleges for OTP verification and notifications.
+                </div>
+                <form method="POST" action="{{ url_for('super_admin_settings') }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Mail Server</label>
+                        <input type="text" class="form-control rounded-pill border-main bg-main text-main" name="mail_server" value="{{ smtp_configs|selectattr('key', 'equalto', 'MAIL_SERVER')|map(attribute='value')|first or '' }}" placeholder="smtp.gmail.com">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold text-muted">Username</label>
+                            <input type="text" class="form-control rounded-pill border-main bg-main text-main" name="mail_username" value="{{ smtp_configs|selectattr('key', 'equalto', 'MAIL_USERNAME')|map(attribute='value')|first or '' }}" placeholder="email@gmail.com">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Port</label>
+                            <input type="number" class="form-control rounded-pill border-main bg-main text-main" name="mail_port" value="{{ smtp_configs|selectattr('key', 'equalto', 'MAIL_PORT')|map(attribute='value')|first or '587' }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Password / App Password</label>
+                        <input type="password" class="form-control rounded-pill border-main bg-main text-main" name="mail_password" placeholder="????????">
+                        <div class="form-text small mt-1">Leave blank to keep existing password.</div>
+                    </div>
+                    <div class="mb-4 d-flex align-items-center gap-2">
+                        <input type="checkbox" class="form-check-input" name="mail_use_tls" id="mail_use_tls" {% if smtp_configs|selectattr('key', 'equalto', 'MAIL_USE_TLS')|map(attribute='value')|first == 'True' %}checked{% endif %}>
+                        <label class="form-check-label small fw-bold text-muted" for="mail_use_tls">Enable TLS</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill shadow-sm py-2">
+                        <i class="fas fa-save me-1"></i> Save Global SMTP Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
