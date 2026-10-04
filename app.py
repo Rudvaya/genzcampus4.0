@@ -433,7 +433,7 @@ def super_admin_login():
 def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
+        password = request.form.get('password', '').strip()
         
         # Logging to file for diagnostics
         with open('instance/login_debug.log', 'a') as f:
@@ -1931,8 +1931,8 @@ def add_club():
     
     name = request.form.get('name')
     description = request.form.get('description')
-    login_id = request.form.get('club_login_id')
-    password = request.form.get('password')
+    login_id = request.form.get('club_login_id', '').strip()
+    password = request.form.get('password', '').strip()
     
     if Club.query.filter_by(club_login_id=login_id).first():
         flash('Club Login ID already exists', 'danger')
@@ -1953,9 +1953,9 @@ def edit_club(club_id):
     club = Club.query.get_or_404(club_id)
     club.name = request.form.get('name')
     club.description = request.form.get('description')
-    club.club_login_id = request.form.get('club_login_id')
+    club.club_login_id = request.form.get('club_login_id', '').strip()
     
-    password = request.form.get('password')
+    password = request.form.get('password', '').strip()
     if password:
         club.set_password(password)
         

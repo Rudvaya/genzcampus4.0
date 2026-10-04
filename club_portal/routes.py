@@ -64,8 +64,8 @@ def filter_accepted_responses(event, responses, now):
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        login_id = request.form.get('login_id')
-        password = request.form.get('password')
+        login_id = request.form.get('login_id', '').strip()
+        password = request.form.get('password', '').strip()
         
         club = Club.query.filter_by(club_login_id=login_id).first()
         if club and club.check_password(password):
