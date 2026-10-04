@@ -108,7 +108,7 @@
 
           <!-- Actions -->
           <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap pb-4">
-            <a href="{{ url_for('index') }}" class="btn btn-light">
+            <a href="{{ url_for('super_admin_dashboard') if current_user.is_superadmin else url_for('index', college_slug=g.current_college.slug) }}" class="btn btn-light">
               <i class="fas fa-times me-2"></i>Cancel
             </a>
             <button type="submit" class="btn btn-primary px-4">
