@@ -168,8 +168,8 @@ def pull_college_slug(endpoint, values):
         g.college_slug = values.pop('college_slug')
         g.current_college = College.query.filter_by(slug=g.college_slug, is_active=True).first()
         if not g.current_college and g.college_slug != 'super-admin':
-            # Handle invalid college slug
-            pass
+            from flask import abort
+            abort(404)
 
 @app.url_defaults
 def add_college_slug(endpoint, values):
