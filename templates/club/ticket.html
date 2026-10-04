@@ -163,7 +163,7 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>';
         btn.disabled = true;
 
-        fetch(`/club/pay-existing/${responseId}`, {
+        fetch('{{ url_for("club_portal.initiate_payment", response_id=response.id) }}', {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
