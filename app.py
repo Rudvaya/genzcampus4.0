@@ -556,11 +556,10 @@ def student_signup():
         # Send OTP
         print(f"DEBUG: Generated OTP for {email}: {otp}") # Print to console for local testing
         try:
-            # Fetch dynamic SMTP settings
-            smtp_config = {}
-            configs = SystemConfig.query.all()
-            for config in configs:
-                smtp_config[config.key] = config.value
+            # Fetch dynamic SMTP settings prioritizing college over global
+            configs = SystemConfig.query.filter(SystemConfig.college_id.in_([1, college.id])).all()
+            configs = sorted(configs, key=lambda c: c.college_id)
+            smtp_config = {c.key: c.value for c in configs}
             
             # Check if SMTP is configured (basic check)
             if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
@@ -578,15 +577,24 @@ def student_signup():
                             sender=app.config['MAIL_USERNAME'],
                             recipients=[email])
                 msg.body = f'Your OTP is: {otp}. It expires in 10 minutes.'
-                mail.send(msg)
-                flash('Registration successful! Please check your email for OTP.', 'info')
+                
+                from threading import Thread
+                def send_async_email(app, mail, msg):
+                    with app.app_context():
+                        try:
+                            mail.send(msg)
+                        except Exception as e:
+                            print(f"Async email error: {e}")
+                
+                Thread(target=send_async_email, args=(app, mail, msg)).start()
+                flash('Registration successful! OTP has been sent to your email.', 'success')
             else:
                 flash(f'Registration successful! (System is in Dev Mode: Your OTP is {otp})', 'info')
             
             return redirect(url_for('verify_otp', user_id=student.id))
         except Exception as e:
-            print(f"Error sending email: {e}")
-            flash(f'Error sending email. Your temporary OTP is: {otp}', 'warning')
+            print(f"Error preparing email: {e}")
+            flash(f'Error preparing email. Your temporary OTP is: {otp}', 'warning')
             return redirect(url_for('verify_otp', user_id=student.id))
     # Fetch departments for the dropdown
     departments = Department.query.filter_by(college_id=college.id).all()
@@ -628,11 +636,10 @@ def resend_otp(user_id):
     print(f"DEBUG: Resent OTP for {user.email}: {otp}")
     
     try:
-        # Fetch dynamic SMTP settings
-        smtp_config = {}
-        configs = SystemConfig.query.all()
-        for config in configs:
-            smtp_config[config.key] = config.value
+        # Fetch dynamic SMTP settings prioritizing college over global
+        configs = SystemConfig.query.filter(SystemConfig.college_id.in_([1, user.college_id])).all()
+        configs = sorted(configs, key=lambda c: c.college_id)
+        smtp_config = {c.key: c.value for c in configs}
         
         if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
             app.config.update(
@@ -648,7 +655,16 @@ def resend_otp(user_id):
                         sender=app.config['MAIL_USERNAME'],
                         recipients=[user.email])
             msg.body = f'Your new OTP is: {otp}. It expires in 10 minutes.'
-            mail_new.send(msg)
+            
+            from threading import Thread
+            def send_async_email(app, mail, msg):
+                with app.app_context():
+                    try:
+                        mail.send(msg)
+                    except Exception as e:
+                        print(f"Async email error: {e}")
+            
+            Thread(target=send_async_email, args=(app, mail_new, msg)).start()
             flash('A new OTP has been sent to your email.', 'success')
         else:
             flash('New OTP generated and printed to console (Dev Mode/SMTP Not Configured).', 'info')
