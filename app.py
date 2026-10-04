@@ -32,6 +32,52 @@ def get_razorpay_client():
 
 app.jinja_env.globals.update(get_razorpay_client=get_razorpay_client)
 
+from threading import Thread
+
+def send_email_async(subject, recipients, body, college_id=None):
+    def async_send(app, msg, mail):
+        with app.app_context():
+            try:
+                mail.send(msg)
+                print(f"Async mail sent to {msg.recipients}")
+            except Exception as e:
+                print(f"Async email error: {e}")
+                
+    # 1. Fetch from OS Environment Variables First (for Render deployment)
+    smtp_config = {
+        'MAIL_SERVER': os.environ.get('MAIL_SERVER'),
+        'MAIL_PORT': os.environ.get('MAIL_PORT'),
+        'MAIL_USERNAME': os.environ.get('MAIL_USERNAME'),
+        'MAIL_PASSWORD': os.environ.get('MAIL_PASSWORD'),
+        'MAIL_USE_TLS': os.environ.get('MAIL_USE_TLS', 'True')
+    }
+    
+    # 2. Fallback to Database (SystemConfig)
+    if not smtp_config.get('MAIL_USERNAME'):
+        college_ids = [1]
+        if college_id: college_ids.append(college_id)
+        from models import SystemConfig
+        configs = SystemConfig.query.filter(SystemConfig.college_id.in_(college_ids)).all()
+        configs = sorted(configs, key=lambda c: c.college_id)
+        smtp_config = {c.key: c.value for c in configs}
+
+    if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
+        app.config.update(
+            MAIL_SERVER=smtp_config.get('MAIL_SERVER', 'smtp.gmail.com'),
+            MAIL_PORT=int(smtp_config.get('MAIL_PORT', 587)),
+            MAIL_USERNAME=smtp_config.get('MAIL_USERNAME'),
+            MAIL_PASSWORD=smtp_config.get('MAIL_PASSWORD'),
+            MAIL_USE_TLS=smtp_config.get('MAIL_USE_TLS') == 'True'
+        )
+        mail = Mail(app)
+        msg = Message(subject, sender=app.config['MAIL_USERNAME'], recipients=recipients)
+        msg.body = body
+        Thread(target=async_send, args=(app, msg, mail)).start()
+        return True
+    else:
+        print("SMTP not configured. Message dumped to console:", body)
+        return False
+
 # Supabase Client Initialization
 supabase: Client = None
 if app.config.get('SUPABASE_URL') and app.config.get('SUPABASE_KEY'):
@@ -554,44 +600,17 @@ def student_signup():
         db.session.commit()
         
         # Send OTP
-        print(f"DEBUG: Generated OTP for {email}: {otp}") # Print to console for local testing
-        try:
-            # Fetch dynamic SMTP settings prioritizing college over global
-            configs = SystemConfig.query.filter(SystemConfig.college_id.in_([1, college.id])).all()
-            configs = sorted(configs, key=lambda c: c.college_id)
-            smtp_config = {c.key: c.value for c in configs}
-            
-            # Check if SMTP is configured (basic check)
-            if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
-                # Create a new mail connection with dynamic settings
-                app.config.update(
-                    MAIL_SERVER=smtp_config.get('MAIL_SERVER', 'smtp.gmail.com'),
-                    MAIL_PORT=int(smtp_config.get('MAIL_PORT', 587)),
-                    MAIL_USERNAME=smtp_config.get('MAIL_USERNAME'),
-                    MAIL_PASSWORD=smtp_config.get('MAIL_PASSWORD'),
-                    MAIL_USE_TLS=smtp_config.get('MAIL_USE_TLS') == 'True'
-                )
-                mail = Mail(app) # Re-init mail with new config
-                
-                msg = Message('Verify your GenZCampus Account',
-                            sender=app.config['MAIL_USERNAME'],
-                            recipients=[email])
-                msg.body = f'Your OTP is: {otp}. It expires in 10 minutes.'
-                
-                from threading import Thread
-                def send_async_email(app, mail, msg):
-                    with app.app_context():
-                        try:
-                            mail.send(msg)
-                        except Exception as e:
-                            print(f"Async email error: {e}")
-                
-                Thread(target=send_async_email, args=(app, mail, msg)).start()
-                flash('Registration successful! OTP has been sent to your email.', 'success')
-            else:
-                flash(f'Registration successful! (System is in Dev Mode: Your OTP is {otp})', 'info')
-            
-            return redirect(url_for('verify_otp', user_id=student.id))
+        print(f"DEBUG: Generated OTP for {email}: {otp}")
+        
+        body = f'Your OTP is: {otp}. It expires in 10 minutes.'
+        sent = send_email_async('Verify your GenZCampus Account', [email], body, college_id=college.id)
+        
+        if sent:
+            flash('Registration successful! OTP has been sent to your email.', 'success')
+        else:
+            flash(f'Registration successful! (System is in Dev Mode: Your OTP is {otp})', 'info')
+        
+        return redirect(url_for('verify_otp', user_id=student.id))
         except Exception as e:
             print(f"Error preparing email: {e}")
             flash(f'Error preparing email. Your temporary OTP is: {otp}', 'warning')
@@ -635,42 +654,13 @@ def resend_otp(user_id):
     
     print(f"DEBUG: Resent OTP for {user.email}: {otp}")
     
-    try:
-        # Fetch dynamic SMTP settings prioritizing college over global
-        configs = SystemConfig.query.filter(SystemConfig.college_id.in_([1, user.college_id])).all()
-        configs = sorted(configs, key=lambda c: c.college_id)
-        smtp_config = {c.key: c.value for c in configs}
-        
-        if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
-            app.config.update(
-                MAIL_SERVER=smtp_config.get('MAIL_SERVER', 'smtp.gmail.com'),
-                MAIL_PORT=int(smtp_config.get('MAIL_PORT', 587)),
-                MAIL_USERNAME=smtp_config.get('MAIL_USERNAME'),
-                MAIL_PASSWORD=smtp_config.get('MAIL_PASSWORD'),
-                MAIL_USE_TLS=smtp_config.get('MAIL_USE_TLS') == 'True'
-            )
-            mail_new = Mail(app)
-            
-            msg = Message('Verify your GenZCampus Account - New OTP',
-                        sender=app.config['MAIL_USERNAME'],
-                        recipients=[user.email])
-            msg.body = f'Your new OTP is: {otp}. It expires in 10 minutes.'
-            
-            from threading import Thread
-            def send_async_email(app, mail, msg):
-                with app.app_context():
-                    try:
-                        mail.send(msg)
-                    except Exception as e:
-                        print(f"Async email error: {e}")
-            
-            Thread(target=send_async_email, args=(app, mail_new, msg)).start()
-            flash('A new OTP has been sent to your email.', 'success')
-        else:
-            flash('New OTP generated and printed to console (Dev Mode/SMTP Not Configured).', 'info')
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        flash('Error sending email. Check console for OTP.', 'warning')
+    body = f'Your new OTP is: {otp}. It expires in 10 minutes.'
+    sent = send_email_async('Verify your GenZCampus Account - New OTP', [user.email], body, college_id=user.college_id)
+    
+    if sent:
+        flash('A new OTP has been sent to your email.', 'success')
+    else:
+        flash('New OTP generated and printed to console (Dev Mode/SMTP Not Configured).', 'info')
     
     return redirect(url_for('verify_otp', user_id=user.id))
 
@@ -698,34 +688,13 @@ def change_email_otp(user_id):
         
         print(f"DEBUG: Change Email OTP for {user.email}: {otp}")
         
-        try:
-            # Send new OTP
-            smtp_config = {}
-            configs = SystemConfig.query.all()
-            for config in configs:
-                smtp_config[config.key] = config.value
-            
-            if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
-                app.config.update(
-                    MAIL_SERVER=smtp_config.get('MAIL_SERVER', 'smtp.gmail.com'),
-                    MAIL_PORT=int(smtp_config.get('MAIL_PORT', 587)),
-                    MAIL_USERNAME=smtp_config.get('MAIL_USERNAME'),
-                    MAIL_PASSWORD=smtp_config.get('MAIL_PASSWORD'),
-                    MAIL_USE_TLS=smtp_config.get('MAIL_USE_TLS') == 'True'
-                )
-                mail_new = Mail(app)
-                
-                msg = Message('Verify your GenZCampus Account - Email Updated',
-                            sender=app.config['MAIL_USERNAME'],
-                            recipients=[user.email])
-                msg.body = f'Your email was updated. Your new OTP is: {otp}. It expires in 10 minutes.'
-                mail_new.send(msg)
-                flash('Email updated and OTP sent to new address.', 'success')
-            else:
-                flash('Email updated. New OTP printed to console (Dev Mode/SMTP Not Configured).', 'info')
-        except Exception as e:
-            print(f"Error sending email: {e}")
-            flash('Email updated but error sending email. Check console for OTP.', 'warning')
+        body = f'Your new OTP is: {otp}. It expires in 10 minutes.'
+        sent = send_email_async('Verify your GenZCampus Account - Email Updated', [user.email], body, college_id=user.college_id)
+        
+        if sent:
+            flash('Email updated successfully! A new OTP has been sent.', 'success')
+        else:
+            flash(f'Email updated successfully! (System is in Dev Mode: Your OTP is {otp})', 'info')
             
         return redirect(url_for('verify_otp', user_id=user.id))
         
@@ -743,37 +712,15 @@ def forgot_password():
             db.session.commit()
             
             print(f"DEBUG: Password Reset OTP for {email}: {otp}") # Print to console
-            try:
-                # Fetch dynamic SMTP settings
-                smtp_config = {}
-                configs = SystemConfig.query.all()
-                for config in configs:
-                    smtp_config[config.key] = config.value
-                
-                if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
-                     # Create a new mail connection with dynamic settings
-                    app.config.update(
-                        MAIL_SERVER=smtp_config.get('MAIL_SERVER', 'smtp.gmail.com'),
-                        MAIL_PORT=int(smtp_config.get('MAIL_PORT', 587)),
-                        MAIL_USERNAME=smtp_config.get('MAIL_USERNAME'),
-                        MAIL_PASSWORD=smtp_config.get('MAIL_PASSWORD'),
-                        MAIL_USE_TLS=smtp_config.get('MAIL_USE_TLS') == 'True'
-                    )
-                    mail = Mail(app) # Re-init mail with new config
-                    
-                    msg = Message('Reset your GenZCampus Password',
-                                sender=app.config['MAIL_USERNAME'],
-                                recipients=[email])
-                    msg.body = f'Your Password Reset OTP is: {otp}. It expires in 10 minutes.'
-                    mail.send(msg)
-                else:
-                    flash('OTP printed to console (Dev Mode)', 'info')
-                
-                return redirect(url_for('reset_password', user_id=user.id))
-            except Exception as e:
-                print(f"Error sending email: {e}")
-                flash('Error sending email. Check console for OTP.', 'warning')
-                return redirect(url_for('reset_password', user_id=user.id))
+            body = f'Your Password Reset OTP is: {otp}. It expires in 10 minutes.'
+            sent = send_email_async('Reset your GenZCampus Password', [email], body, college_id=user.college_id)
+            
+            if sent:
+                flash('A password reset OTP has been sent to your email.', 'info')
+            else:
+                flash(f'OTP generated (Dev Mode): {otp}', 'info')
+            
+            return redirect(url_for('reset_password', user_id=user.id))
         else:
             flash('Email not found', 'danger')
             
