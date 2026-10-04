@@ -213,6 +213,7 @@ class Event(db.Model):
     venue = db.Column(db.String(100))
     status = db.Column(db.String(20), default='upcoming') # upcoming, active, expired
     allowed_departments = db.Column(db.Text) # JSON string of dept names
+    allowed_years = db.Column(db.Text) # JSON string of years (e.g., ["1", "2", "3", "4"])
     participation_type = db.Column(db.String(20), default='solo') # solo, team, both
     team_size_min = db.Column(db.Integer, default=1)
     team_size_max = db.Column(db.Integer, default=1)

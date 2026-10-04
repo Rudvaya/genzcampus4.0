@@ -119,6 +119,8 @@ def logout():
 def create_event():
     club_id = session.get('club_id')
     if not club_id: return redirect(url_for('club_portal.login'))
+    
+    club = Club.query.get(club_id)
 
     if request.method == 'POST':
         name = request.form.get('name')
@@ -131,6 +133,7 @@ def create_event():
         team_size_max = int(request.form.get('team_size_max', 1))
         max_registrations = int(request.form.get('max_registrations', 0))
         allowed_depts = request.form.getlist('departments') # Multi-select
+        allowed_years = request.form.getlist('years') # Multi-select for years
         registration_deadline_str = request.form.get('registration_deadline')
         registration_deadline = datetime.strptime(registration_deadline_str, '%Y-%m-%dT%H:%M') if registration_deadline_str else None
         
@@ -146,6 +149,7 @@ def create_event():
 
         event = Event(
             club_id=club_id,
+            college_id=club.college_id,
             name=name,
             description=description,
             date=start_date.date(), # Keep legacy field sync
@@ -158,6 +162,7 @@ def create_event():
             team_size_max=team_size_max,
             max_registrations=max_registrations,
             allowed_departments=json.dumps(allowed_depts),
+            allowed_years=json.dumps(allowed_years),
             is_paid=is_paid,
             amount=amount,
             payment_model=payment_model,
@@ -278,11 +283,19 @@ def student_events():
     
     available_events = []
     user_dept = current_user.department.strip().lower() if current_user.department else ""
+    user_year = str(current_user.year) if current_user.year else ""
     
     for event in all_events:
-        allowed = json.loads(event.allowed_departments) if event.allowed_departments else []
-        # Case-insensitive, stripped check
-        if not allowed or any(d.strip().lower() == user_dept for d in allowed):
+        allowed_depts = json.loads(event.allowed_departments) if event.allowed_departments else []
+        allowed_years = json.loads(event.allowed_years) if event.allowed_years else []
+        
+        # Check Department
+        dept_match = not allowed_depts or any(d.strip().lower() == user_dept for d in allowed_depts)
+        
+        # Check Year
+        year_match = not allowed_years or user_year in allowed_years
+        
+        if dept_match and year_match:
             available_events.append(event)
             
     # Check if student already registered

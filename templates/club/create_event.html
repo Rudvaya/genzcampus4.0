@@ -59,8 +59,7 @@
                 </div>
 
                 <div class="row">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Participation Type</label>
                         <select name="participation_type" id="participation_type" class="form-select" onchange="toggleTeamSizeConfig()">
                             <option value="solo">Solo Only</option>
@@ -68,8 +67,8 @@
                             <option value="both" selected>Solo & Team</option>
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Allowed Departments (Multi-select)</label>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Allowed Departments</label>
                         <div class="border rounded p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
                             {% for dept in departments %}
                             <div class="form-check">
@@ -77,6 +76,20 @@
                                     value="{{ dept.name }}" id="dept_{{ dept.id }}" checked>
                                 <label class="form-check-label small" for="dept_{{ dept.id }}">
                                     {{ dept.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Allowed Years</label>
+                        <div class="border rounded p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
+                            {% for year in ["1", "2", "3", "4"] %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="years"
+                                    value="{{ year }}" id="year_{{ year }}" checked>
+                                <label class="form-check-label small" for="year_{{ year }}">
+                                    Year {{ year }}
                                 </label>
                             </div>
                             {% endfor %}
