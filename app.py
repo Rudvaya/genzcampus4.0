@@ -63,11 +63,12 @@ def send_email_async(subject, recipients, body, college_id=None):
 
     if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
         app.config.update(
-            MAIL_SERVER=smtp_config.get('MAIL_SERVER', 'smtp.gmail.com'),
-            MAIL_PORT=int(smtp_config.get('MAIL_PORT', 587)),
+            MAIL_SERVER=smtp_config.get('MAIL_SERVER') or 'smtp.gmail.com',
+            MAIL_PORT=int(smtp_config.get('MAIL_PORT') or 587),
             MAIL_USERNAME=smtp_config.get('MAIL_USERNAME'),
             MAIL_PASSWORD=smtp_config.get('MAIL_PASSWORD'),
-            MAIL_USE_TLS=smtp_config.get('MAIL_USE_TLS') == 'True'
+            MAIL_USE_TLS=str(smtp_config.get('MAIL_USE_TLS')).lower() in ['true', '1', 't', 'y', 'yes']
+
         )
         mail = Mail(app)
         msg = Message(subject, sender=app.config['MAIL_USERNAME'], recipients=recipients)
