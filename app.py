@@ -511,54 +511,15 @@ def student_signup():
             department=department,
             year=year,
             role='student',
-            is_verified=False
+            is_verified=True
         )
         student.set_password(password)
-        
-        # Generate OTP
-        otp = ''.join(random.choices(string.digits, k=6))
-        student.otp = otp
-        student.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
         
         db.session.add(student)
         db.session.commit()
         
-        # Send OTP
-        print(f"DEBUG: Generated OTP for {email}: {otp}") # Print to console for local testing
-        try:
-            # Fetch dynamic SMTP settings
-            smtp_config = {}
-            configs = SystemConfig.query.all()
-            for config in configs:
-                smtp_config[config.key] = config.value
-            
-            # Check if SMTP is configured (basic check)
-            if smtp_config.get('MAIL_USERNAME') and smtp_config.get('MAIL_PASSWORD'):
-                # Create a new mail connection with dynamic settings
-                app.config.update(
-                    MAIL_SERVER=smtp_config.get('MAIL_SERVER', 'smtp.gmail.com'),
-                    MAIL_PORT=int(smtp_config.get('MAIL_PORT', 587)),
-                    MAIL_USERNAME=smtp_config.get('MAIL_USERNAME'),
-                    MAIL_PASSWORD=smtp_config.get('MAIL_PASSWORD'),
-                    MAIL_USE_TLS=smtp_config.get('MAIL_USE_TLS') == 'True'
-                )
-                mail = Mail(app) # Re-init mail with new config
-                
-                msg = Message('Verify your GenZCampus Account',
-                            sender=app.config['MAIL_USERNAME'],
-                            recipients=[email])
-                msg.body = f'Your OTP is: {otp}. It expires in 10 minutes.'
-                mail.send(msg)
-                flash('Registration successful! Please check your email for OTP.', 'info')
-            else:
-                flash('Registration successful! OTP printed to console (Dev Mode/SMTP Not Configured).', 'info')
-            
-            return redirect(url_for('verify_otp', user_id=student.id))
-        except Exception as e:
-            print(f"Error sending email: {e}")
-            flash('Error sending email. Check console for OTP.', 'warning')
-            return redirect(url_for('verify_otp', user_id=student.id))
-    
+        flash('Registration successful! You can now log in.', 'success')
+        return redirect(url_for('login', college_slug=college.slug))
     # Fetch departments for the dropdown
     departments = Department.query.filter_by(college_id=college.id).all()
     return render_template('student_signup.html', departments=departments)
